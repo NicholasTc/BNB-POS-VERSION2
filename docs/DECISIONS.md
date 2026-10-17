@@ -1,0 +1,22 @@
+# Decisions
+
+## Approved business policy (2026-10-17)
+
+- One café and one owner-authorized shared POS device. One email/password owner account, locally bootstrapped/reset; no public signup or email-reset flow.
+- Unique **four-digit numeric employee PINs** (user amendment). Owner provisions/resets credentials. Employee PIN required for clock-in, incoming cashier switch, and own clock-out.
+- Cashier locks after 15 minutes of inactivity; attendance remains open until explicit clock-out. Active cashier clock-out requires another active employee to authenticate; final clock-out locks the POS.
+- Explicitly confirm discard of unpaid carts before changing cashier. Do not clear or switch an uncertain sale until durable recovery resolves it.
+- Cash and QRIS only, cashier-attested receipt of payment. Integer rupiah, positive whole quantities, final menu prices; no additional tax, charges, discounts, or tips.
+- Asia/Jakarta business timezone. Sales reported by completion date; attendance filters include shifts overlapping the selected local dates.
+- Completed sales immutable; no void/edit/refund workflow. Owner handles corrections outside the app. Reports are recorded gross sales, not independently verified settlements or net external adjustments.
+
+## Technical conventions
+
+- Modular monolith; Next.js App Router, strict TypeScript, React, Tailwind, PostgreSQL, Drizzle, npm lockfile, Vitest, Playwright. Five stage gates follow the preserved project brief.
+- Better Auth evaluated for owner email/password auth: use its PostgreSQL/Drizzle adapter, no public signup; employee PIN/device authorization remains a separate, server-controlled workflow. See [Better Auth installation](https://better-auth.com/docs/installation) and [options](https://better-auth.com/docs/reference/options).
+- Bind databases and the development app to loopback. Do not deploy. Runtime migrations are explicit administrative commands.
+- ESLint stays on the latest 9.x patch compatible with Next's React/import/accessibility plugins; ESLint 10 produced unsupported peer combinations. Upgrade when all plugin peers support it. esbuild is overridden to patched 0.28.2 and must pass migration generation and all gates.
+- A sale's UUID is its durable idempotency/recovery key. Persist a server quote and immutable lines before receiving payment; honor that quoted price until explicitly cancelled before payment. Payment checkbox durably records cashier attestation; Done atomically transitions to completed revenue. Pending/paid sales survive lock, pairing changes and restarts, and block identity changes except PIN reauthentication by the original cashier. Completed/cancelled snapshots are immutable in PostgreSQL.
+- Browser recovery writes the UUID and attempted step to localStorage before financial requests. Never accept new transactions or offer cancellation while payment/completion is uncertain. The server also exposes its single unfinished transaction so recovery is possible without the original browser storage. Browser storage is required before accepting payment; no offline sales mode.
+- Report queries share a read-only repeatable-read PostgreSQL snapshot. Local dates map to half-open UTC intervals `[start, next day)` in Asia/Jakarta (UTC+07:00). Attendance overlaps when clock-in is before interval end and clock-out is absent or after interval start. Report range is at most 366 days; sales and attendance histories paginate separately in batches of 25 without truncating totals. Pending/paid records are flagged separately from completed revenue. Returning to cashier through owner navigation signs out the owner.
+- Touch UI direction: coffee #36251e, oat #faf6ee, leaf #28624b, butter #f2cf66, paper #ffffff. Humanist system sans for controls; rounded, compact LISI wordmark. Left menu and right sticky cart on tablet; single-column mobile. Visual emphasis belongs to products and the checkout action.

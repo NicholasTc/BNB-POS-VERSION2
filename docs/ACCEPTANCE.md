@@ -1,0 +1,9 @@
+# Acceptance and gates
+
+At **every stage**, pass typecheck, ESLint, relevant Vitest unit tests, real PostgreSQL integration tests, relevant Playwright tests, production build, migration verification, and a security/maintainability review. Record actual results in PROGRESS.md. Never advance with a failed or unavailable required check.
+
+- Foundation: repeatable clean npm install; migrations apply twice safely; owner login works, signup blocked, owner APIs deny anonymous access, CSRF/origin protection, logout/revocation, validated env; browser login/locked POS smoke.
+- Attendance: simultaneous shifts; unique active shift under concurrency; clock-out is PIN-authenticated and atomic; switching preserves shifts, blocks impersonation, and handles carts; last employee locks; refresh and server restart preserve attendance; expired cashier cannot sell; PIN brute force limited in PostgreSQL.
+- Sales: authoritative integer pricing; immutable names/prices; payment attestation required; atomic transaction; duplicate/concurrent requests create one sale; changed payload with same key rejected; stale price cannot silently finalize; uncertain response recoverable by durable key; failed save never reports success; cashier identity server-derived.
+- Owner: accurate totals, counts, product quantities, payment and employee breakdowns and itemized history; date filtering handles Jakarta midnight and overlapping shifts; management revokes changed employee credentials; reports reconcile to persisted sales; server authorizes every operation.
+- Hardening: required regression plus database outage/recovery, integrity and tamper protection, accessible tablet/mobile controls, known-fixture reporting and performance measurement, audited dependencies, backup restored and compared locally. Document operational limitations honestly.

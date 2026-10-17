@@ -1,0 +1,30 @@
+name: lisi-pos-v2
+services:
+  db:
+    image: postgres:17.7-alpine
+    environment:
+      POSTGRES_USER: lisi_dev
+      POSTGRES_PASSWORD: lisi_local_dev
+      POSTGRES_DB: lisi_dev
+    ports: ["127.0.0.1:55438:5432"]
+    volumes: ["lisi_dev_data:/var/lib/postgresql/data"]
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U lisi_dev -d lisi_dev"]
+      interval: 2s
+      timeout: 3s
+      retries: 30
+  test-db:
+    image: postgres:17.7-alpine
+    environment:
+      POSTGRES_USER: lisi_test
+      POSTGRES_PASSWORD: lisi_local_test
+      POSTGRES_DB: lisi_test
+    ports: ["127.0.0.1:55439:5432"]
+    tmpfs: ["/var/lib/postgresql/data"]
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U lisi_test -d lisi_test"]
+      interval: 2s
+      timeout: 3s
+      retries: 30
+volumes:
+  lisi_dev_data:
