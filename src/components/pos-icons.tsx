@@ -1,4 +1,8 @@
-export function PosIcon({ name }: { name: "cash" | "qris" | "chevron" }) {
+export function PosIcon({
+  name,
+}: {
+  name: "cash" | "qris" | "chevron" | "lock" | "person";
+}) {
   return (
     <svg
       aria-hidden="true"
@@ -19,6 +23,16 @@ export function PosIcon({ name }: { name: "cash" | "qris" | "chevron" }) {
         </>
       ) : name === "chevron" ? (
         <path d="m6 9 6 6 6-6" />
+      ) : name === "lock" ? (
+        <>
+          <rect x="5" y="10" width="14" height="11" rx="2" />
+          <path d="M8 10V6a4 4 0 0 1 8 0v4M12 15v2" />
+        </>
+      ) : name === "person" ? (
+        <g fill="currentColor" stroke="none">
+          <circle cx="12" cy="6" r="4" />
+          <path d="M4 20c0-5 3-8 8-8s8 3 8 8c-3 3-13 3-16 0Z" />
+        </g>
       ) : (
         <>
           <path d="M3 3h6v6H3zM15 3h6v6h-6zM3 15h6v6H3zM15 15h2v2h-2zM21 15v6h-6M12 3v3M12 10v3H9M3 12h3M12 18v3M18 12h3" />

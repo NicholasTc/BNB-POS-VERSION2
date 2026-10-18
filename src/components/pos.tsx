@@ -125,11 +125,6 @@ export function Pos() {
           <LisiLogo />
         </Link>
         <div className="cashier-identity">
-          {state?.cashier && (
-            <span aria-label={`Kasir: ${state.cashier.name}`}>
-              {state.cashier.name}
-            </span>
-          )}
           <button
             className="staff-toggle"
             aria-expanded={staffOpen}
@@ -239,6 +234,41 @@ export function Pos() {
         )}
       </header>
       <main className={state ? "content stack" : "center-stage stack"}>
+        {state && (
+          <section
+            className={`cashier-status ${state.cashier ? "is-active" : "is-locked"}`}
+            aria-label="Status kasir"
+            role="status"
+            data-testid="cashier-status"
+          >
+            <div className="cashier-status-identity">
+              <PosIcon name={state.cashier ? "person" : "lock"} />
+              {state.cashier ? (
+                <strong aria-label={`Kasir: ${state.cashier.name}`}>
+                  Kasir: {state.cashier.name}
+                </strong>
+              ) : (
+                <strong>Belum ada kasir</strong>
+              )}
+            </div>
+            {state.cashier ? (
+              <span className="cashier-active">
+                <span aria-hidden="true" />
+                Aktif
+              </span>
+            ) : (
+              <button
+                className="cashier-sign-in"
+                disabled={busy}
+                onClick={() =>
+                  open(state.shifts.length ? "switch" : "clock-in")
+                }
+              >
+                Masuk
+              </button>
+            )}
+          </section>
+        )}
         {error && (
           <p className="error" role="alert">
             {error}
@@ -277,34 +307,7 @@ export function Pos() {
             </button>
           </div>
         ) : (
-          <>
-            {!state.cashier && (
-              <div className="card stack shift-toolbar">
-                <h1>Mulai hari yang baik.</h1>
-                <p className="muted">
-                  Masukkan PIN untuk mulai kerja atau lanjut sebagai kasir.
-                </p>
-                <div className="row">
-                  <button onClick={() => open("clock-in")}>Mulai kerja</button>
-                  <button
-                    className="secondary"
-                    disabled={!state.shifts.length}
-                    onClick={() => open("switch")}
-                  >
-                    Ganti kasir
-                  </button>
-                  <button
-                    className="secondary"
-                    disabled={!state.shifts.length}
-                    onClick={() => open("clock-out")}
-                  >
-                    Selesai kerja
-                  </button>
-                </div>
-              </div>
-            )}
-            <Sales ref={salesRef} state={state} />
-          </>
+          <Sales ref={salesRef} state={state} />
         )}
       </main>
       {dialog && (

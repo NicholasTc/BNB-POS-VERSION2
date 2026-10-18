@@ -42,6 +42,10 @@ Inspected reference catalog/cash/QRIS captures at 630px plus mobile and desktop 
 
 Latest local p95 (1,000 sales / 10 samples): POS 3 ms, reports 28 ms, quote/attest/complete 16 ms. Dependencies were not changed or re-audited for this redesign; previous audit and verification limits remain applicable.
 
+## Cashier header refinement (2026-10-18)
+
+Full sequential gate passed after matching the newest locked/active header reference: **20 unit / 43 PostgreSQL integration / 17 Chromium browser tests**, typecheck/lint, no migration drift, build, 13-asset browser-secret scan and 15-table backup/restore. New browser coverage checks bar/tab alignment, logo/control centering, identical bar height/position before/after PIN entry, existing-shift Masuk reauthentication without duplicate attendance, mobile overflow and long-name containment. Before/after/mobile screenshots visually reviewed at 784px/390px. No database, dependency or financial-domain change.
+
 ## Review and remaining verification limits
 
 Security/integrity review checked every route's trust boundary, cookie/origin behavior, employee attribution and revocation, lock order, transactional state changes, immutable rows, money overflow, idempotency/payload mismatch and database failure handling. Default third-party auth SQL logging is disabled; custom logs do not include credentials or raw errors. Built browser assets were scanned for actual configured server secrets without exposing them.

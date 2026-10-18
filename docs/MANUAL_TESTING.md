@@ -33,7 +33,7 @@ Use dummy data and pretend payments. No payment provider is connected; the app r
 
 ## 3. Test attendance and switching
 
-1. Select **Mulai kerja**, enter **0123**, then submit. Ayu should become active cashier. Open **Staf** to see Sedang bekerja and the attendance controls.
+1. In the **Belum ada kasir** bar, select **Masuk**, enter **0123**, then **Mulai kerja**. The bar should change to **Kasir: Ayu · Aktif** without shifting the category tabs. Open **Staf** to see Sedang bekerja and the attendance controls.
 2. Open **Staf → Mulai kerja** with **4567**. Both employees should be working; Ayu remains cashier.
 3. Select **Staf → Ganti kasir**, enter **4567**, then **Jadi kasir**. Bima should now be cashier; there should still be two shifts.
 4. Refresh the page. The cashier and both shifts should remain.
@@ -67,7 +67,7 @@ Additional completed tests will change these totals. Returning through Kasir sig
 
 - Try **one** incorrect PIN: access should be denied. Avoid ten failed attempts, which can lock correct PIN access for up to 15 minutes.
 - Add an unpaid cart, then choose **Staf → Ganti kasir**. Cancel the discard confirmation: the cart should remain. A confirmed discard plus successful incoming PIN should clear it.
-- Select **Staf → Kunci kasir**: attendance remains open. Ganti kasir with an active employee's PIN should unlock access. Optional: verify automatic locking after 15 minutes without interaction.
+- Select **Staf → Kunci kasir**: attendance remains open. **Masuk** with an active employee's PIN should unlock access without creating another shift; **Staf → Ganti kasir** remains available. Optional: verify automatic locking after 15 minutes without interaction.
 - With no unfinished payment, select **Staf → Selesai kerja** and enter Bima's PIN. His shift should close while Ayu remains working. Repeat with Ayu: the final shift closes and the POS locks.
 
 ## Optional: interrupted connection

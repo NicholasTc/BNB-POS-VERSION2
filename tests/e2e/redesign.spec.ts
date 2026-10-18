@@ -267,3 +267,99 @@ test("owner photo/category edits filter live, broken photos fall back, cart edit
     await admin.close();
   }
 });
+
+test("reference header keeps locked/active proportions and Masuk reauthenticates without duplicating shifts", async ({
+  page,
+}) => {
+  await page.setViewportSize({ width: 784, height: 930 });
+  await login(page);
+  page.on("dialog", (d) => void d.accept());
+  await page
+    .getByRole("button", { name: "Hubungkan perangkat ini", exact: true })
+    .click();
+  await expect(
+    page.getByText("Perangkat terhubung selama 30 hari.", { exact: false }),
+  ).toBeVisible();
+  await page.getByRole("link", { name: "Kasir", exact: true }).click();
+  const status = page.getByTestId("cashier-status");
+  await expect(
+    status.getByText("Belum ada kasir", { exact: true }),
+  ).toBeVisible();
+  await expect(
+    page.getByRole("button", { name: "Tambah Jus Mangga", exact: true }),
+  ).toBeDisabled();
+  const locked = await status.boundingBox();
+  const tabs = await page.locator(".catalog-tabs").boundingBox();
+  const logo = await page.locator(".lisi-logo").boundingBox();
+  const staff = await page
+    .getByRole("button", { name: "Staf", exact: true })
+    .boundingBox();
+  if (!locked || !tabs || !logo || !staff)
+    throw new Error("Header layout missing");
+  expect(Math.abs(locked.x - tabs.x)).toBeLessThan(1);
+  expect(Math.abs(locked.width - tabs.width)).toBeLessThan(1);
+  expect(
+    Math.abs(staff.x + staff.width - (locked.x + locked.width)),
+  ).toBeLessThan(1);
+  expect(
+    Math.abs(logo.y + logo.height / 2 - (staff.y + staff.height / 2)),
+  ).toBeLessThan(1);
+  expect(locked.height).toBeGreaterThanOrEqual(110);
+  expect(locked.height).toBeLessThanOrEqual(118);
+  await page.screenshot({ path: "test-results/header-before.png" });
+  await page.getByRole("button", { name: "Masuk", exact: true }).click();
+  await page.getByLabel("PIN karyawan", { exact: true }).fill("0123");
+  await page
+    .getByRole("dialog")
+    .getByRole("button", { name: "Mulai kerja", exact: true })
+    .click();
+  await expect(page.getByRole("dialog")).not.toBeVisible();
+  await expect(status.getByLabel("Kasir: Ayu", { exact: true })).toBeVisible();
+  await expect(status.getByText("Aktif", { exact: true })).toBeVisible();
+  const active = await status.boundingBox();
+  expect(active?.height).toBe(locked.height);
+  expect(active?.y).toBe(locked.y);
+  await expect(
+    page.getByText("Selamat bekerja!", { exact: true }),
+  ).not.toBeVisible();
+  await page.screenshot({ path: "test-results/header-after.png" });
+  await page.getByRole("button", { name: "Staf", exact: true }).click();
+  await page.getByRole("button", { name: "Kunci kasir", exact: true }).click();
+  await expect(
+    status.getByText("Belum ada kasir", { exact: true }),
+  ).toBeVisible();
+  await page.getByRole("button", { name: "Masuk", exact: true }).click();
+  await page.getByLabel("PIN karyawan", { exact: true }).fill("0123");
+  await page
+    .getByRole("dialog")
+    .getByRole("button", { name: "Jadi kasir", exact: true })
+    .click();
+  await expect(status.getByLabel("Kasir: Ayu", { exact: true })).toBeVisible();
+  await page.setViewportSize({ width: 390, height: 844 });
+  expect(
+    await page.evaluate(
+      () => document.documentElement.scrollWidth <= innerWidth,
+    ),
+  ).toBe(true);
+  await page.screenshot({ path: "test-results/header-mobile.png" });
+  const pool = testPool();
+  try {
+    expect(
+      (
+        await pool.query(
+          "SELECT count(*)::int AS shifts FROM attendance WHERE clock_out IS NULL",
+        )
+      ).rows[0].shifts,
+    ).toBe(1);
+    await pool.query("UPDATE employee SET name=$1", ["Ayu ".repeat(20).trim()]);
+  } finally {
+    await pool.end();
+  }
+  await page.reload();
+  await expect(status.getByText("Aktif", { exact: true })).toBeVisible();
+  expect(
+    await page.evaluate(
+      () => document.documentElement.scrollWidth <= innerWidth,
+    ),
+  ).toBe(true);
+});

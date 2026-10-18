@@ -3,7 +3,7 @@
 Updated: 2026-10-18 (Asia/Jakarta).
 
 ## Current stage
-Reference cashier redesign complete and locally verified. Owner dashboard layout retained; menu photo/category fields added. No deployment. Full implementation/function mapping: UI_REDESIGN.md; current use: MANUAL_TESTING.md; verification history/limits: VERIFICATION.md.
+Cashier top-section refinement complete and verified against the newest reference: logo/Staf row above a compact locked/active status bar and aligned category tabs. Locked and active bar geometry stays stable. Owner dashboard layout retained; menu photo/category fields added. No deployment. Full implementation/function mapping: UI_REDESIGN.md; current use: MANUAL_TESTING.md; verification history/limits: VERIFICATION.md.
 
 ## Completed work
 - Complete MVP: PostgreSQL/Drizzle, owner authentication, four-digit employee PINs, shared-device authorization, persistent attendance, cashier switching/locking, immutable cash/QRIS sales and durable recovery, owner reporting/management.
@@ -13,13 +13,13 @@ Reference cashier redesign complete and locally verified. Owner dashboard layout
 - Additive migration 0004 applied to local development/test databases. Old products retained with neutral metadata defaults; omitted metadata in legacy edits remains intact. Only menu metadata domain code changed; no financial transaction/schema changes or dependency updates.
 
 ## Latest verification
-- Full sequential `npm run gate`: **20/20 unit**, **43/43 real PostgreSQL integration**, **16/16 Chromium browser**; typecheck, zero-warning lint, no migration drift, production build and browser-secret scan (13 JS assets) passed.
+- Full sequential `npm run gate`: **20/20 unit**, **43/43 real PostgreSQL integration**, **17/17 Chromium browser**; typecheck, zero-warning lint, no migration drift, production build and browser-secret scan (13 JS assets) passed.
 - Backup/restore: 15 public/Drizzle tables, content/row digests, sequences and sale totals matched, including a completed sale/shift. Fixtures target only guarded loopback lisi_test; development records untouched except additive migration.
-- Regressions include same-reference lost payment/completion replies and actual database outage, checkout refresh suspension, live reports/filter drafts, language persistence, metadata validation/preservation, cash boundaries/change, QRIS gating, sheet close/reopen and cart editing. Mobile/630px reference/desktop screenshots inspected; test-results/reference-{catalog,cash,qris}.png are local review artifacts.
+- Regressions include same-reference lost payment/completion replies and actual database outage, checkout refresh suspension, live reports/filter drafts, language persistence, metadata validation/preservation, cash boundaries/change, QRIS gating, sheet close/reopen and cart editing. Mobile/630px reference/desktop screenshots inspected; latest header checks at 784px and 390px cover aligned widths, unchanged locked/active height/position, long names and PIN unlock without duplicate shifts. Local review artifacts: test-results/header-{before,after,mobile}.png and reference-{catalog,cash,qris}.png.
 - Local 1,000-sale / 10-sample p95: POS 3 ms, report 28 ms, quote/attest/complete 16 ms. Local measurements only. No blockers.
 
 ## Next action
-Reload the app and follow MANUAL_TESTING.md. Existing products remain under Semua until the owner assigns Minuman/Makanan and optional photos. Use Staf for attendance/lock/owner/manual refresh; Ubah edits cart quantities. Test with simulated payments and separate owner/cashier browser profiles.
+Reload the app and follow MANUAL_TESTING.md. Existing products remain under Semua until the owner assigns Minuman/Makanan and optional photos. Use Masuk on the locked status bar for first clock-in or existing-shift reauthentication; Staf retains attendance/lock/owner/manual refresh. Ubah edits cart quantities. Test with simulated payments and separate owner/cashier browser profiles.
 
 ## Resume notes / limits
 - Apply versioned migrations explicitly in other environments. Keep local credentials in the existing manual guide/private .env.local; never print/commit environment secrets or backups. Preserve unrelated user/generated changes.

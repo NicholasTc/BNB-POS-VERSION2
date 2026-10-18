@@ -40,7 +40,7 @@ async function start(page: Page) {
   ).toBeVisible();
   await page.getByRole("link", { name: "Kasir", exact: true }).click();
   await expect(
-    page.getByRole("button", { name: "Mulai kerja", exact: true }),
+    page.getByRole("button", { name: "Masuk", exact: true }),
   ).toBeVisible();
 }
 test("mobile checkout, keyboard PIN focus trap and owner handoff revocation", async ({
@@ -49,7 +49,7 @@ test("mobile checkout, keyboard PIN focus trap and owner handoff revocation", as
   await page.setViewportSize({ width: 390, height: 844 });
   await start(page);
   expect((await page.request.get("/api/owner")).status()).toBe(401);
-  await page.getByRole("button", { name: "Mulai kerja", exact: true }).click();
+  await page.getByRole("button", { name: "Masuk", exact: true }).click();
   await page.getByLabel("PIN karyawan", { exact: true }).focus();
   for (let i = 0; i < 20; i++) {
     await page.keyboard.press("Tab");
