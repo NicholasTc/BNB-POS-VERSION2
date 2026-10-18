@@ -2,7 +2,7 @@
 
 Approved target behavior; consult PROGRESS.md for implemented/verified stage status.
 
-- Owner: bootstrap locally, sign in at `/owner`, authorize the shared device, create employees with unique four-digit PINs, maintain final-price menu items, inspect recorded sales and attendance. Reset credentials locally if owner access is lost.
+- Owner: bootstrap locally, sign in at `/owner` from any personal browser/device (concurrent sessions allowed; no cashier pairing needed). Authorize the shared POS only from the intended cashier browser, create employees with unique four-digit PINs, maintain final-price menu items, inspect recorded sales and attendance. Reset credentials locally if owner access is lost.
 - Staff controls: Staf opens clock-in/out, switching, lock, attendance, owner access and manual refresh. Ubah in the order summary opens quantity/removal controls.
 - Start shift: employee enters own PIN using “Mulai kerja”. First employee unlocks the POS. Additional employees begin their own shifts without ending anyone else's.
 - Change cashier: discard an unpaid cart only after explicit confirmation; incoming clocked-in employee enters own PIN. Attendance does not change.

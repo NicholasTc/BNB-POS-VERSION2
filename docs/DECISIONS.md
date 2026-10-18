@@ -16,7 +16,7 @@
 
 ## Approved business policy (2026-10-17)
 
-- One café and one owner-authorized shared POS device. One email/password owner account, locally bootstrapped/reset; no public signup or email-reset flow.
+- One café and one owner-authorized shared POS browser. The owner dashboard is intended for any personal device with a browser (tablet/laptop/desktop), with concurrent authenticated sessions and no cashier pairing requirement. Connecting/replacing a cashier browser does not limit owner dashboard access. One email/password owner account, locally bootstrapped/reset; no public signup or email-reset flow.
 - Unique **four-digit numeric employee PINs** (user amendment). Owner provisions/resets credentials. Employee PIN required for clock-in, incoming cashier switch, and own clock-out.
 - Cashier locks after 15 minutes of inactivity; attendance remains open until explicit clock-out. Active cashier clock-out requires another active employee to authenticate; final clock-out locks the POS.
 - Explicitly confirm discard of unpaid carts before changing cashier. Do not clear or switch an uncertain sale until durable recovery resolves it.

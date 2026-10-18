@@ -57,8 +57,10 @@ export const ownerEnglish = {
   "Tambahkan menu dan harga kafe Anda.": "Add your café menu and prices.",
   "Menu disimpan.": "Menu saved.",
   "Perangkat kasir": "Cashier device",
-  "Satu perangkat bersama. Menghubungkan ulang mencabut akses perangkat sebelumnya; shift tetap tercatat.":
-    "One shared device. Reconnecting revokes the previous device; employee shifts remain recorded.",
+  "Dasbor pemilik dapat dibuka di perangkat apa pun dengan akun pemilik. Tidak perlu menghubungkan perangkat untuk membuka dasbor.":
+    "Open the owner dashboard on any device by signing in with your owner account. You do not need to connect a device to use the dashboard.",
+  "Hubungkan hanya browser yang akan dipakai sebagai kasir. Menghubungkan ulang mencabut akses kasir sebelumnya; penjualan dan shift tetap tersimpan.":
+    "Connect only the browser that will serve as the cashier terminal. Reconnecting replaces the previous cashier browser; sales and employee shifts stay saved.",
   "Hubungkan perangkat ini": "Connect this device",
   "Putuskan akses": "Disconnect device",
   "Hubungkan perangkat ini? Perangkat lama akan terkunci dan kasir perlu memasukkan PIN kembali.":

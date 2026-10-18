@@ -15,6 +15,8 @@ Requires Node 22.12+ (22.x) or 24.x, npm, Python 3 for interactive provisioning,
 
 The local environment and databases have already been prepared in this checkout. At your request, a **local test owner and two active test employees** have been created; their development-only credentials are in [manual testing](docs/MANUAL_TESTING.md). For this checkout, skip owner provisioning and employee creation. Sign in at `/owner`, scroll to Pengaturan kafe, connect this device, and add menu names/final prices. Select Kasir to return; this signs out the owner. Leading-zero PINs work. A fresh database still requires the setup steps above. See [operations](docs/OPERATIONS.md) for resets and recovery.
 
+The owner dashboard at `/owner` supports simultaneous sign-ins from personal browsers/devices without cashier pairing. Only the shared cashier browser needs **Connect this device**; owner sign-in on another browser does not replace it. Physical devices will use the same hosted HTTPS URL after deployment.
+
 For a guided first test with sample employees, menu items and expected report totals, follow [manual testing](docs/MANUAL_TESTING.md).
 
 Visible cashier listings/status and owner reports now check for changes every five seconds, with additional checks on focus/reconnection and cross-tab updates. Listing refresh pauses during payment and preserves existing carts and saved quotes. Owner reports retain filters and expanded details. The owner header's **Bahasa / Language** selector saves Indonesian/English to the owner account across sessions; cashier language, rupiah amounts and Jakarta business dates remain unchanged.

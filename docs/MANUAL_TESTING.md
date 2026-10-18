@@ -76,6 +76,12 @@ Do this after reconciling the baseline above, because it creates another test sa
 
 `npm run gate` runs all automated checks, including deliberate lost responses and a real database connection outage. Do not run automated tests while simultaneously experimenting with another test runner; fixtures are isolated but share their own test database. See OPERATIONS.md for outage and backup procedures.
 
+## Owner access from personal devices
+
+The owner dashboard is intended for any personal tablet/laptop/desktop browser. Open `/owner` and sign in; no device connection is required. Multiple owner sessions can stay open alongside the cashier. Use **Connect this device / Hubungkan perangkat ini** only on the browser that should become the cashier terminal, because it replaces the previously paired cashier browser. Signing in or signing out of a separate personal browser must not disconnect the cashier or another owner session.
+
+For local testing, use separate browser profiles to simulate independent devices. Physical devices will use the same hosted HTTPS URL after deployment; `127.0.0.1` currently refers to each device itself.
+
 ## Optional: automatic updates and owner language
 
 Use separate browser profiles/windows (one can be private) for the owner and cashier. Pair the cashier browser as usual, then sign the owner out there before using the owner in the other profile. Ordinary tabs in the same profile share login cookies; selecting Kasir signs that owner session out.

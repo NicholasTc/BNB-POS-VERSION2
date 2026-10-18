@@ -417,3 +417,60 @@ test("owner language preserves form drafts and persists through reload, logout a
     await admin.close();
   }
 });
+
+test("personal owner browsers need no cashier pairing and can use reports concurrently", async ({
+  page,
+  browser,
+}) => {
+  test.setTimeout(60000);
+  const { admin } = await setup(page, browser);
+  const laptop = await browser.newContext({
+    baseURL: origin,
+    viewport: { width: 1280, height: 900 },
+  });
+  const tablet = await browser.newContext({
+    baseURL: origin,
+    viewport: { width: 820, height: 1180 },
+  });
+  try {
+    const first = await laptop.newPage(),
+      second = await tablet.newPage();
+    await login(first);
+    await login(second);
+    for (const context of [laptop, tablet]) {
+      expect(
+        (await context.cookies()).some(
+          (cookie) => cookie.name === "lisi_device",
+        ),
+      ).toBe(false);
+      expect((await context.request.get("/api/owner")).status()).toBe(200);
+      expect((await context.request.get("/api/owner/report")).status()).toBe(
+        200,
+      );
+    }
+    await expect(first.getByTestId("sales-count")).toHaveText("0");
+    await expect(second.getByTestId("sales-count")).toHaveText("0");
+    await sell(page);
+    await first.bringToFront();
+    await expect(first.getByTestId("sales-count")).toHaveText("1", {
+      timeout: 12000,
+    });
+    await second.bringToFront();
+    await expect(second.getByTestId("sales-count")).toHaveText("1", {
+      timeout: 12000,
+    });
+    await first.getByRole("button", { name: "Keluar", exact: true }).click();
+    await expect(
+      first.getByRole("button", { name: "Masuk", exact: true }),
+    ).toBeVisible();
+    expect((await laptop.request.get("/api/owner")).status()).toBe(401);
+    expect((await tablet.request.get("/api/owner")).status()).toBe(200);
+    const cashier = await page.request.get("/api/pos");
+    expect(cashier.status()).toBe(200);
+    expect((await cashier.json()).cashier.name).toBe("Ayu");
+  } finally {
+    await laptop.close();
+    await tablet.close();
+    await admin.close();
+  }
+});

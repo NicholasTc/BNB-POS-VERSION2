@@ -43,7 +43,12 @@ export function DeviceSettings() {
       <h2>{t("Perangkat kasir")}</h2>
       <p className="muted">
         {t(
-          "Satu perangkat bersama. Menghubungkan ulang mencabut akses perangkat sebelumnya; shift tetap tercatat.",
+          "Dasbor pemilik dapat dibuka di perangkat apa pun dengan akun pemilik. Tidak perlu menghubungkan perangkat untuk membuka dasbor.",
+        )}
+      </p>
+      <p className="muted">
+        {t(
+          "Hubungkan hanya browser yang akan dipakai sebagai kasir. Menghubungkan ulang mencabut akses kasir sebelumnya; penjualan dan shift tetap tersimpan.",
         )}
       </p>
       <div className="row">

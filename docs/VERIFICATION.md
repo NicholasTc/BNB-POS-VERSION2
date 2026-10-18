@@ -46,6 +46,12 @@ Latest local p95 (1,000 sales / 10 samples): POS 3 ms, reports 28 ms, quote/atte
 
 Full sequential gate passed after matching the newest locked/active header reference: **20 unit / 43 PostgreSQL integration / 17 Chromium browser tests**, typecheck/lint, no migration drift, build, 13-asset browser-secret scan and 15-table backup/restore. New browser coverage checks bar/tab alignment, logo/control centering, identical bar height/position before/after PIN entry, existing-shift Masuk reauthentication without duplicate attendance, mobile overflow and long-name containment. Before/after/mobile screenshots visually reviewed at 784px/390px. No database, dependency or financial-domain change.
 
+## Personal-device owner access (2026-10-18)
+
+Verified existing owner access is independent of cashier pairing. New Chromium regression signs in concurrently from fresh laptop/tablet-size browser contexts with no lisi_device cookie, reads owner/report APIs, sees the same completed sale update in both dashboards, and confirms signing out one session leaves the other owner and the paired cashier authorized. Physical-device/Safari/deployed-network testing remains outside local coverage. Settings wording now makes the separation explicit in Indonesian/English; authentication/device rules are unchanged.
+
+Full sequential gate passed: **20 unit / 43 PostgreSQL integration / 18 Chromium browser tests**, lint/typecheck, no migration drift, build, browser-secret scan (13 assets) and 15-table backup/restore. No database, dependency or authorization changes.
+
 ## Review and remaining verification limits
 
 Security/integrity review checked every route's trust boundary, cookie/origin behavior, employee attribution and revocation, lock order, transactional state changes, immutable rows, money overflow, idempotency/payload mismatch and database failure handling. Default third-party auth SQL logging is disabled; custom logs do not include credentials or raw errors. Built browser assets were scanned for actual configured server secrets without exposing them.
