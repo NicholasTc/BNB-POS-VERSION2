@@ -1,6 +1,9 @@
 "use client";
-import { useEffect, useState } from "react";
-import { api } from "@/lib/client";
+import { useEffect, useState, useCallback, useRef } from "react";
+import { api, ApiError } from "@/lib/client";
+import { useAutoRefresh } from "@/lib/use-auto-refresh";
+import { useOwnerLanguage } from "@/components/owner-language";
+import { ownerMessage } from "@/lib/owner-language";
 import { rupiah } from "@/lib/money";
 import { businessToday, localTime } from "@/lib/dates";
 import type { Report } from "@/modules/reporting";
@@ -15,42 +18,89 @@ type Data = Omit<Report, "history" | "attendance" | "open"> & {
   })[];
   open: (Omit<Report["open"][number], "createdAt"> & { createdAt: string })[];
 };
+type Query = {
+  from: string;
+  to: string;
+  salesPage: number;
+  attendancePage: number;
+};
+const reportUrl = (q: Query) =>
+  `/api/owner/report?${new URLSearchParams({ from: q.from, to: q.to, salesPage: String(q.salesPage), attendancePage: String(q.attendancePage) })}`;
 export function Reports() {
+  const { language, t } = useOwnerLanguage();
+  const [initial] = useState<Query>(() => ({
+    from: businessToday(),
+    to: businessToday(),
+    salesPage: 1,
+    attendancePage: 1,
+  }));
+  const [query, setQuery] = useState(initial),
+    [applied, setApplied] = useState(initial);
   const [data, setData] = useState<Data | null>(null),
     [error, setError] = useState(""),
-    [busy, setBusy] = useState(false);
+    [busy, setBusy] = useState(true),
+    [stale, setStale] = useState(false);
+  const version = useRef(0);
+  const manualError = useRef(false);
   useEffect(() => {
-    api<Data>("/api/owner/report")
-      .then(setData)
-      .catch((e) => setError((e as Error).message));
-  }, []);
-  async function load(
-    from: string,
-    to: string,
-    salesPage = 1,
-    attendancePage = 1,
-  ) {
+    const controller = new AbortController();
+    const request = ++version.current;
+    api<Data>(reportUrl(query), undefined, { signal: controller.signal })
+      .then((result) => {
+        if (controller.signal.aborted || request !== version.current) return;
+        setData(result);
+        setApplied(query);
+        setError("");
+        manualError.current = false;
+        setStale(false);
+      })
+      .catch((e) => {
+        if (!controller.signal.aborted && request === version.current)
+          setError((e as Error).message);
+      })
+      .finally(() => {
+        if (!controller.signal.aborted && request === version.current)
+          setBusy(false);
+      });
+    return () => controller.abort();
+  }, [query]);
+  const refresh = useCallback(
+    async (signal: AbortSignal) => {
+      const request = version.current;
+      try {
+        const result = await api<Data>(reportUrl(applied), undefined, {
+          signal,
+          background: true,
+        });
+        if (!signal.aborted && request === version.current) {
+          setData(result);
+          setStale(false);
+          if (!manualError.current) setError("");
+        }
+      } catch (e) {
+        if (!signal.aborted && request === version.current) {
+          setStale(true);
+          if (e instanceof ApiError && e.status === 401) setError(e.message);
+        }
+      }
+    },
+    [applied],
+  );
+  useAutoRefresh(refresh, !busy);
+  function load(from: string, to: string, salesPage = 1, attendancePage = 1) {
+    ++version.current;
+    manualError.current = true;
     setBusy(true);
     setError("");
-    try {
-      setData(
-        await api<Data>(
-          `/api/owner/report?${new URLSearchParams({ from, to, salesPage: String(salesPage), attendancePage: String(attendancePage) })}`,
-        ),
-      );
-    } catch (e) {
-      setError((e as Error).message);
-    } finally {
-      setBusy(false);
-    }
+    setQuery({ from, to, salesPage, attendancePage });
   }
   return (
     <div className="stack" aria-busy={busy}>
       <section className="report-top">
         <div>
-          <h2>Cerita kafe hari ini.</h2>
+          <h2>{t("Cerita kafe hari ini.")}</h2>
           <p className="muted">
-            Penjualan yang dicatat kasir. Waktu Indonesia Barat.
+            {t("Penjualan yang dicatat kasir. Waktu Indonesia Barat.")}
           </p>
         </div>
         <form
@@ -62,7 +112,7 @@ export function Reports() {
           }}
         >
           <div>
-            <label htmlFor="date-from">Dari tanggal</label>
+            <label htmlFor="date-from">{t("Dari tanggal")}</label>
             <input
               id="date-from"
               name="from"
@@ -72,7 +122,7 @@ export function Reports() {
             />
           </div>
           <div>
-            <label htmlFor="date-to">Sampai tanggal</label>
+            <label htmlFor="date-to">{t("Sampai tanggal")}</label>
             <input
               id="date-to"
               name="to"
@@ -81,90 +131,100 @@ export function Reports() {
               required
             />
           </div>
-          <button disabled={busy}>Tampilkan</button>
+          <button disabled={busy}>
+            {busy ? t("Memuat…") : t("Tampilkan")}
+          </button>
         </form>
       </section>
+      <p className="sync-note" role="status">
+        {stale
+          ? t("Pembaruan otomatis tertunda. Data terakhir tetap ditampilkan.")
+          : t("Pembaruan otomatis aktif.")}
+      </p>
       {error && (
         <p className="error" role="alert">
-          {error}
+          {ownerMessage(error, language)}
         </p>
       )}
       {!data ? (
         <p role="status">
           {error
-            ? "Laporan belum tersedia. Coba Tampilkan lagi."
-            : "Memuat laporan…"}
+            ? t("Laporan belum tersedia. Coba Tampilkan lagi.")
+            : t("Memuat laporan…")}
         </p>
       ) : (
         <>
           <div className="summary-grid">
             <section className="revenue-panel">
-              <p>Pendapatan tercatat</p>
+              <p>{t("Pendapatan tercatat")}</p>
               <strong data-testid="revenue">
                 {rupiah(data.summary.revenue)}
               </strong>
               <p>
-                {data.from} sampai {data.to}
+                {data.from} {t("sampai")} {data.to}
               </p>
             </section>
             <section className="card stack">
-              <h3>Penjualan selesai</h3>
+              <h3>{t("Penjualan selesai")}</h3>
               <strong className="summary-count" data-testid="sales-count">
                 {data.summary.salesCount}
               </strong>
               <p className="muted">
-                Pesanan yang sudah dibayar dan diselesaikan.
+                {t("Pesanan yang sudah dibayar dan diselesaikan.")}
               </p>
             </section>
             <section className="card stack">
-              <h3>Pembayaran</h3>
+              <h3>{t("Pembayaran")}</h3>
               {(["qris", "cash"] as const).map((method) => {
                 const p = data.payments.find((p) => p.method === method);
                 return (
                   <div className="row between" key={method}>
                     <span>
-                      {method === "qris" ? "QRIS" : "Tunai"}{" "}
+                      {method === "qris" ? "QRIS" : t("Tunai")}{" "}
                       <small>({p?.count ?? 0})</small>
                     </span>
                     <strong>{rupiah(p?.total ?? 0)}</strong>
                   </div>
                 );
               })}
-              <small>Belum direkonsiliasi dengan penyedia pembayaran.</small>
+              <small>
+                {t("Belum direkonsiliasi dengan penyedia pembayaran.")}
+              </small>
             </section>
           </div>
           {!!data.open.length && (
             <section className="payment-note">
-              <h3>Transaksi belum selesai</h3>
+              <h3>{t("Transaksi belum selesai")}</h3>
               {data.open.map((s) => (
                 <p key={s.id}>
                   <strong>{s.cashierName}</strong>: {rupiah(s.total)} —{" "}
                   {s.status === "paid"
-                    ? "penerimaan pembayaran sudah dicatat; perlu Selesai"
-                    : "menunggu konfirmasi pembayaran"}
+                    ? t("penerimaan pembayaran sudah dicatat; perlu Selesai")
+                    : t("menunggu konfirmasi pembayaran")}
                   . <span className="reference">{s.reference}</span>
                 </p>
               ))}
               <p>
-                Belum masuk pendapatan. Buka Kasir dan minta kasir asal
-                memasukkan PIN untuk melanjutkan.
+                {t(
+                  "Belum masuk pendapatan. Buka Kasir dan minta kasir asal memasukkan PIN untuk melanjutkan.",
+                )}
               </p>
             </section>
           )}
           <div className="report-grid">
             <section className="card stack">
-              <h2>Menu terjual</h2>
+              <h2>{t("Menu terjual")}</h2>
               {data.items.length ? (
                 <div className="table-wrap">
                   <table>
                     <caption className="sr-only">
-                      Jumlah dan pendapatan setiap menu
+                      {t("Jumlah dan pendapatan setiap menu")}
                     </caption>
                     <thead>
                       <tr>
-                        <th scope="col">Menu</th>
-                        <th scope="col">Jumlah</th>
-                        <th scope="col">Tercatat</th>
+                        <th scope="col">{t("Menu")}</th>
+                        <th scope="col">{t("Jumlah")}</th>
+                        <th scope="col">{t("Tercatat")}</th>
                       </tr>
                     </thead>
                     <tbody>
@@ -180,23 +240,23 @@ export function Reports() {
                 </div>
               ) : (
                 <p className="muted">
-                  Belum ada menu terjual pada tanggal ini.
+                  {t("Belum ada menu terjual pada tanggal ini.")}
                 </p>
               )}
             </section>
             <section className="card stack">
-              <h2>Penjualan per karyawan</h2>
+              <h2>{t("Penjualan per karyawan")}</h2>
               {data.cashiers.length ? (
                 <div className="table-wrap">
                   <table>
                     <caption className="sr-only">
-                      Penjualan berdasarkan kasir
+                      {t("Penjualan berdasarkan kasir")}
                     </caption>
                     <thead>
                       <tr>
-                        <th scope="col">Karyawan</th>
-                        <th scope="col">Penjualan</th>
-                        <th scope="col">Tercatat</th>
+                        <th scope="col">{t("Karyawan")}</th>
+                        <th scope="col">{t("Penjualan")}</th>
+                        <th scope="col">{t("Tercatat")}</th>
                       </tr>
                     </thead>
                     <tbody>
@@ -211,39 +271,41 @@ export function Reports() {
                   </table>
                 </div>
               ) : (
-                <p className="muted">Belum ada penjualan pada tanggal ini.</p>
+                <p className="muted">
+                  {t("Belum ada penjualan pada tanggal ini.")}
+                </p>
               )}
             </section>
           </div>
           <section className="card stack">
-            <h2>Riwayat penjualan</h2>
+            <h2>{t("Riwayat penjualan")}</h2>
             {data.history.length ? (
               data.history.map((s) => (
                 <details className="sale-history" key={s.id}>
                   <summary>
                     <span>
-                      <strong>{localTime(s.completedAt)}</strong>
+                      <strong>{localTime(s.completedAt, language)}</strong>
                       <br />
                       <small>
                         {s.cashierName} ·{" "}
-                        {s.paymentMethod === "qris" ? "QRIS" : "Tunai"}
+                        {s.paymentMethod === "qris" ? "QRIS" : t("Tunai")}
                       </small>
                     </span>
                     <strong>{rupiah(s.total)}</strong>
-                    <span className="details-label">Lihat item</span>
+                    <span className="details-label">{t("Lihat item")}</span>
                   </summary>
                   <p className="reference">{s.reference}</p>
                   <div className="table-wrap">
                     <table>
                       <caption className="sr-only">
-                        Rincian {s.reference}
+                        {t("Rincian")} {s.reference}
                       </caption>
                       <thead>
                         <tr>
-                          <th scope="col">Menu saat dijual</th>
-                          <th scope="col">Harga</th>
-                          <th scope="col">Jumlah</th>
-                          <th scope="col">Subtotal</th>
+                          <th scope="col">{t("Menu saat dijual")}</th>
+                          <th scope="col">{t("Harga")}</th>
+                          <th scope="col">{t("Jumlah")}</th>
+                          <th scope="col">{t("Subtotal")}</th>
                         </tr>
                       </thead>
                       <tbody>
@@ -262,7 +324,7 @@ export function Reports() {
               ))
             ) : (
               <p className="muted">
-                Belum ada penjualan selesai pada rentang ini.
+                {t("Belum ada penjualan selesai pada rentang ini.")}
               </p>
             )}
             <Pagination
@@ -276,33 +338,35 @@ export function Reports() {
             />
           </section>
           <section className="card stack">
-            <h2>Kehadiran karyawan</h2>
+            <h2>{t("Kehadiran karyawan")}</h2>
             <p className="muted">
-              Termasuk shift yang melewati tengah malam atau masih berlangsung.
+              {t(
+                "Termasuk shift yang melewati tengah malam atau masih berlangsung.",
+              )}
             </p>
             {data.attendance.length ? (
               <div className="table-wrap">
                 <table>
                   <caption className="sr-only">
-                    Shift yang bersinggungan dengan tanggal pilihan
+                    {t("Shift yang bersinggungan dengan tanggal pilihan")}
                   </caption>
                   <thead>
                     <tr>
-                      <th scope="col">Karyawan</th>
-                      <th scope="col">Mulai kerja</th>
-                      <th scope="col">Selesai kerja</th>
+                      <th scope="col">{t("Karyawan")}</th>
+                      <th scope="col">{t("Mulai kerja")}</th>
+                      <th scope="col">{t("Selesai kerja")}</th>
                     </tr>
                   </thead>
                   <tbody>
                     {data.attendance.map((a) => (
                       <tr key={a.id}>
                         <th scope="row">{a.name}</th>
-                        <td>{localTime(a.clockIn)}</td>
+                        <td>{localTime(a.clockIn, language)}</td>
                         <td>
                           {a.clockOut ? (
-                            localTime(a.clockOut)
+                            localTime(a.clockOut, language)
                           ) : (
-                            <span className="badge">Masih bekerja</span>
+                            <span className="badge">{t("Masih bekerja")}</span>
                           )}
                         </td>
                       </tr>
@@ -311,7 +375,7 @@ export function Reports() {
                 </table>
               </div>
             ) : (
-              <p className="muted">Tidak ada shift pada rentang ini.</p>
+              <p className="muted">{t("Tidak ada shift pada rentang ini.")}</p>
             )}
             <Pagination
               page={data.attendancePage}
@@ -337,30 +401,34 @@ function Pagination({
   count: number;
   busy: boolean;
   onChange: (page: number) => void;
-  label: string;
+  label: "penjualan" | "kehadiran";
 }) {
+  const { t, language } = useOwnerLanguage();
   return (
     <div className="row between">
       <small>
-        {count} data {label} · Halaman {page} dari{" "}
-        {Math.max(1, Math.ceil(count / 25))}
+        {count}{" "}
+        {language === "en"
+          ? `${t(label)} ${t("data")}`
+          : `${t("data")} ${t(label)}`}{" "}
+        · {t("Halaman")} {page} {t("dari")} {Math.max(1, Math.ceil(count / 25))}
       </small>
       <div className="row">
         <button
           className="secondary"
-          aria-label={`Halaman ${label} sebelumnya`}
+          aria-label={`${t("Halaman")} ${t(label)} ${t("sebelumnya")}`}
           disabled={busy || page <= 1}
           onClick={() => onChange(page - 1)}
         >
-          Sebelumnya
+          {t("Sebelumnya")}
         </button>
         <button
           className="secondary"
-          aria-label={`Halaman ${label} berikutnya`}
+          aria-label={`${t("Halaman")} ${t(label)} ${t("berikutnya")}`}
           disabled={busy || page * 25 >= count}
           onClick={() => onChange(page + 1)}
         >
-          Berikutnya
+          {t("Berikutnya")}
         </button>
       </div>
     </div>

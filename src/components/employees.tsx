@@ -1,8 +1,11 @@
 "use client";
 import { useCallback, useEffect, useState } from "react";
 import { api } from "@/lib/client";
+import { useOwnerLanguage } from "@/components/owner-language";
+import { ownerMessage } from "@/lib/owner-language";
 type Employee = { id: string; name: string; active: boolean };
 export function Employees() {
+  const { language, t } = useOwnerLanguage();
   const [items, setItems] = useState<Employee[]>([]),
     [editing, setEditing] = useState<Employee | null>(null),
     [error, setError] = useState(""),
@@ -44,22 +47,22 @@ export function Employees() {
   }
   return (
     <section className="card stack">
-      <h2>Karyawan</h2>
+      <h2>{t("Karyawan")}</h2>
       {error && (
         <p className="error" role="alert">
-          {error}
+          {ownerMessage(error, language)}
         </p>
       )}
       {notice && (
         <p className="success" role="status">
-          {notice}
+          {ownerMessage(notice, language)}
         </p>
       )}
       <div className="management-grid">
         <form className="stack" onSubmit={save} key={editing?.id ?? "new"}>
-          <h3>{editing ? "Ubah karyawan" : "Tambah karyawan"}</h3>
+          <h3>{editing ? t("Ubah karyawan") : t("Tambah karyawan")}</h3>
           <div>
-            <label htmlFor="employee-name">Nama karyawan</label>
+            <label htmlFor="employee-name">{t("Nama karyawan")}</label>
             <input
               id="employee-name"
               name="name"
@@ -70,7 +73,7 @@ export function Employees() {
           </div>
           <div>
             <label htmlFor="new-pin">
-              {editing ? "PIN baru (opsional)" : "PIN empat angka"}
+              {editing ? t("PIN baru (opsional)") : t("PIN empat angka")}
             </label>
             <input
               id="new-pin"
@@ -84,8 +87,9 @@ export function Employees() {
               required={!editing}
             />
             <small>
-              Berikan PIN langsung kepada karyawan. PIN lama tidak dapat
-              dilihat.
+              {t(
+                "Berikan PIN langsung kepada karyawan. PIN lama tidak dapat dilihat.",
+              )}
             </small>
           </div>
           <label className="row">
@@ -95,17 +99,19 @@ export function Employees() {
               defaultChecked={editing?.active ?? true}
               style={{ width: 24, minHeight: 24 }}
             />
-            Aktif
+            {t("Aktif")}
           </label>
           <div className="row">
-            <button disabled={busy}>Simpan karyawan</button>
+            <button disabled={busy}>
+              {busy ? t("Menyimpan…") : t("Simpan karyawan")}
+            </button>
             {editing && (
               <button
                 type="button"
                 className="secondary"
                 onClick={() => setEditing(null)}
               >
-                Batal
+                {t("Batal")}
               </button>
             )}
           </div>
@@ -116,19 +122,23 @@ export function Employees() {
               <div className="row between" key={e.id}>
                 <div>
                   <strong>{e.name}</strong>
-                  <p className="muted">{e.active ? "Aktif" : "Nonaktif"}</p>
+                  <p className="muted">
+                    {e.active ? t("Aktif") : t("Nonaktif")}
+                  </p>
                 </div>
                 <button
                   className="secondary"
                   onClick={() => setEditing(e)}
-                  aria-label={`Ubah ${e.name}`}
+                  aria-label={`${t("Ubah")} ${e.name}`}
                 >
-                  Ubah
+                  {t("Ubah")}
                 </button>
               </div>
             ))
           ) : (
-            <p className="muted">Tambahkan karyawan pertama untuk mulai.</p>
+            <p className="muted">
+              {t("Tambahkan karyawan pertama untuk mulai.")}
+            </p>
           )}
         </div>
       </div>

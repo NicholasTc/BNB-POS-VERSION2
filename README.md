@@ -17,6 +17,8 @@ The local environment and databases have already been prepared in this checkout.
 
 For a guided first test with sample employees, menu items and expected report totals, follow [manual testing](docs/MANUAL_TESTING.md).
 
+Visible cashier listings/status and owner reports now check for changes every five seconds, with additional checks on focus/reconnection and cross-tab updates. Listing refresh pauses during payment and preserves existing carts and saved quotes. Owner reports retain filters and expanded details. The owner header's **Bahasa / Language** selector saves Indonesian/English to the owner account across sessions; cashier language, rupiah amounts and Jakarta business dates remain unchanged.
+
 Production-mode local verification: `npm run build && npm start`. No public deployment is configured or authorized. Never change localhost credentials into production credentials by reuse.
 
 ## Checks

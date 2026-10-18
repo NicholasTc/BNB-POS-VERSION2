@@ -31,6 +31,16 @@ export const user = pgTable(
   },
   (t) => [check("one_owner", sql`${t.id} = 'owner'`)],
 );
+export const ownerPreferences = pgTable(
+  "owner_preferences",
+  {
+    ownerId: text("owner_id")
+      .primaryKey()
+      .references(() => user.id, { onDelete: "cascade" }),
+    language: text("language").notNull().default("id"),
+  },
+  (t) => [check("owner_language", sql`${t.language} IN ('id','en')`)],
+);
 export const session = pgTable("owner_session", {
   id: text("id").primaryKey(),
   token: text("token").notNull().unique(),

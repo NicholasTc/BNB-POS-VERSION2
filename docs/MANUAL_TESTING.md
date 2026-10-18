@@ -73,6 +73,18 @@ Do this after reconciling the baseline above, because it creates another test sa
 
 `npm run gate` runs all automated checks, including deliberate lost responses and a real database connection outage. Do not run automated tests while simultaneously experimenting with another test runner; fixtures are isolated but share their own test database. See OPERATIONS.md for outage and backup procedures.
 
+## Optional: automatic updates and owner language
+
+Use separate browser profiles/windows (one can be private) for the owner and cashier. Pair the cashier browser as usual, then sign the owner out there before using the owner in the other profile. Ordinary tabs in the same profile share login cookies; selecting Kasir signs that owner session out.
+
+1. Keep the cashier visible with an unpaid item in the cart. Change a product name/price or active status in the owner dashboard. The cashier listing should update within about five seconds. The existing cart should retain its quantities and prices; a stale price is still rejected before payment using the existing refresh workflow.
+2. Repeat a menu change after opening a saved payment quote. Its amount must stay unchanged; listing refresh resumes after checkout/recovery finishes. Do not request another payment when a response is uncertain.
+3. Change an employee name or reset a PIN in the owner dashboard. Cashier status should reflect the change automatically. PIN reset still revokes access and requires reauthentication; it must not close attendance or erase an unpaid cart or unfinished sale.
+4. Keep the owner report visible on dates containing the next sale. Expand an existing sale and type, but do not apply, another date range. Complete a cashier test sale. Report totals/history should update within about five seconds; the expanded record and draft date inputs should remain. Applied historical dates must not reset to today.
+5. Briefly disconnect the owner browser. Existing report data should remain with a quiet stale-data message; restore connectivity and focus the page to resume updates. Background updates must not prolong an idle owner login or cashier inactivity timer.
+6. Buttons should show a subtle pressed state. Async actions show a working label/disabled state until their result is known; failed saves must not show success.
+7. In the owner header, select **English** under **Bahasa / Language**. Check reports, employee/menu management and settings; partially entered forms should remain. Reload, sign out/in, and sign in from a fresh browser profile: English should persist. Switch back to **Bahasa Indonesia** and verify the same persistence. Product/employee names, rupiah values and Jakarta business dates do not change language or meaning.
+
 ## Report an issue
 
 Record the screen/action, expected versus actual behavior, cashier name, approximate Jakarta time, and LS-reference where applicable. A screenshot is useful. Never include passwords, PINs, cookies, or .env.local contents.

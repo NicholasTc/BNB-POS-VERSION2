@@ -1,7 +1,8 @@
 "use client";
 import Link from "next/link";
 import { useCallback, useEffect, useState, useRef } from "react";
-import { api } from "@/lib/client";
+import { api, ApiError } from "@/lib/client";
+import { useAutoRefresh } from "@/lib/use-auto-refresh";
 import { PinPad } from "./pin-pad";
 import { Sales, type SalesHandle } from "./sales";
 import { Modal } from "./modal";
@@ -18,6 +19,7 @@ export function Pos() {
     [loading, setLoading] = useState(true),
     [error, setError] = useState(""),
     [busy, setBusy] = useState(false),
+    [checking, setChecking] = useState(false),
     [action, setAction] = useState<"clock-in" | "switch" | "clock-out">(
       "clock-in",
     ),
@@ -30,15 +32,29 @@ export function Pos() {
           setState(x);
           setError("");
         })
-        .catch((e) => setError((e as Error).message))
+        .catch((e) => {
+          if (e instanceof ApiError && e.status === 401) setState(null);
+          setError((e as Error).message);
+        })
         .finally(() => setLoading(false)),
     [],
   );
   useEffect(() => {
     void refresh();
-    const timer = setInterval(() => void refresh(), 15000);
-    return () => clearInterval(timer);
   }, [refresh]);
+  const refreshStatus = useCallback(async (signal: AbortSignal) => {
+    try {
+      const current = await api<PosState>("/api/pos", undefined, { signal });
+      if (!signal.aborted) setState(current);
+    } catch (e) {
+      if (!signal.aborted && e instanceof ApiError && e.status === 401) {
+        setState(null);
+        setError(e.message);
+      }
+      // Temporary connectivity does not clear a cart or a financial error.
+    }
+  }, []);
+  useAutoRefresh(refreshStatus, !loading && !busy);
   useEffect(() => {
     let last = 0;
     const touch = (e: Event) => {
@@ -131,8 +147,19 @@ export function Pos() {
             <Link className="button" href="/owner">
               Hubungkan perangkat
             </Link>
-            <button className="secondary" onClick={() => void refresh()}>
-              Periksa koneksi
+            <button
+              className="secondary"
+              disabled={checking}
+              onClick={async () => {
+                setChecking(true);
+                try {
+                  await refresh();
+                } finally {
+                  setChecking(false);
+                }
+              }}
+            >
+              {checking ? "Memeriksa…" : "Periksa koneksi"}
             </button>
           </div>
         ) : (
@@ -167,7 +194,7 @@ export function Pos() {
                       }
                     }}
                   >
-                    Kunci kasir
+                    {busy ? "Mengunci…" : "Kunci kasir"}
                   </button>
                 )}
               </div>

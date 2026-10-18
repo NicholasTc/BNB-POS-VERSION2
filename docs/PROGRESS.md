@@ -3,7 +3,7 @@
 Updated: 2026-10-18 (Asia/Jakarta).
 
 ## Current stage
-**MVP implementation complete; all five local stage gates passed.** No deployment or real financial operations activated. Approved policy: unique four-digit PINs; all other initial defaults accepted. Read DECISIONS.md and VERIFICATION.md before changes.
+Follow-up improvements complete and locally verified: safe cashier listing/status refresh, automatic owner report updates, subtle button feedback, and persistent owner Indonesian/English preference. No deployment. Existing carts, immutable quotes, payment recovery, filters, authorization and local test accounts preserved.
 
 ## Completed work
 - Strict Next.js/React/Tailwind modular monolith; PostgreSQL/Drizzle migrations and isolated Docker development/test databases.
@@ -13,17 +13,22 @@ Updated: 2026-10-18 (Asia/Jakarta).
 - Date-filtered owner summaries and paginated itemized sales/attendance; Jakarta boundaries and report reconciliation.
 - Mobile/keyboard usability review, real database outage recovery, client-secret scan, local performance and backup/restore verification. Documentation matches implementation; see README.md for structure/setup and OPERATIONS.md for provisioning/recovery/prerequisites.
 
-## Actual final verification
+## Original MVP verification
 - Clean npm ci, typecheck, zero-warning ESLint, no migration drift and production build: passed. Migrations reapplied twice in integration tests.
 - Vitest: **13/13 unit**, **35/35 real PostgreSQL integration**; Playwright: **9/9 Chromium**, including lost committed responses, refresh/fresh process, mobile/keyboard, owner revocation and actual PostgreSQL connection outage.
 - Built browser-secret scan: passed (13 JS assets). Restored test backup matched **14 tables**, row/content digests, sequences and sale totals, including a completed sale and shift; disposable restore DB removed. Private development dump created under ignored backups/.
 - 1,000-sale fixture / 10 samples: POS p95 4 ms; reporting p95 20 ms; quote+attest+complete p95 17 ms (local only).
 - Runtime audit: **0 findings**. Full audit: **5 high entries in one unpatched development-only braces/Next ESLint chain**, plus plugin-compatible ESLint 9 EOL. Risk and mitigation documented; do not claim full audit clean. No known critical application defect remains from local review.
 
-## Next action
-Local manual-test owner (`owner@lisi.test`) and active employees Ayu/Bima were created on 2026-10-18 at the user's explicit request. Their development-only password/PINs are recorded in MANUAL_TESTING.md as requested; do not reuse for production. Owner HTTP login/authorization/logout and both employee PIN hashes verified. No attendance, menu or sales records created by provisioning. Sign in at http://127.0.0.1:3000/owner, connect the shared device, add the three sample menu items and follow the manual walkthrough.
+## Follow-up implementation / verification
+- Read-only visible-page polling every 5 seconds with focus/reconnect and cross-tab invalidation; cashier menu refresh pauses during checkout, only updates the listing, and preserves carts/quotes/recovery. Device/cashier status is revalidated independently.
+- Owner reports retain applied dates/pages, draft inputs and expanded records; version/abort guards reject late obsolete responses. Quiet stale-data feedback on background failure.
+- Pressed states and explicit working labels; owner UI translated to Indonesian/English. Owner-authorized preference endpoint and additive migration 0003 persist language on the account, with browser cache for subsequent login screens.
+- Full sequential `npm run gate` passed: typecheck, zero-warning lint, **16/16 unit**, **40/40 real PostgreSQL integration**, **13/13 Chromium browser**, no migration drift, production build, browser-secret scan (13 assets), backup/restore (15 tables, digests/sequences/sale totals matched). Four new browser regressions cover cart/quote preservation, live reports, stale/late responses and durable language; passive owner reads do not renew sessions. Dashboard screenshots inspected.
+- Additive migration 0003 applied to local development/test databases. No dependency or financial/attendance domain changes. Latest local p95: POS 3 ms, reports 23 ms, quote/attest/complete 20 ms (1,000-sale fixture / 10 samples). Manual testing, policy and verification docs updated. No blockers.
 
-Existing LISI dev server was confirmed on port 3000 and both databases healthy. Human café/device trial and production prerequisites remain before deployment authorization. Preserve the existing next-env.d.ts modification. Application regression results above are unchanged; this update provisioned local data and documentation only.
+## Next action
+Reload the app once to load the new UI, then follow MANUAL_TESTING.md's automatic-update/language checks with separate owner/cashier browser profiles. Preserve local test credentials and unrelated generated next-env.d.ts changes; never run fixtures on development data. Apply versioned migrations explicitly when moving to another environment.
 
 ## Resume notes / limits
 - Use `npm run gate` for regression after changes. Test runners and backup verification hold a shared advisory lock; never bypass loopback /lisi_test URL guards.

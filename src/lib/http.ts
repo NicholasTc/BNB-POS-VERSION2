@@ -53,7 +53,16 @@ export async function body<T extends z.ZodType>(
   }
 }
 export async function requireOwner(request: Request) {
-  const session = await auth.api.getSession({ headers: request.headers });
+  const session = await auth.api.getSession({
+    headers: request.headers,
+    // Passive refreshes validate expiration/revocation without keeping an
+    // unattended owner tab signed in. Interactive requests retain prior behavior.
+    query: {
+      disableRefresh:
+        request.method === "GET" &&
+        request.headers.get("x-lisi-background") === "1",
+    },
+  });
   if (session?.user.id !== "owner")
     throw new AppError(401, "Silakan masuk sebagai pemilik.");
   return session.user;

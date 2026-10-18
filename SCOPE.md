@@ -8,4 +8,6 @@ Build the five stages in `docs/PROJECT_BRIEF.md`, subject to approved policy in 
 4. Owner: date-filtered sales, item/cashier/payment summaries, itemized history, overlapping attendance history, employee management.
 5. Hardening: full regression/security/integrity/usability review, dependency audit, measured local performance, backup/restore verification, reconciled documentation.
 
+Approved follow-up (2026-10-18): safe automatic cashier listing/status and owner report updates, subtle button feedback, and persistent Indonesian/English owner language preference. Existing attendance/payment/recovery rules and financial snapshots remain unchanged.
+
 Excluded: public deployment, live financial integrations, customer ordering/accounts, delivery, kitchen queues, inventory, payroll, accounting, loyalty, AI, multi-branch/native apps, complex pricing, and sale edits/voids/refunds.

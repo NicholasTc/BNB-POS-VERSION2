@@ -1,9 +1,12 @@
 "use client";
 import { useCallback, useEffect, useState } from "react";
 import { api } from "@/lib/client";
+import { useOwnerLanguage } from "@/components/owner-language";
+import { ownerMessage } from "@/lib/owner-language";
 import { rupiah } from "@/lib/money";
 type Item = { id: string; name: string; price: number; active: boolean };
 export function MenuManagement() {
+  const { language, t } = useOwnerLanguage();
   const [items, setItems] = useState<Item[]>([]),
     [editing, setEditing] = useState<Item | null>(null),
     [error, setError] = useState(""),
@@ -45,22 +48,22 @@ export function MenuManagement() {
   }
   return (
     <section className="card stack">
-      <h2>Menu kafe</h2>
+      <h2>{t("Menu kafe")}</h2>
       {error && (
         <p className="error" role="alert">
-          {error}
+          {ownerMessage(error, language)}
         </p>
       )}
       {notice && (
         <p className="success" role="status">
-          {notice}
+          {ownerMessage(notice, language)}
         </p>
       )}
       <div className="management-grid">
         <form className="stack" onSubmit={save} key={editing?.id ?? "new"}>
-          <h3>{editing ? "Ubah menu" : "Tambah menu"}</h3>
+          <h3>{editing ? t("Ubah menu") : t("Tambah menu")}</h3>
           <div>
-            <label htmlFor="menu-name">Nama menu</label>
+            <label htmlFor="menu-name">{t("Nama menu")}</label>
             <input
               id="menu-name"
               name="name"
@@ -70,7 +73,7 @@ export function MenuManagement() {
             />
           </div>
           <div>
-            <label htmlFor="menu-price">Harga akhir (Rp)</label>
+            <label htmlFor="menu-price">{t("Harga akhir (Rp)")}</label>
             <input
               id="menu-price"
               name="price"
@@ -90,17 +93,19 @@ export function MenuManagement() {
               defaultChecked={editing?.active ?? true}
               style={{ width: 24, minHeight: 24 }}
             />
-            Tersedia
+            {t("Tersedia")}
           </label>
           <div className="row">
-            <button disabled={busy}>Simpan menu</button>
+            <button disabled={busy}>
+              {busy ? t("Menyimpan…") : t("Simpan menu")}
+            </button>
             {editing && (
               <button
                 type="button"
                 className="secondary"
                 onClick={() => setEditing(null)}
               >
-                Batal
+                {t("Batal")}
               </button>
             )}
           </div>
@@ -113,20 +118,20 @@ export function MenuManagement() {
                   <strong>{e.name}</strong>
                   <p className="muted">
                     {rupiah(e.price)}
-                    {!e.active ? " • Tidak tersedia" : ""}
+                    {!e.active && <> • {t("Tidak tersedia")}</>}
                   </p>
                 </div>
                 <button
                   className="secondary"
                   onClick={() => setEditing(e)}
-                  aria-label={`Ubah menu ${e.name}`}
+                  aria-label={`${t("Ubah menu")} ${e.name}`}
                 >
-                  Ubah
+                  {t("Ubah")}
                 </button>
               </div>
             ))
           ) : (
-            <p className="muted">Tambahkan menu dan harga kafe Anda.</p>
+            <p className="muted">{t("Tambahkan menu dan harga kafe Anda.")}</p>
           )}
         </div>
       </div>

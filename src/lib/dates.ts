@@ -23,8 +23,8 @@ export function businessRange(from: string, to: string) {
     throw new Error("Pilih rentang berurutan, paling lama 366 hari.");
   return { start, end };
 }
-export const localTime = (value: string) =>
-  new Intl.DateTimeFormat("id-ID", {
+export const localTime = (value: string, language: "id" | "en" = "id") =>
+  new Intl.DateTimeFormat(language === "en" ? "en-GB" : "id-ID", {
     timeZone: BUSINESS_TIMEZONE,
     dateStyle: "medium",
     timeStyle: "short",

@@ -22,6 +22,12 @@ Implemented sale states: pending (saved quote), paid (cashier-attested, awaiting
 
 Device-row locking serializes attendance, quoting, attestation, completion and recovery. Repeated UUID/payload returns the saved result; a different payload is rejected. Finalization cannot attribute a sale to a browser-supplied employee. The original employee must reauthenticate if their cashier access expires. An already-completed response remains recoverable even after idle expiry. PIN reset and device pairing revoke active credentials without erasing unfinished sales or shifts.
 
+## Automatic updates and owner language
+
+Automatic updates use visible-page, read-only five-second polling, with focus/reconnect and best-effort cross-tab invalidation. Requests do not overlap; cleanup aborts outstanding work. Reports use applied-query/version guards to reject obsolete replies while retaining draft inputs and expanded records. Background failures retain prior data and show a quiet stale-data message. Cashier menu polling pauses during payment/recovery and never rewrites carts or immutable quotes. Status checks preserve the existing authorization, lock and attendance rules.
+
+Background owner requests explicitly disable session renewal while retaining expiry/revocation checks; cashier status reads never perform an activity touch. Cross-tab messages contain only an invalidation hint and cannot authorize requests or record sales. Owner language preferences use an owner-derived key, strict enum validation and the existing exact-Origin/JSON guards; the browser cache is presentation-only.
+
 ## Before production
 
 No public deployment is authorized. Require HTTPS, trusted reverse proxy configuration, secret management, least-privilege DB roles, tested backup/restore, monitoring, and a review of the final stage verification record. Four-digit PINs have a small keyspace: device authorization, salted hashing, a separate pepper, persistent throttling, prompt credential reset and physical device controls are necessary. PIN hashes and pepper must not share a backup destination.

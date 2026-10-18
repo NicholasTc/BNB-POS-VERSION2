@@ -10,6 +10,7 @@ import { z } from "zod";
 import { api, ApiError } from "@/lib/client";
 import { rupiah, priceLines } from "@/lib/money";
 import type { PosState } from "./pos";
+import { useAutoRefresh } from "@/lib/use-auto-refresh";
 type Item = { id: string; name: string; price: number };
 type Cart = { cashierId: string; items: (Item & { quantity: number })[] };
 type Quote = {
@@ -84,6 +85,7 @@ export function Sales({
     [busy, setBusy] = useState(false),
     [error, setError] = useState(""),
     [blocked, setBlocked] = useState(false),
+    [menuStale, setMenuStale] = useState(false),
     [missing, setMissing] = useState(false);
   const pending =
     !!recovery || (!!quote && ["pending", "paid"].includes(quote.status));
@@ -179,6 +181,19 @@ export function Sales({
       live = false;
     };
   }, [recover]);
+  const refreshMenu = useCallback(async (signal: AbortSignal) => {
+    try {
+      const items = await api<Item[]>("/api/menu", undefined, { signal });
+      if (signal.aborted) return;
+      // Only the listing changes. Cart prices, quotes and recovery are never
+      // rewritten by background activity; checkout still validates prices.
+      setMenu(items);
+      setMenuStale(false);
+    } catch {
+      if (!signal.aborted) setMenuStale(true);
+    }
+  }, []);
+  useAutoRefresh(refreshMenu, !loading && !busy && !pending);
   useEffect(() => {
     if (loading) return;
     try {
@@ -296,6 +311,7 @@ export function Sales({
     setError("");
     try {
       setMenu(await api<Item[]>("/api/menu"));
+      setMenuStale(false);
       await recover();
     } catch (e) {
       setError((e as Error).message);
@@ -333,12 +349,17 @@ export function Sales({
             <h2>Yang enak hari ini</h2>
             <p className="muted">Ketuk menu untuk menambah pesanan.</p>
           </div>
+          {menuStale && (
+            <small role="status">
+              Pembaruan menu tertunda. Pesanan Anda tetap tersimpan.
+            </small>
+          )}
           <button
             className="secondary"
             onClick={() => void check()}
             disabled={busy}
           >
-            Perbarui & periksa
+            {busy ? "Memeriksa…" : "Perbarui & periksa"}
           </button>
         </div>
         {error && (

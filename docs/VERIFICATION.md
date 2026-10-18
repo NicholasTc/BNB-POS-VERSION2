@@ -24,6 +24,14 @@ Local performance sample (1,000 completed-sale fixture, 10 measured samples): PO
 
 Dependency audit: runtime **0 vulnerabilities**. Full audit reports **5 high entries in one unpatched braces/Next ESLint development dependency chain**, with no critical/moderate entries after patched esbuild override. ESLint 9 remains for plugin peer compatibility despite EOL. Risk/mitigation are documented in RELIABILITY.md; do not treat the full audit as clean.
 
+## Follow-up verification (2026-10-18)
+
+The complete sequential `npm run gate` passed after the automatic-update/language changes: **16 unit, 40 real PostgreSQL integration and 13 Chromium browser tests**, typecheck, zero-warning lint, migration drift check, production build and browser-secret scan (13 assets). Backup/restore matched all **15 public/Drizzle tables**, content digests, row counts, sequences and completed-sale totals. Additive migration 0003 was applied locally; no financial or attendance transaction logic changed.
+
+Four additional browser regressions cover owner menu/status changes without losing carts, checkout polling suspension and immutable saved quotes, automatic report updates with preserved draft/applied dates and expanded records, late-response rejection, stale-data recovery, pending-button feedback, and language persistence through reload/logout/fresh browser login. Five preference integration checks cover defaults, authorization/CSRF, strict validation, durable storage and passive reads that neither renew nor accept expired owner sessions. English dates retain Jakarta boundaries. English/Indonesian dashboard screenshots were visually inspected.
+
+Latest local 1,000-sale / 10-sample timings: POS p95 3 ms, reporting p95 23 ms, quote/attest/complete p95 20 ms. Local measurements only. Existing audit findings and cross-browser/production verification limits above remain unchanged; dependencies were not changed in this follow-up.
+
 ## Review and remaining verification limits
 
 Security/integrity review checked every route's trust boundary, cookie/origin behavior, employee attribution and revocation, lock order, transactional state changes, immutable rows, money overflow, idempotency/payload mismatch and database failure handling. Default third-party auth SQL logging is disabled; custom logs do not include credentials or raw errors. Built browser assets were scanned for actual configured server secrets without exposing them.

@@ -1,5 +1,12 @@
 # Decisions
 
+## Approved follow-up (2026-10-18)
+
+- Refresh visible cashier listings/status and owner reports with read-only five-second polling plus focus/reconnect and best-effort cross-tab signals. Signals carry no records or credentials and never replace server authorization.
+- Pause cashier menu refresh during payment/recovery. Preserve unpaid carts, saved quotes, historical prices, report filters/pages, unsubmitted inputs and expanded records. Abort/version guards prevent obsolete responses from replacing newer queries; background failures retain data with quiet stale feedback.
+- Passive owner reads validate session expiry/revocation without renewing the login. Passive cashier reads do not extend the inactivity timer.
+- Use subtle pressed states and working labels for feedback. Save Indonesian/English on the authenticated owner account, with a browser cache for the login screen. Keep cashier language, integer rupiah and Jakarta business dates unchanged.
+
 ## Approved business policy (2026-10-17)
 
 - One café and one owner-authorized shared POS device. One email/password owner account, locally bootstrapped/reset; no public signup or email-reset flow.
