@@ -1,7 +1,7 @@
 import { test, expect, type Page } from "@playwright/test";
 import { Pool } from "pg";
 import { hashPin, pinLookup } from "../../src/lib/credentials";
-import { login, pin } from "./helpers";
+import { ownerSection, login, pin } from "./helpers";
 function testPool() {
   const url = process.env.TEST_DATABASE_URL;
   if (
@@ -31,6 +31,7 @@ test.beforeEach(async () => {
   }
 });
 async function pair(page: Page) {
+  await ownerSection(page, "settings", "device");
   page.on("dialog", (dialog) => void dialog.accept());
   await page
     .getByRole("button", { name: "Hubungkan perangkat ini", exact: true })
@@ -95,7 +96,7 @@ test("direct cashier navigation revokes owner cookies and cached owner tabs cann
   const other = await page.context().newPage();
   await other.goto("/owner");
   await expect(
-    other.getByRole("heading", { name: "Halo, Pemilik." }),
+    other.getByRole("navigation", { name: "Navigasi pemilik" }),
   ).toBeVisible();
   await page.bringToFront();
   await page.goto("/");
@@ -138,6 +139,7 @@ test("expired or remotely revoked owner access removes dashboard data and manage
   const response = await page.goto("/owner");
   expect(response?.headers()["cache-control"]).toContain("no-store");
   await login(page);
+  await ownerSection(page, "settings", "menu");
   await page.getByLabel("Nama menu", { exact: true }).fill("Draft preserved");
   await page.evaluate(() => {
     window.dispatchEvent(new Event("blur"));
@@ -223,6 +225,7 @@ test("owner inactivity locks after fifteen minutes; genuine activity preserves i
   page,
 }) => {
   await login(page);
+  await ownerSection(page, "settings", "menu");
   const pool = testPool();
   try {
     await pool.query(
@@ -237,6 +240,8 @@ test("owner inactivity locks after fifteen minutes; genuine activity preserves i
       (await pool.query("SELECT updated_at FROM owner_session")).rows[0]
         .updated_at,
     ).toEqual(before.updated_at);
+    await page.clock.install();
+    await page.clock.fastForward(61000);
     await page.keyboard.press("Tab");
     await expect
       .poll(async () =>

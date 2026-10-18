@@ -1,5 +1,10 @@
 # Decisions
 
+## Owner navigation follow-up (2026-10-18)
+
+- User explicitly requested the supplied phone/iPad/laptop owner reference as inspiration to reduce scrolling, preserving every existing capability. This supersedes the earlier owner-layout freeze. Four destinations: Ringkasan, Transaksi, Staf, Pengaturan; desktop/tablet sidebar and phone bottom navigation.
+- Summary previews supplement full reports: all product aggregates remain available, full itemized transaction history and independent pagination remain under Transaksi/Staf, and all management fields remain accessible. Today/yesterday/seven-day shortcuts supplement the existing Jakarta custom date range. Preserve drafts, applied filters, pages and expanded sales across section/language/live updates. Shared cashier, API, financial, database and authentication rules remain unchanged. Mapping: OWNER_UI.md.
+
 ## Approved reference redesign (2026-10-18)
 
 - Follow the final two user images for the cashier catalog/order summary and cash/QRIS sheets. Keep owner dashboard layout/styling unchanged; only add the requested menu metadata fields. Use matching temporary product photography and a green editable LISI mark.

@@ -1,7 +1,7 @@
 import { test, expect, type Page } from "@playwright/test";
 import { Pool } from "pg";
 import { hashPin, pinLookup } from "../../src/lib/credentials";
-import { login, pin, openPayment } from "./helpers";
+import { ownerSection, login, pin, openPayment } from "./helpers";
 const origin = "http://127.0.0.1:3100";
 function testPool() {
   const url = process.env.TEST_DATABASE_URL;
@@ -43,6 +43,7 @@ test.beforeEach(async () => {
 });
 async function start(page: Page) {
   await login(page);
+  await ownerSection(page, "settings", "device");
   page.on("dialog", (d) => void d.accept());
   await page
     .getByRole("button", { name: "Hubungkan perangkat ini", exact: true })
@@ -216,6 +217,7 @@ test("owner photo/category edits filter live, broken photos fall back, cart edit
   try {
     const owner = await admin.newPage();
     await login(owner);
+    await ownerSection(owner, "settings", "menu");
     await owner
       .getByRole("button", { name: "Ubah menu Jus Mangga", exact: true })
       .click();
@@ -273,6 +275,7 @@ test("reference header keeps locked/active proportions and Masuk reauthenticates
 }) => {
   await page.setViewportSize({ width: 784, height: 930 });
   await login(page);
+  await ownerSection(page, "settings", "device");
   page.on("dialog", (d) => void d.accept());
   await page
     .getByRole("button", { name: "Hubungkan perangkat ini", exact: true })

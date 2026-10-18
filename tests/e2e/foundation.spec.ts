@@ -10,11 +10,11 @@ test("locked POS and owner sign in/out", async ({ page }) => {
   await page.getByLabel("Kata sandi").fill("test-owner-password-2026");
   await page.getByRole("button", { name: "Masuk", exact: true }).click();
   await expect(
-    page.getByRole("heading", { name: "Halo, Pemilik." }),
+    page.getByRole("navigation", { name: "Navigasi pemilik" }),
   ).toBeVisible();
   await page.reload();
   await expect(
-    page.getByRole("heading", { name: "Halo, Pemilik." }),
+    page.getByRole("navigation", { name: "Navigasi pemilik" }),
   ).toBeVisible();
   await page.getByRole("button", { name: "Keluar", exact: true }).click();
   await expect(

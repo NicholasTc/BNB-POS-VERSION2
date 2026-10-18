@@ -6,7 +6,11 @@ import { ownerMessage } from "@/lib/owner-language";
 import { rupiah } from "@/lib/money";
 import type { MenuProduct } from "@/lib/menu";
 type Item = MenuProduct & { active: boolean };
-export function MenuManagement() {
+export function MenuManagement({
+  onLoad,
+}: {
+  onLoad?: (items: Item[]) => void;
+}) {
   const { language, t } = useOwnerLanguage();
   const [items, setItems] = useState<Item[]>([]),
     [editing, setEditing] = useState<Item | null>(null),
@@ -16,9 +20,12 @@ export function MenuManagement() {
   const load = useCallback(
     () =>
       api<Item[]>("/api/owner/menu")
-        .then(setItems)
+        .then((items) => {
+          setItems(items);
+          onLoad?.(items);
+        })
         .catch((e) => setError((e as Error).message)),
-    [],
+    [onLoad],
   );
   useEffect(() => {
     void load();

@@ -8,7 +8,14 @@ import {
 import { Pool } from "pg";
 import { hashPin, pinLookup } from "../../src/lib/credentials";
 import { businessToday } from "../../src/lib/dates";
-import { login, pin, openPayment, confirmPayment } from "./helpers";
+import {
+  ownerSection,
+  openOwnerDates,
+  login,
+  pin,
+  openPayment,
+  confirmPayment,
+} from "./helpers";
 const origin = "http://127.0.0.1:3100";
 let coffee: string, pastry: string, ayu: string;
 function testPool() {
@@ -112,6 +119,7 @@ test("owner listing/status changes refresh safely while an unpaid cart survives"
       .getByRole("button", { name: "Tambah jumlah Kopi susu", exact: true })
       .click();
     await owner.bringToFront();
+    await ownerSection(owner, "settings", "menu");
     await owner
       .getByRole("button", { name: "Ubah menu Kopi susu", exact: true })
       .click();
@@ -248,10 +256,12 @@ test("owner reports update after sales without losing drafts, disclosures or app
     await expect(owner.getByTestId("sales-count")).toHaveText("1", {
       timeout: 12000,
     });
-    const details = owner.locator("details").first();
+    await ownerSection(owner, "transactions");
+    const details = owner.locator(".sale-history").first();
     await details.locator("summary").click();
     const reference = await details.locator(".reference").textContent();
     if (!reference) throw new Error("Missing sale reference");
+    await openOwnerDates(owner);
     await owner.getByLabel("Dari tanggal", { exact: true }).fill("2020-01-01");
     await owner
       .getByLabel("Sampai tanggal", { exact: true })
@@ -268,7 +278,7 @@ test("owner reports update after sales without losing drafts, disclosures or app
       "2020-01-01",
     );
     await expect(
-      owner.locator("details").filter({ hasText: reference }),
+      owner.locator(".sale-history").filter({ hasText: reference }),
     ).toHaveAttribute("open", "");
     let release!: () => void, captured!: () => void, finished!: () => void;
     const held = new Promise<void>((r) => {
@@ -349,14 +359,17 @@ test("owner language preserves form drafts and persists through reload, logout a
   let fresh: BrowserContext | undefined;
   try {
     await owner.bringToFront();
+    await ownerSection(owner, "summary");
+    await openOwnerDates(owner);
+    await owner.getByLabel("Dari tanggal", { exact: true }).fill("2020-01-01");
+    await ownerSection(owner, "settings", "menu");
     await owner.getByLabel("Nama menu", { exact: true }).fill("Draft item");
     await owner.getByLabel("Harga akhir (Rp)", { exact: true }).fill("12345");
-    await owner.getByLabel("Dari tanggal", { exact: true }).fill("2020-01-01");
     await owner
       .getByLabel("Bahasa / Language", { exact: true })
       .selectOption("en");
     await expect(
-      owner.getByRole("heading", { name: "Hello, Pemilik." }),
+      owner.getByRole("navigation", { name: "Owner navigation" }),
     ).toBeVisible();
     await expect(
       owner.getByText("Language saved.", { exact: true }),
@@ -367,6 +380,7 @@ test("owner language preserves form drafts and persists through reload, logout a
     await expect(
       owner.getByLabel("Final price (Rp)", { exact: true }),
     ).toHaveValue("12345");
+    await ownerSection(owner, "staff");
     await expect(owner.getByLabel("From date", { exact: true })).toHaveValue(
       "2020-01-01",
     );
@@ -381,8 +395,9 @@ test("owner language preserves form drafts and persists through reload, logout a
     await expect(
       owner.getByLabel("Bahasa / Language", { exact: true }),
     ).toHaveValue("en");
+    await ownerSection(owner, "settings");
     await expect(
-      owner.getByRole("heading", { name: "Café settings", exact: true }),
+      owner.getByRole("heading", { name: "Settings", exact: true }),
     ).toBeVisible();
     await owner.getByRole("button", { name: "Sign out", exact: true }).click();
     await owner.getByLabel("Email", { exact: true }).fill("owner@test.local");
@@ -391,7 +406,7 @@ test("owner language preserves form drafts and persists through reload, logout a
       .fill("test-owner-password-2026");
     await owner.getByRole("button", { name: "Sign in", exact: true }).click();
     await expect(
-      owner.getByRole("heading", { name: "Hello, Pemilik." }),
+      owner.getByRole("navigation", { name: "Owner navigation" }),
     ).toBeVisible();
     fresh = await browser.newContext({ baseURL: origin });
     const other = await fresh.newPage();
@@ -402,7 +417,7 @@ test("owner language preserves form drafts and persists through reload, logout a
       .fill("test-owner-password-2026");
     await other.getByRole("button", { name: "Masuk", exact: true }).click();
     await expect(
-      other.getByRole("heading", { name: "Hello, Pemilik." }),
+      other.getByRole("navigation", { name: "Owner navigation" }),
     ).toBeVisible();
     await expect(
       other.getByLabel("Bahasa / Language", { exact: true }),
@@ -411,7 +426,7 @@ test("owner language preserves form drafts and persists through reload, logout a
       .getByLabel("Bahasa / Language", { exact: true })
       .selectOption("id");
     await expect(
-      other.getByRole("heading", { name: "Halo, Pemilik." }),
+      other.getByRole("navigation", { name: "Navigasi pemilik" }),
     ).toBeVisible();
   } finally {
     await fresh?.close();

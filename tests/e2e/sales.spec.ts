@@ -1,7 +1,13 @@
 import { test, expect, type Page } from "@playwright/test";
 import { Pool } from "pg";
 import { hashPin, pinLookup } from "../../src/lib/credentials";
-import { login, pin, openPayment, confirmPayment } from "./helpers";
+import {
+  ownerSection,
+  login,
+  pin,
+  openPayment,
+  confirmPayment,
+} from "./helpers";
 let coffeeId: string;
 test.beforeEach(async () => {
   const url = process.env.TEST_DATABASE_URL;
@@ -34,6 +40,7 @@ test.beforeEach(async () => {
 });
 async function start(page: Page) {
   await login(page);
+  await ownerSection(page, "settings", "device");
   page.on("dialog", (d) => void d.accept());
   await page
     .getByRole("button", { name: "Hubungkan perangkat ini", exact: true })

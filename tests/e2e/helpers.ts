@@ -6,7 +6,7 @@ export async function login(page: Page) {
   await page.getByLabel("Kata sandi").fill("test-owner-password-2026");
   await page.getByRole("button", { name: "Masuk", exact: true }).click();
   await expect(
-    page.getByRole("heading", { name: "Halo, Pemilik." }),
+    page.getByRole("navigation", { name: /Navigasi pemilik|Owner navigation/ }),
   ).toBeVisible();
 }
 export async function pin(
@@ -50,4 +50,38 @@ export async function confirmPayment(page: Page) {
   await dialog
     .getByRole("button", { name: /^(Uang|Pembayaran) diterima · Simpan$/ })
     .click();
+}
+
+export async function ownerSection(
+  page: Page,
+  section: "summary" | "transactions" | "staff" | "settings",
+  part?: "device" | "employees" | "menu",
+) {
+  await page.bringToFront();
+  const labels = {
+    summary: /^(Ringkasan|Overview)$/,
+    transactions: /^(Transaksi|Transactions)$/,
+    staff: /^(Staf|Staff)$/,
+    settings: /^(Pengaturan|Settings)$/,
+  };
+  await page
+    .locator(".owner-navigation")
+    .getByRole("button", { name: labels[section] })
+    .click();
+  if (part) {
+    const parts = {
+      device: /^(Perangkat kasir|Cashier device)$/,
+      employees: /^(Kelola staf|Manage staff)$/,
+      menu: /^(Menu kafe|Café menu)$/,
+    };
+    await page
+      .locator(".owner-subnav:visible")
+      .getByRole("button", { name: parts[part] })
+      .click();
+  }
+}
+export async function openOwnerDates(page: Page) {
+  const picker = page.locator(".owner-date-picker");
+  if ((await picker.getAttribute("open")) === null)
+    await picker.locator("summary").click();
 }

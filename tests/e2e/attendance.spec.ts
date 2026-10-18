@@ -1,10 +1,11 @@
 import { test, expect } from "@playwright/test";
 import { spawn } from "node:child_process";
-import { login, pin } from "./helpers";
+import { ownerSection, login, pin } from "./helpers";
 test("pair, provision, concurrent shifts, switch, refresh, process restart and lock", async ({
   page,
 }) => {
   await login(page);
+  await ownerSection(page, "settings", "device");
   page.on("dialog", (d) => void d.accept());
   await page
     .getByRole("button", { name: "Hubungkan perangkat ini", exact: true })
@@ -12,6 +13,7 @@ test("pair, provision, concurrent shifts, switch, refresh, process restart and l
   await expect(
     page.getByText("Perangkat terhubung selama 30 hari.", { exact: false }),
   ).toBeVisible();
+  await ownerSection(page, "staff", "employees");
   for (const [name, code] of [
     ["Ayu", "0123"],
     ["Bima", "4567"],

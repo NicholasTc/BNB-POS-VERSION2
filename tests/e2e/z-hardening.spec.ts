@@ -4,7 +4,13 @@ import { createServer, connect, type Socket } from "node:net";
 import { spawn } from "node:child_process";
 import type { AddressInfo } from "node:net";
 import { hashPin, pinLookup } from "../../src/lib/credentials";
-import { login, pin, openPayment, confirmPayment } from "./helpers";
+import {
+  ownerSection,
+  login,
+  pin,
+  openPayment,
+  confirmPayment,
+} from "./helpers";
 test.beforeEach(async () => {
   const url = process.env.TEST_DATABASE_URL;
   if (
@@ -31,6 +37,7 @@ test.beforeEach(async () => {
 });
 async function start(page: Page) {
   await login(page);
+  await ownerSection(page, "settings", "device");
   page.on("dialog", (d) => void d.accept());
   await page
     .getByRole("button", { name: "Hubungkan perangkat ini", exact: true })

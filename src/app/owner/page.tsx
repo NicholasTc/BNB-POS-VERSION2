@@ -14,6 +14,9 @@ import {
 } from "@/components/owner-language";
 import { ownerMessage, type OwnerLanguage } from "@/lib/owner-language";
 import { useOwnerAccess } from "@/lib/use-owner-access";
+import { OwnerNavigation, type OwnerView } from "@/components/owner-navigation";
+import type { MenuProduct } from "@/lib/menu";
+import "./owner.css";
 export default function Owner() {
   return (
     <OwnerLanguageProvider>
@@ -30,6 +33,8 @@ function OwnerContent() {
     [error, setError] = useState(""),
     [savingLanguage, setSavingLanguage] = useState(false),
     [languageNotice, setLanguageNotice] = useState(false);
+  const [view, setView] = useState<OwnerView>("summary");
+  const [products, setProducts] = useState<MenuProduct[]>([]);
   const clearOwner = useCallback(() => setName(null), []);
   const access = useOwnerAccess(!!name, clearOwner);
   useEffect(() => {
@@ -62,6 +67,7 @@ function OwnerContent() {
         "/api/owner",
       );
       applyOwnerLanguage(x.language);
+      setView("summary");
       setName(x.name);
     } catch (e) {
       setError(e instanceof Error ? e.message : "Belum berhasil masuk.");
@@ -102,74 +108,71 @@ function OwnerContent() {
       setSavingLanguage(false);
     }
   }
+  function navigate(next: OwnerView) {
+    setView(next);
+    window.scrollTo({ top: 0, behavior: "instant" });
+  }
+  const languagePicker = (
+    <div className="language-picker">
+      <label htmlFor="owner-language">Bahasa / Language</label>
+      <select
+        id="owner-language"
+        value={language}
+        disabled={loading || busy || savingLanguage}
+        onChange={(e) => void selectLanguage(e.target.value as OwnerLanguage)}
+      >
+        <option value="id">Indonesia</option>
+        <option value="en">English</option>
+      </select>
+    </div>
+  );
   return (
-    <div lang={language}>
-      <header className="app-header">
-        <Link className="brand" href="/" onClick={leave}>
-          lisi<span>{t("ruang pemilik")}</span>
-        </Link>
-        <div className="row">
-          <div className="language-picker">
-            <label htmlFor="owner-language">Bahasa / Language</label>
-            <select
-              id="owner-language"
-              value={language}
-              disabled={loading || busy || savingLanguage}
-              onChange={(e) =>
-                void selectLanguage(e.target.value as OwnerLanguage)
-              }
-            >
-              <option value="id">Bahasa Indonesia</option>
-              <option value="en">English</option>
-            </select>
+    <div
+      lang={language}
+      className={`owner-app ${name ? "owner-authenticated" : "owner-login"}`}
+    >
+      {name && (
+        <aside className="owner-sidebar">
+          <div className="owner-wordmark" aria-label="lisi café">
+            lisi<small>café</small>
           </div>
-          <Link
-            className="button secondary"
-            href="/"
-            onClick={leave}
-            aria-disabled={busy || savingLanguage}
+          <OwnerNavigation view={view} onChange={navigate} />
+          <div className="owner-profile">
+            <span className="owner-avatar" aria-hidden="true">
+              {name.slice(0, 1)}
+            </span>
+            <div>
+              <small>{t("Pemilik")}</small>
+              <strong>{name}</strong>
+            </div>
+          </div>
+        </aside>
+      )}
+      <div className="owner-workspace">
+        <header className="owner-toolbar">
+          <span
+            className="owner-mobile-brand owner-wordmark"
+            aria-label="lisi café"
           >
-            {t("Kasir")}
-          </Link>
-        </div>
-      </header>
-      <main className={name ? "content stack" : "center-stage stack"}>
-        {savingLanguage ? (
-          <small role="status">{t("Menyimpan…")}</small>
-        ) : (
-          languageNotice && <small role="status">{t("Bahasa disimpan.")}</small>
-        )}
-        {error && (
-          <p className="error" role="alert">
-            {ownerMessage(error, language)}
-          </p>
-        )}
-        {name && access.checking && (
-          <p role="status">
-            {access.error
-              ? ownerMessage(access.error, language)
-              : t("Memeriksa akses pemilik…")}
-          </p>
-        )}
-        {loading ? (
-          <p role="status">{t("Memuat…")}</p>
-        ) : name ? (
-          <div
-            className="stack"
-            hidden={access.checking}
-            style={access.checking ? { display: "none" } : undefined}
-            inert={access.checking}
-          >
-            <div className="row between">
-              <h1>
-                {t("Halo,")} {name}.
-              </h1>
+            lisi<small>café</small>
+          </span>
+          <div className="owner-tools">
+            {languagePicker}
+            <Link
+              className="button secondary"
+              href="/"
+              onClick={leave}
+              aria-disabled={busy || savingLanguage}
+            >
+              {t("Kasir")}
+            </Link>
+            {name && (
               <button
                 className="secondary"
                 disabled={busy || savingLanguage}
                 onClick={async () => {
-                  if (busy || savingLanguage) return;
                   setBusy(true);
+                  setError("");
                   try {
                     await api("/api/auth/sign-out", {});
                     setName(null);
@@ -182,46 +185,79 @@ function OwnerContent() {
               >
                 {busy ? t("Keluar…") : t("Keluar")}
               </button>
-            </div>
-            <Reports />
-            <hr />
-            <h2>{t("Pengaturan kafe")}</h2>
-            <DeviceSettings />
-            <Employees />
-            <MenuManagement />
+            )}
           </div>
-        ) : (
-          <form className="card stack" onSubmit={login}>
-            <h1>{t("Ruang pemilik")}</h1>
-            <p className="muted">{t("Masuk untuk mengelola kafe.")}</p>
-            <div>
-              <label htmlFor="email">{t("Email")}</label>
-              <input
-                id="email"
-                name="email"
-                type="email"
-                autoComplete="username"
-                required
-                maxLength={254}
+        </header>
+        <main className={name ? "owner-content" : "center-stage stack"}>
+          {savingLanguage ? (
+            <small role="status">{t("Menyimpan…")}</small>
+          ) : (
+            languageNotice && (
+              <small role="status">{t("Bahasa disimpan.")}</small>
+            )
+          )}
+          {error && (
+            <p className="error" role="alert">
+              {ownerMessage(error, language)}
+            </p>
+          )}
+          {name && access.checking && (
+            <p role="status">
+              {access.error
+                ? ownerMessage(access.error, language)
+                : t("Memeriksa akses pemilik…")}
+            </p>
+          )}
+          {loading ? (
+            <p role="status">{t("Memuat…")}</p>
+          ) : name ? (
+            <div hidden={access.checking} inert={access.checking}>
+              <Reports
+                view={view}
+                onNavigate={navigate}
+                products={products}
+                staff={<Employees />}
+                settings={
+                  <>
+                    <MenuManagement onLoad={setProducts} />
+                  </>
+                }
+                device={<DeviceSettings />}
               />
             </div>
-            <div>
-              <label htmlFor="password">{t("Kata sandi")}</label>
-              <input
-                id="password"
-                name="password"
-                type="password"
-                autoComplete="current-password"
-                required
-                maxLength={128}
-              />
-            </div>
-            <button disabled={busy}>
-              {busy ? t("Memeriksa…") : t("Masuk")}
-            </button>
-          </form>
-        )}
-      </main>
+          ) : (
+            <form className="card stack" onSubmit={login}>
+              <h1>{t("Ruang pemilik")}</h1>
+              <p className="muted">{t("Masuk untuk mengelola kafe.")}</p>
+              <div>
+                <label htmlFor="email">{t("Email")}</label>
+                <input
+                  id="email"
+                  name="email"
+                  type="email"
+                  autoComplete="username"
+                  required
+                  maxLength={254}
+                />
+              </div>
+              <div>
+                <label htmlFor="password">{t("Kata sandi")}</label>
+                <input
+                  id="password"
+                  name="password"
+                  type="password"
+                  autoComplete="current-password"
+                  required
+                  maxLength={128}
+                />
+              </div>
+              <button disabled={busy}>
+                {busy ? t("Memeriksa…") : t("Masuk")}
+              </button>
+            </form>
+          )}
+        </main>
+      </div>
     </div>
   );
 }

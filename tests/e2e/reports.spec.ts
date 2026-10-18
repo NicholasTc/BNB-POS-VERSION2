@@ -2,7 +2,7 @@ import { test, expect } from "@playwright/test";
 import { Pool } from "pg";
 import { randomUUID } from "node:crypto";
 import { hashPin, pinLookup } from "../../src/lib/credentials";
-import { login } from "./helpers";
+import { login, ownerSection, openOwnerDates } from "./helpers";
 test("owner date filters, breakdowns, itemized history and overnight attendance", async ({
   page,
 }) => {
@@ -69,15 +69,18 @@ test("owner date filters, breakdowns, itemized history and overnight attendance"
     await pool.end();
   }
   await login(page);
+  await openOwnerDates(page);
   await page.getByLabel("Dari tanggal", { exact: true }).fill("2026-10-17");
   await page.getByLabel("Sampai tanggal", { exact: true }).fill("2026-10-17");
   await page.getByRole("button", { name: "Tampilkan", exact: true }).click();
   await expect(page.getByTestId("revenue")).toHaveText(/Rp\s*54\.000/);
   await expect(page.getByTestId("sales-count")).toHaveText("2");
-  await page.locator("details").first().locator("summary").click();
+  await ownerSection(page, "transactions");
+  await page.locator(".sale-history").first().locator("summary").click();
   await expect(
     page.getByRole("columnheader", { name: "Menu saat dijual", exact: true }),
   ).toBeVisible();
+  await ownerSection(page, "staff");
   await expect(
     page.getByRole("cell", { name: /17 Okt 2026, 01\.00/ }),
   ).toBeVisible();
@@ -85,6 +88,7 @@ test("owner date filters, breakdowns, itemized history and overnight attendance"
     path: "test-results/owner-dashboard.png",
     fullPage: true,
   });
+  await ownerSection(page, "transactions");
   await page.getByLabel("Dari tanggal", { exact: true }).fill("2026-10-18");
   await page.getByLabel("Sampai tanggal", { exact: true }).fill("2026-10-18");
   await page.getByRole("button", { name: "Tampilkan", exact: true }).click();

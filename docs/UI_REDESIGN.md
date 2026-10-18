@@ -1,5 +1,7 @@
 # Reference UI migration
 
+Historical cashier redesign record. The newer owner phone/iPad/laptop reference supersedes the owner-layout freeze below; see OWNER_UI.md for the current owner layout and complete function mapping. Cashier behavior remains as recorded here.
+
 Requested 2026-10-18. Targets are the user's final two attached images: compact cashier catalog/order summary, and Tunai/QRIS payment sheets. The first three images show the current UI. Preserve the target composition, colors, spacing, typography, labels and visual hierarchy; do not introduce an alternative design.
 
 Status: user clarified all four questions. Keep owner dashboard styling/layout unchanged; add owner-editable photos/categories while preserving products; use one Save action for acknowledgment and completion; create matching temporary artwork. Implementation complete. Full sequential gate passed: 20 unit / 43 PostgreSQL integration / 17 Chromium browser tests, lint/typecheck/build, no migration drift, client-secret scan and backup/restore. Local migration 0004 applied; development products/history preserved.
