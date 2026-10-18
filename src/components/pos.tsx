@@ -6,6 +6,8 @@ import { useAutoRefresh } from "@/lib/use-auto-refresh";
 import { PinPad } from "./pin-pad";
 import { Sales, type SalesHandle } from "./sales";
 import { Modal } from "./modal";
+import { LisiLogo, PosIcon } from "./pos-icons";
+import "./cashier.css";
 export type PosState = {
   paired: true;
   shifts: { id: string; employeeId: string; name: string; clockIn: string }[];
@@ -20,6 +22,7 @@ export function Pos() {
     [error, setError] = useState(""),
     [busy, setBusy] = useState(false),
     [checking, setChecking] = useState(false),
+    [staffOpen, setStaffOpen] = useState(false),
     [action, setAction] = useState<"clock-in" | "switch" | "clock-out">(
       "clock-in",
     ),
@@ -69,6 +72,11 @@ export function Pos() {
       window.removeEventListener("keydown", touch);
     };
   }, [state?.cashier, refresh]);
+  useEffect(() => {
+    if (!notice) return;
+    const timer = window.setTimeout(() => setNotice(""), 4000);
+    return () => clearTimeout(timer);
+  }, [notice]);
   async function submit(pin: string) {
     setBusy(true);
     setError("");
@@ -105,24 +113,130 @@ export function Pos() {
       )
     )
       return;
+    setStaffOpen(false);
     setError("");
     setAction(value);
     setDialog(true);
   }
   return (
-    <>
-      <header className="app-header">
-        <Link className="brand" href="/">
-          lisi<span>teman di balik meja</span>
+    <div className="cashier-app">
+      <header className="cashier-header">
+        <Link className="cashier-brand" href="/" aria-label="LISI kasir">
+          <LisiLogo />
         </Link>
-        <div className="row">
+        <div className="cashier-identity">
           {state?.cashier && (
-            <span className="badge">Kasir: {state.cashier.name}</span>
+            <span aria-label={`Kasir: ${state.cashier.name}`}>
+              {state.cashier.name}
+            </span>
           )}
-          <Link className="button secondary" href="/owner">
-            Pemilik
-          </Link>
+          <button
+            className="staff-toggle"
+            aria-expanded={staffOpen}
+            aria-controls="staff-panel"
+            onClick={() => setStaffOpen(!staffOpen)}
+          >
+            Staf <PosIcon name="chevron" />
+          </button>
         </div>
+        {staffOpen && (
+          <section
+            id="staff-panel"
+            className="staff-panel stack"
+            aria-label="Staf"
+          >
+            {state && (
+              <>
+                <button disabled={busy} onClick={() => open("clock-in")}>
+                  Mulai kerja
+                </button>
+                <button
+                  className="secondary"
+                  disabled={busy || !state.shifts.length}
+                  onClick={() => open("switch")}
+                >
+                  Ganti kasir
+                </button>
+                <button
+                  className="secondary"
+                  disabled={busy || !state.shifts.length}
+                  onClick={() => open("clock-out")}
+                >
+                  Selesai kerja
+                </button>
+                {state.cashier && (
+                  <button
+                    className="secondary"
+                    disabled={busy}
+                    onClick={async () => {
+                      setBusy(true);
+                      try {
+                        await api("/api/pos", { action: "lock" });
+                        setStaffOpen(false);
+                        await refresh();
+                      } catch (e) {
+                        setError((e as Error).message);
+                      } finally {
+                        setBusy(false);
+                      }
+                    }}
+                  >
+                    {busy ? "Mengunci…" : "Kunci kasir"}
+                  </button>
+                )}
+                <button
+                  className="secondary"
+                  disabled={checking}
+                  onClick={async () => {
+                    setChecking(true);
+                    try {
+                      await refresh();
+                      await salesRef.current?.check();
+                    } finally {
+                      setChecking(false);
+                    }
+                  }}
+                >
+                  {checking ? "Memeriksa…" : "Perbarui & periksa"}
+                </button>
+                <div className="staff-attendance">
+                  <h2>
+                    Sedang bekerja{" "}
+                    <span className="badge">{state.shifts.length}</span>
+                  </h2>
+                  {state.shifts.length ? (
+                    <ul className="shift-list">
+                      {state.shifts.map((s) => (
+                        <li key={s.id}>
+                          <strong>{s.name}</strong>
+                          <span className="muted">
+                            Sejak{" "}
+                            {new Intl.DateTimeFormat("id-ID", {
+                              timeZone: "Asia/Jakarta",
+                              hour: "2-digit",
+                              minute: "2-digit",
+                            }).format(new Date(s.clockIn))}
+                          </span>
+                          {state.cashier?.employeeId === s.employeeId && (
+                            <span className="badge">Kasir aktif</span>
+                          )}
+                        </li>
+                      ))}
+                    </ul>
+                  ) : (
+                    <p className="muted">Belum ada yang mulai kerja.</p>
+                  )}
+                </div>
+              </>
+            )}
+            <Link className="button secondary" href="/owner">
+              Pemilik
+            </Link>
+            <button className="text-button" onClick={() => setStaffOpen(false)}>
+              Tutup menu staf
+            </button>
+          </section>
+        )}
       </header>
       <main className={state ? "content stack" : "center-stage stack"}>
         {error && (
@@ -164,87 +278,32 @@ export function Pos() {
           </div>
         ) : (
           <>
-            <div className="card stack shift-toolbar">
-              <div className="row between">
-                <div>
-                  <h1>
-                    {state.cashier
-                      ? `Halo, ${state.cashier.name}.`
-                      : "Mulai hari yang baik."}
-                  </h1>
-                  <p className="muted">
-                    {state.cashier
-                      ? "Meja kasir siap. Selamat bekerja!"
-                      : "Masukkan PIN untuk mulai kerja atau lanjut sebagai kasir."}
-                  </p>
-                </div>
-                {state.cashier && (
+            {!state.cashier && (
+              <div className="card stack shift-toolbar">
+                <h1>Mulai hari yang baik.</h1>
+                <p className="muted">
+                  Masukkan PIN untuk mulai kerja atau lanjut sebagai kasir.
+                </p>
+                <div className="row">
+                  <button onClick={() => open("clock-in")}>Mulai kerja</button>
                   <button
                     className="secondary"
-                    disabled={busy}
-                    onClick={async () => {
-                      setBusy(true);
-                      try {
-                        await api("/api/pos", { action: "lock" });
-                        await refresh();
-                      } catch (e) {
-                        setError((e as Error).message);
-                      } finally {
-                        setBusy(false);
-                      }
-                    }}
+                    disabled={!state.shifts.length}
+                    onClick={() => open("switch")}
                   >
-                    {busy ? "Mengunci…" : "Kunci kasir"}
+                    Ganti kasir
                   </button>
-                )}
+                  <button
+                    className="secondary"
+                    disabled={!state.shifts.length}
+                    onClick={() => open("clock-out")}
+                  >
+                    Selesai kerja
+                  </button>
+                </div>
               </div>
-              <div className="row">
-                <button onClick={() => open("clock-in")}>Mulai kerja</button>
-                <button
-                  className="secondary"
-                  onClick={() => open("switch")}
-                  disabled={!state.shifts.length}
-                >
-                  Ganti kasir
-                </button>
-                <button
-                  className="secondary"
-                  onClick={() => open("clock-out")}
-                  disabled={!state.shifts.length}
-                >
-                  Selesai kerja
-                </button>
-              </div>
-            </div>
+            )}
             <Sales ref={salesRef} state={state} />
-            <section className="card">
-              <h2>
-                Sedang bekerja{" "}
-                <span className="badge">{state.shifts.length}</span>
-              </h2>
-              {state.shifts.length ? (
-                <ul className="shift-list">
-                  {state.shifts.map((s) => (
-                    <li key={s.id}>
-                      <strong>{s.name}</strong>
-                      <span className="muted">
-                        Sejak{" "}
-                        {new Intl.DateTimeFormat("id-ID", {
-                          timeZone: "Asia/Jakarta",
-                          hour: "2-digit",
-                          minute: "2-digit",
-                        }).format(new Date(s.clockIn))}
-                      </span>
-                      {state.cashier?.employeeId === s.employeeId && (
-                        <span className="badge">Kasir aktif</span>
-                      )}
-                    </li>
-                  ))}
-                </ul>
-              ) : (
-                <p className="muted">Belum ada yang mulai kerja.</p>
-              )}
-            </section>
           </>
         )}
       </main>
@@ -288,6 +347,6 @@ export function Pos() {
           />
         </Modal>
       )}
-    </>
+    </div>
   );
 }

@@ -32,6 +32,16 @@ Four additional browser regressions cover owner menu/status changes without losi
 
 Latest local 1,000-sale / 10-sample timings: POS p95 3 ms, reporting p95 23 ms, quote/attest/complete p95 20 ms. Local measurements only. Existing audit findings and cross-browser/production verification limits above remain unchanged; dependencies were not changed in this follow-up.
 
+## Reference cashier redesign verification (2026-10-18)
+
+Final sequential `npm run gate` passed: **20 unit, 43 real PostgreSQL integration and 16 Chromium browser tests**, typecheck, zero-warning lint, no migration drift, production build, browser-secret scan (13 JS assets), and backup/restore of 15 public/Drizzle tables including completed sale/shift, matching digests/sequences/totals. Additive migration 0004 applied locally; existing development products/history preserved.
+
+New checks exercise owner-authorized strict category/photo validation, neutral legacy defaults and metadata preservation, cash integer/keypad limits and Rp58.000 → Rp100.000 → Rp42.000 change, selected product badges, one Save waiting for authoritative completion, QRIS checkbox gating without premature attestation, close/reopen retaining the quote, live category/photo changes and local image fallback. Existing attendance, idempotency, immutable quotes, lost-response, database-outage, live-report and language regressions remain passing.
+
+Inspected reference catalog/cash/QRIS captures at 630px plus mobile and desktop layouts. Owner dashboard styling is unchanged; new photo/category controls use the existing management form style. Seven generated local WebP placeholders and a code-native SVG logo replace unavailable original assets. See UI_REDESIGN.md and assets/PRODUCT_ARTWORK.md. No claim of original font/logo asset fidelity.
+
+Latest local p95 (1,000 sales / 10 samples): POS 3 ms, reports 28 ms, quote/attest/complete 16 ms. Dependencies were not changed or re-audited for this redesign; previous audit and verification limits remain applicable.
+
 ## Review and remaining verification limits
 
 Security/integrity review checked every route's trust boundary, cookie/origin behavior, employee attribution and revocation, lock order, transactional state changes, immutable rows, money overflow, idempotency/payload mismatch and database failure handling. Default third-party auth SQL logging is disabled; custom logs do not include credentials or raw errors. Built browser assets were scanned for actual configured server secrets without exposing them.

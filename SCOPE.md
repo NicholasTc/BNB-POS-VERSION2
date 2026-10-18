@@ -10,4 +10,6 @@ Build the five stages in `docs/PROJECT_BRIEF.md`, subject to approved policy in 
 
 Approved follow-up (2026-10-18): safe automatic cashier listing/status and owner report updates, subtle button feedback, and persistent Indonesian/English owner language preference. Existing attendance/payment/recovery rules and financial snapshots remain unchanged.
 
+Approved reference redesign (2026-10-18): match the user’s final two cashier/payment images, keep the owner layout, add editable product categories/photo URLs and local placeholders, and combine receipt acknowledgment/completion into one Save interaction while retaining existing durable server transitions/recovery. Cash received/change are presentation helpers.
+
 Excluded: public deployment, live financial integrations, customer ordering/accounts, delivery, kitchen queues, inventory, payroll, accounting, loyalty, AI, multi-branch/native apps, complex pricing, and sale edits/voids/refunds.

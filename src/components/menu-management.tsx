@@ -4,7 +4,8 @@ import { api } from "@/lib/client";
 import { useOwnerLanguage } from "@/components/owner-language";
 import { ownerMessage } from "@/lib/owner-language";
 import { rupiah } from "@/lib/money";
-type Item = { id: string; name: string; price: number; active: boolean };
+import type { MenuProduct } from "@/lib/menu";
+type Item = MenuProduct & { active: boolean };
 export function MenuManagement() {
   const { language, t } = useOwnerLanguage();
   const [items, setItems] = useState<Item[]>([]),
@@ -35,6 +36,8 @@ export function MenuManagement() {
         name: f.get("name"),
         price: Number(f.get("price")),
         active: f.get("active") === "on",
+        category: f.get("category"),
+        imageUrl: f.get("imageUrl"),
       });
       setEditing(null);
       form.reset();
@@ -85,6 +88,49 @@ export function MenuManagement() {
               defaultValue={editing?.price ?? ""}
               required
             />
+          </div>
+          <div>
+            <label htmlFor="menu-category">{t("Kategori")}</label>
+            <select
+              id="menu-category"
+              name="category"
+              defaultValue={editing?.category ?? "uncategorized"}
+            >
+              <option value="uncategorized">{t("Belum dikategorikan")}</option>
+              <option value="drink">{t("Minuman")}</option>
+              <option value="food">{t("Makanan")}</option>
+            </select>
+          </div>
+          <div>
+            <label htmlFor="menu-image">{t("Foto menu (opsional)")}</label>
+            <input
+              id="menu-image"
+              name="imageUrl"
+              type="text"
+              list="menu-photos"
+              maxLength={2000}
+              defaultValue={editing?.imageUrl ?? ""}
+              placeholder="https://…"
+              aria-describedby="menu-image-help"
+            />
+            <datalist id="menu-photos">
+              <option value="/menu/mango.webp">{t("Contoh mangga")}</option>
+              <option value="/menu/strawberry.webp">
+                {t("Contoh stroberi")}
+              </option>
+              <option value="/menu/coffee.webp">{t("Contoh kopi")}</option>
+              <option value="/menu/pastry.webp">{t("Contoh makanan")}</option>
+              <option value="/menu/avocado.webp">{t("Contoh alpukat")}</option>
+              <option value="/menu/tea.webp">{t("Contoh teh")}</option>
+              <option value="/menu/water.webp">
+                {t("Contoh air mineral")}
+              </option>
+            </datalist>
+            <small id="menu-image-help">
+              {t(
+                "Gunakan URL HTTPS atau pilih foto contoh. Kosongkan untuk foto bawaan.",
+              )}
+            </small>
           </div>
           <label className="row">
             <input

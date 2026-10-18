@@ -29,6 +29,13 @@
       "when": 1792295360491,
       "tag": "0003_organic_vulture",
       "breakpoints": true
+    },
+    {
+      "idx": 4,
+      "version": "7",
+      "when": 1792299063082,
+      "tag": "0004_tough_maddog",
+      "breakpoints": true
     }
   ]
 }

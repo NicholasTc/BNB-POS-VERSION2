@@ -12,11 +12,11 @@ Returning through Kasir signs the owner out. Owner session maximum lifetime is e
 
 ## Café recovery
 
-- Idle lock (15 minutes) preserves shifts. Use Ganti kasir with a clocked-in employee's PIN. During unfinished payment, only the original cashier may reauthenticate.
+- Idle lock (15 minutes) preserves shifts. Use Staf → Ganti kasir with a clocked-in employee's PIN. During unfinished payment, only the original cashier may reauthenticate.
 - Global PIN budget: 60 attempts/minute; 10 failed/reserved attempts in a 15-minute window. Successful verification releases only its own failure reservation. Earlier failures are retained; limits survive restarts. Ten failures can temporarily lock out correct PINs too. Wait for the window, investigate physical access, and reset compromised PINs as owner.
 - A cart is stored locally and bound to its cashier. Confirm discard before switching or ending cashier work. Never use another cashier's cart without checking it.
 - Before receiving money, save/check the server quote. Menu changes before that step require refreshing the cart; issued quotes retain their prices until explicitly cancelled before payment.
-- If payment was received but the response is uncertain, **do not charge again or create a replacement**. Retain the displayed LS-UUID reference and use Perbarui & periksa. The browser preserves the key before sending requests; the server also retains the single unfinished transaction. An uncertain payment cannot be cancelled from the recovery screen.
+- If payment was received but the response is uncertain, **do not charge again or create a replacement**. Retain the displayed LS-UUID reference and use Periksa status transaksi in the sheet or Staf → Perbarui & periksa. The browser preserves the key before sending requests; the server also retains the single unfinished transaction. An uncertain payment cannot be cancelled from the recovery screen.
 - If service remains unavailable, preserve the reference and payment evidence for the owner. After service returns, owner checks unfinished transactions/history; the original employee authenticates and finishes the existing paid transaction. A completed result is recoverable even if cashier access expired. Never clear browser transaction storage as a troubleshooting shortcut.
 - Owner reports distinguish unfinished paid records from completed revenue and are gross cashier-recorded amounts. QRIS is not independently verified. Corrections/refunds happen outside this MVP and do not rewrite recorded sales.
 

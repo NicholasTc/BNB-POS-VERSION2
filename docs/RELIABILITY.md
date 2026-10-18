@@ -18,7 +18,7 @@ Integer rupiah; server-derived cashier identity; server-validated prices; immuta
 
 Uncertain transactions must retain their recovery key across refreshes. Employee sessions/cart changes must not silently erase this key. During outages, do not request a second customer payment. Follow WORKFLOWS.md and ask the owner to reconcile before replacement entry.
 
-Implemented sale states: pending (saved quote), paid (cashier-attested, awaiting Done), completed (included in reports), cancelled (only when explicitly attested not yet paid). All quote/line fields are immutable; database triggers enforce allowed transitions and deferred aggregate checks require 1–50 lines matching the header total. Maximum quantity is 99 per product and maximum total Rp1,000,000,000; overflow/fractional amounts are rejected. Prices changed before quoting require a fresh cart; later menu changes do not alter issued quotes.
+Implemented sale states: pending (saved quote), paid (cashier-attested, awaiting completion/recovery), completed (included in reports), cancelled (only when explicitly attested not yet paid). All quote/line fields are immutable; database triggers enforce allowed transitions and deferred aggregate checks require 1–50 lines matching the header total. Maximum quantity is 99 per product and maximum total Rp1,000,000,000; overflow/fractional amounts are rejected. Prices changed before quoting require a fresh cart; later menu changes do not alter issued quotes.
 
 Device-row locking serializes attendance, quoting, attestation, completion and recovery. Repeated UUID/payload returns the saved result; a different payload is rejected. Finalization cannot attribute a sale to a browser-supplied employee. The original employee must reauthenticate if their cashier access expires. An already-completed response remains recoverable even after idle expiry. PIN reset and device pairing revoke active credentials without erasing unfinished sales or shifts.
 
@@ -27,6 +27,10 @@ Device-row locking serializes attendance, quoting, attestation, completion and r
 Automatic updates use visible-page, read-only five-second polling, with focus/reconnect and best-effort cross-tab invalidation. Requests do not overlap; cleanup aborts outstanding work. Reports use applied-query/version guards to reject obsolete replies while retaining draft inputs and expanded records. Background failures retain prior data and show a quiet stale-data message. Cashier menu polling pauses during payment/recovery and never rewrites carts or immutable quotes. Status checks preserve the existing authorization, lock and attendance rules.
 
 Background owner requests explicitly disable session renewal while retaining expiry/revocation checks; cashier status reads never perform an activity touch. Cross-tab messages contain only an invalidation hint and cannot authorize requests or record sales. Owner language preferences use an owner-derived key, strict enum validation and the existing exact-Origin/JSON guards; the browser cache is presentation-only.
+
+## Reference UI and menu metadata
+
+Cashier styling is scoped to preserve the owner dashboard. Additive migration 0004 gives old menu records neutral category/photo defaults; legacy edits that omit metadata preserve it. Strict owner-authorized/origin-checked schemas validate category and bounded local-placeholder/HTTPS URLs. Images load directly in the browser without referrers or a server-side URL fetch; HTTPS image sources are permitted by CSP, with local fallback on errors. Cash calculations are bounded integer presentation helpers. Save retains the existing separate durable server transitions and recovery writes; closing a sheet never authorizes cancellation or a new sale.
 
 ## Before production
 

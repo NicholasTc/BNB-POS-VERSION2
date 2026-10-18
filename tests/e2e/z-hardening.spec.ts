@@ -4,7 +4,7 @@ import { createServer, connect, type Socket } from "node:net";
 import { spawn } from "node:child_process";
 import type { AddressInfo } from "node:net";
 import { hashPin, pinLookup } from "../../src/lib/credentials";
-import { login, pin } from "./helpers";
+import { login, pin, openPayment, confirmPayment } from "./helpers";
 test.beforeEach(async () => {
   const url = process.env.TEST_DATABASE_URL;
   if (
@@ -83,11 +83,8 @@ test("mobile checkout, keyboard PIN focus trap and owner handoff revocation", as
     path: "test-results/pos-mobile.png",
     fullPage: true,
   });
-  await page
-    .getByRole("button", { name: "Lanjut pembayaran", exact: true })
-    .click();
-  await page.getByLabel("Pembayaran sudah diterima", { exact: true }).click();
-  await page.getByRole("button", { name: "Selesai", exact: true }).click();
+  await openPayment(page);
+  await confirmPayment(page);
   await expect(
     page.getByRole("heading", { name: "Penjualan tersimpan!" }),
   ).toBeVisible();
@@ -101,13 +98,20 @@ test("real PostgreSQL connection outage preserves paid sale and recovers once", 
   await page
     .getByRole("button", { name: "Tambah Kopi susu", exact: true })
     .click();
-  await page
-    .getByRole("button", { name: "Lanjut pembayaran", exact: true })
-    .click();
-  await page.getByLabel("Pembayaran sudah diterima", { exact: true }).click();
-  await expect(
-    page.getByRole("button", { name: "Selesai", exact: true }),
-  ).toBeEnabled();
+  await openPayment(page);
+  await page.route("**/api/sales", (route) => {
+    if (
+      route.request().method() === "POST" &&
+      route.request().postDataJSON()?.action === "complete"
+    )
+      return route.abort("failed");
+    return route.continue();
+  });
+  await confirmPayment(page);
+  await expect(page.getByRole("dialog").getByRole("alert")).toContainText(
+    "Belum terkonfirmasi",
+  );
+  await page.unroute("**/api/sales");
   const sockets = new Set<Socket>();
   const upstream = new URL(process.env.TEST_DATABASE_URL!);
   const proxy = createServer((client) => {
@@ -174,11 +178,19 @@ test("real PostgreSQL connection outage preserves paid sale and recovers once", 
       .toBe(200);
     await page.goto("http://127.0.0.1:3102");
     await expect(
-      page.getByRole("button", { name: "Selesai", exact: true }),
+      page.getByRole("button", {
+        name: "Pembayaran diterima · Simpan",
+        exact: true,
+      }),
     ).toBeEnabled();
     for (const socket of sockets) socket.destroy();
     await new Promise<void>((resolve) => proxy.close(() => resolve()));
-    await page.getByRole("button", { name: "Selesai", exact: true }).click();
+    await page
+      .getByRole("button", {
+        name: "Pembayaran diterima · Simpan",
+        exact: true,
+      })
+      .click();
     await expect(
       page.getByRole("alert").filter({ hasText: "Belum terkonfirmasi" }),
     ).toBeVisible();
@@ -187,12 +199,21 @@ test("real PostgreSQL connection outage preserves paid sale and recovers once", 
     ).not.toBeVisible();
     await listen(port);
     await page
-      .getByRole("button", { name: "Perbarui & periksa", exact: true })
+      .getByRole("dialog")
+      .getByRole("button", { name: "Periksa status transaksi", exact: true })
       .click();
     await expect(
-      page.getByRole("button", { name: "Selesai", exact: true }),
+      page.getByRole("button", {
+        name: "Pembayaran diterima · Simpan",
+        exact: true,
+      }),
     ).toBeEnabled();
-    await page.getByRole("button", { name: "Selesai", exact: true }).click();
+    await page
+      .getByRole("button", {
+        name: "Pembayaran diterima · Simpan",
+        exact: true,
+      })
+      .click();
     await expect(
       page.getByRole("heading", { name: "Penjualan tersimpan!" }),
     ).toBeVisible();

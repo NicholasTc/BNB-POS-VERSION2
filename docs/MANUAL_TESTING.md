@@ -16,7 +16,7 @@ Created in the local development database on 2026-10-18 at your request. These c
 - Employee **Ayu**: PIN **0123** (active)
 - Employee **Bima**: PIN **4567** (active)
 
-The owner and both employee accounts already exist. Skip owner provisioning and employee creation; sign in with the credentials above. Menu items, attendance and sales have not been created by this account setup.
+The owner and both employee accounts already exist. Skip owner provisioning and employee creation; sign in with the credentials above. That account setup did not seed menu items, attendance or sales; subsequent manual tests may already have added records.
 
 If you intentionally need to reset the owner later, run `python3 scripts/provision-owner.py` from the project directory. Resetting revokes existing owner sessions; update this guide if you change the testing password.
 ## 2. Configure a sample café
@@ -25,32 +25,35 @@ Open http://127.0.0.1:3000/owner and sign in. Scroll to **Pengaturan kafe**.
 
 - Select **Hubungkan perangkat ini** and confirm.
 - **Ayu** and **Bima** are already created and active. Do not add duplicates.
-- Add available menu items **Kopi susu** for **18000**, **Croissant** for **22000**, and **Teh lemon** for **15000**. Enter whole rupiah without dots or commas.
+- Add these sample products only if they do not already exist: **Kopi susu** for **18000**, **Croissant** for **22000**, and **Teh lemon** for **15000**. Enter whole rupiah without dots or commas.
+- Set **Kategori** to Minuman for drinks and Makanan for Croissant. Under **Foto menu (opsional)**, select a placeholder or enter an HTTPS photo URL. Examples: `/menu/coffee.webp`, `/menu/pastry.webp`, `/menu/tea.webp`, `/menu/mango.webp`, `/menu/strawberry.webp`, `/menu/avocado.webp`, `/menu/water.webp`. Existing products start uncategorized and remain visible under Semua; their names/prices are preserved.
 - Select **Kasir** at the top to return. This signs the owner out.
 
 Use dummy data and pretend payments. No payment provider is connected; the app records your confirmation without moving money. Test sales persist in the development database and cannot be edited/voided through the app. Automated fixtures use a separate test database and do not clear these manual records.
 
 ## 3. Test attendance and switching
 
-1. Select **Mulai kerja**, enter **0123**, then submit. Ayu should become active cashier and appear under Sedang bekerja.
-2. Repeat Mulai kerja with **4567**. Both employees should be working; Ayu remains cashier.
-3. Select **Ganti kasir**, enter **4567**, then **Jadi kasir**. Bima should now be cashier; there should still be two shifts.
+1. Select **Mulai kerja**, enter **0123**, then submit. Ayu should become active cashier. Open **Staf** to see Sedang bekerja and the attendance controls.
+2. Open **Staf → Mulai kerja** with **4567**. Both employees should be working; Ayu remains cashier.
+3. Select **Staf → Ganti kasir**, enter **4567**, then **Jadi kasir**. Bima should now be cashier; there should still be two shifts.
 4. Refresh the page. The cashier and both shifts should remain.
 
 ## 4. Make two sample sales
 
 With **Bima** as cashier:
 
-1. Add **two Kopi susu** and **one Croissant**. Check quantities and total **Rp58.000**.
-2. Select **Tunai**, then **Lanjut pembayaran**. Review the saved amount.
-3. For this simulated test, select **Pembayaran sudah diterima**. Wait for the saved-payment acknowledgment, then select **Selesai**.
+1. Tap **Kopi susu** twice and **Croissant** once. Check the quantity badges and total **Rp58.000**. **Ubah** opens quantity +/- and removal controls.
+2. Select **Tunai** to open the payment sheet with the saved total. Enter **100000**, using the field, quick amount or keypad. Expect **Rp42.000** change; entering less than Rp58.000 must keep Save disabled.
+3. For this simulated test, select **Uang diterima · Simpan** once. It acknowledges receipt and completes the same transaction; wait for the confirmed result.
 4. Expect **Penjualan tersimpan!**, the correct amount and Bima's name. Retain the LS-reference when investigating a problem.
 
-Select **Pesanan baru**, switch cashier to **Ayu** using 0123, then sell **one Teh lemon** using **QRIS**, following the same acknowledgment and completion steps. Expect **Rp15.000** attributed to Ayu. QRIS remains manually recorded, not provider-verified.
+Select **Pesanan baru**, switch through **Staf → Ganti kasir** to **Ayu** using 0123, then sell **one Teh lemon** using **QRIS**. Check the quoted amount, verify the simulated merchant receipt, select **Pembayaran Rp15.000 sudah saya cek masuk**, then **Pembayaran diterima · Simpan**. The checkbox alone must not record payment. Expect **Rp15.000** attributed to Ayu. QRIS remains manually recorded, not provider-verified.
+
+**Tutup** or Escape closes a payment sheet without cancelling the saved quote. Use **Lanjutkan pembayaran** to reopen it. For an unpaid cancellation, expand **Rincian transaksi → Kembali, belum dibayar** and confirm. Never cancel or request another payment when status is uncertain.
 
 ## 5. Reconcile owner reports
 
-Select **Pemilik**, sign in, and filter the dates containing these sales. Starting from an empty database, expect:
+Select **Staf → Pemilik**, sign in, and filter the dates containing these sales. Starting from an empty database, expect:
 
 - Recorded revenue **Rp73.000**, completed sales **2**.
 - Cash **Rp58.000**, QRIS **Rp15.000**.
@@ -63,13 +66,13 @@ Additional completed tests will change these totals. Returning through Kasir sig
 ## 6. Test mistakes, locking and clock-out
 
 - Try **one** incorrect PIN: access should be denied. Avoid ten failed attempts, which can lock correct PIN access for up to 15 minutes.
-- Add an unpaid cart, then choose Ganti kasir. Cancel the discard confirmation: the cart should remain. A confirmed discard plus successful incoming PIN should clear it.
-- Select **Kunci kasir**: attendance remains open. Ganti kasir with an active employee's PIN should unlock access. Optional: verify automatic locking after 15 minutes without interaction.
-- With no unfinished payment, select **Selesai kerja** and enter Bima's PIN. His shift should close while Ayu remains working. Repeat with Ayu: the final shift closes and the POS locks.
+- Add an unpaid cart, then choose **Staf → Ganti kasir**. Cancel the discard confirmation: the cart should remain. A confirmed discard plus successful incoming PIN should clear it.
+- Select **Staf → Kunci kasir**: attendance remains open. Ganti kasir with an active employee's PIN should unlock access. Optional: verify automatic locking after 15 minutes without interaction.
+- With no unfinished payment, select **Staf → Selesai kerja** and enter Bima's PIN. His shift should close while Ayu remains working. Repeat with Ayu: the final shift closes and the POS locks.
 
 ## Optional: interrupted connection
 
-Do this after reconciling the baseline above, because it creates another test sale. Prepare a sale and record simulated receipt of payment. In browser developer tools, set Network to Offline, then select Selesai. The app must not show success. Restore Online, choose Perbarui & periksa, and finish the same transaction. Verify only one completed sale with that reference. Never create a replacement or request a second customer payment while status is uncertain.
+Do this after reconciling the baseline above, because it creates another test sale. Prepare a sale, fill the cash amount or check the QRIS receipt checkbox. In browser developer tools, set Network to Offline, then select the sheet’s Save button. The app must not show success. Restore Online, choose **Periksa status transaksi** in the payment sheet, then finish the same transaction if still pending/paid. **Staf → Perbarui & periksa** also remains available after closing the sheet. Verify only one completed sale with that reference. Never create a replacement or request a second customer payment while status is uncertain.
 
 `npm run gate` runs all automated checks, including deliberate lost responses and a real database connection outage. Do not run automated tests while simultaneously experimenting with another test runner; fixtures are isolated but share their own test database. See OPERATIONS.md for outage and backup procedures.
 

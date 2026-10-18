@@ -169,6 +169,8 @@ export const menuItem = pgTable(
     id: uuid("id").primaryKey().defaultRandom(),
     name: text("name").notNull(),
     price: integer("price").notNull(),
+    category: text("category").notNull().default("uncategorized"),
+    imageUrl: text("image_url").notNull().default(""),
     active: boolean("active").notNull().default(true),
     createdAt: timestamp("created_at", { withTimezone: true })
       .notNull()
@@ -177,6 +179,11 @@ export const menuItem = pgTable(
   (t) => [
     check("menu_name_length", sql`length(${t.name}) BETWEEN 1 AND 80`),
     check("menu_price_range", sql`${t.price} BETWEEN 1 AND 100000000`),
+    check(
+      "menu_category",
+      sql`${t.category} IN ('uncategorized','drink','food')`,
+    ),
+    check("menu_image_length", sql`length(${t.imageUrl}) <= 2000`),
   ],
 );
 export const paymentMethod = pgEnum("payment_method", ["cash", "qris"]);

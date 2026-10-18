@@ -208,12 +208,20 @@ export async function saveMenu(input: {
   name: string;
   price: number;
   active: boolean;
+  category?: "uncategorized" | "drink" | "food";
+  imageUrl?: string;
 }) {
   await db.transaction(async (tx) => {
     if (input.id) {
       const result = await tx
         .update(menuItem)
-        .set({ name: input.name, price: input.price, active: input.active })
+        .set({
+          name: input.name,
+          price: input.price,
+          active: input.active,
+          category: input.category,
+          imageUrl: input.imageUrl,
+        })
         .where(eq(menuItem.id, input.id))
         .returning({ id: menuItem.id });
       if (!result.length) throw new AppError(404, "Menu tidak ditemukan.");

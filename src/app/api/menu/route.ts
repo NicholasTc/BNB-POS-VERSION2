@@ -7,7 +7,13 @@ export const GET = endpoint(async (request) => {
   await posState(deviceToken(request));
   return json(
     await db
-      .select({ id: menuItem.id, name: menuItem.name, price: menuItem.price })
+      .select({
+        id: menuItem.id,
+        name: menuItem.name,
+        price: menuItem.price,
+        category: menuItem.category,
+        imageUrl: menuItem.imageUrl,
+      })
       .from(menuItem)
       .where(eq(menuItem.active, true))
       .orderBy(menuItem.createdAt),

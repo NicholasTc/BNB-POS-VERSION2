@@ -4,6 +4,7 @@ test("locked POS and owner sign in/out", async ({ page }) => {
   await expect(
     page.getByRole("heading", { name: "Siap menyambut hari?" }),
   ).toBeVisible();
+  await page.getByRole("button", { name: "Staf", exact: true }).click();
   await page.getByRole("link", { name: "Pemilik", exact: true }).click();
   await page.getByLabel("Email", { exact: true }).fill("owner@test.local");
   await page.getByLabel("Kata sandi").fill("test-owner-password-2026");

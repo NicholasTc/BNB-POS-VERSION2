@@ -1,7 +1,7 @@
 import { test, expect, type Page } from "@playwright/test";
 import { Pool } from "pg";
 import { hashPin, pinLookup } from "../../src/lib/credentials";
-import { login, pin } from "./helpers";
+import { login, pin, openPayment, confirmPayment } from "./helpers";
 let coffeeId: string;
 test.beforeEach(async () => {
   const url = process.env.TEST_DATABASE_URL;
@@ -48,11 +48,9 @@ async function checkout(page: Page) {
   await page
     .getByRole("button", { name: "Tambah Kopi susu", exact: true })
     .click();
-  await page
-    .getByRole("button", { name: "Lanjut pembayaran", exact: true })
-    .click();
+  await openPayment(page);
   await expect(
-    page.getByRole("heading", { name: "Pesanan sudah tepat?" }),
+    page.getByRole("heading", { name: "QRIS", exact: true }),
   ).toBeVisible();
 }
 test("touch cart, explicit discard on switch, cash sale and historical prices", async ({
@@ -63,6 +61,7 @@ test("touch cart, explicit discard on switch, cash sale and historical prices", 
   await page
     .getByRole("button", { name: "Tambah Kopi susu", exact: true })
     .click();
+  await page.getByRole("button", { name: "Ubah", exact: true }).click();
   await page
     .getByRole("button", { name: "Tambah jumlah Kopi susu", exact: true })
     .click();
@@ -70,7 +69,7 @@ test("touch cart, explicit discard on switch, cash sale and historical prices", 
     page.getByRole("status", { name: "Jumlah Kopi susu" }),
   ).toHaveText("2");
   await pin(page, "Ganti kasir", "4567", "Jadi kasir");
-  await expect(page.getByText("Kasir: Bima", { exact: true })).toBeVisible();
+  await expect(page.getByLabel("Kasir: Bima", { exact: true })).toBeVisible();
   await expect(
     page.getByRole("heading", { name: "Mulai dari satu pilihan." }),
   ).toBeVisible();
@@ -80,20 +79,12 @@ test("touch cart, explicit discard on switch, cash sale and historical prices", 
   await page
     .getByRole("button", { name: "Tambah Croissant", exact: true })
     .click();
+  await page.getByRole("button", { name: "Ubah", exact: true }).click();
   await page
     .getByRole("button", { name: "Kurangi Kopi susu", exact: true })
     .click();
-  await page.getByLabel("Tunai", { exact: true }).check();
-  await page
-    .getByRole("button", { name: "Lanjut pembayaran", exact: true })
-    .click();
-  await page.getByLabel("Pembayaran sudah diterima", { exact: true }).click();
-  await expect(
-    page.getByText("Penerimaan pembayaran telah dicatat oleh kasir.", {
-      exact: true,
-    }),
-  ).toBeVisible();
-  await page.getByRole("button", { name: "Selesai", exact: true }).click();
+  await openPayment(page, "Tunai");
+  await confirmPayment(page);
   await expect(
     page.getByRole("heading", { name: "Penjualan tersimpan!" }),
   ).toBeVisible();
@@ -110,13 +101,12 @@ test("lost committed response survives refresh and recovers without duplicate sa
 }) => {
   await start(page);
   await checkout(page);
-  await page.getByLabel("Pembayaran sudah diterima", { exact: true }).click();
-  await expect(
-    page.getByRole("button", { name: "Selesai", exact: true }),
-  ).toBeEnabled();
   let lost = false;
   await page.route("**/api/sales", async (route) => {
-    const payload = route.request().postDataJSON();
+    const payload =
+      route.request().method() === "POST"
+        ? route.request().postDataJSON()
+        : null;
     if (payload?.action === "complete" && !lost) {
       lost = true;
       const response = await route.fetch();
@@ -124,7 +114,7 @@ test("lost committed response survives refresh and recovers without duplicate sa
       await route.abort("failed");
     } else await route.continue();
   });
-  await page.getByRole("button", { name: "Selesai", exact: true }).click();
+  await confirmPayment(page);
   await expect(
     page.getByRole("alert").filter({ hasText: "Belum terkonfirmasi" }),
   ).toBeVisible();
@@ -162,7 +152,7 @@ test("lost payment acknowledgement cannot be cancelled, can recover and finish",
       await route.abort("failed");
     } else await route.continue();
   });
-  await page.getByLabel("Pembayaran sudah diterima", { exact: true }).click();
+  await confirmPayment(page);
   await expect(
     page.getByRole("alert").filter({ hasText: "Belum terkonfirmasi" }),
   ).toBeVisible();
@@ -171,9 +161,14 @@ test("lost payment acknowledgement cannot be cancelled, can recover and finish",
   ).not.toBeVisible();
   await page.reload();
   await expect(
-    page.getByRole("button", { name: "Selesai", exact: true }),
+    page.getByRole("button", {
+      name: "Pembayaran diterima · Simpan",
+      exact: true,
+    }),
   ).toBeEnabled();
-  await page.getByRole("button", { name: "Selesai", exact: true }).click();
+  await page
+    .getByRole("button", { name: "Pembayaran diterima · Simpan", exact: true })
+    .click();
   await expect(
     page.getByRole("heading", { name: "Penjualan tersimpan!" }),
   ).toBeVisible();
@@ -193,9 +188,7 @@ test("changed menu price is rejected before taking payment and can be refreshed"
   } finally {
     await pool.end();
   }
-  await page
-    .getByRole("button", { name: "Lanjut pembayaran", exact: true })
-    .click();
+  await page.getByRole("button", { name: "QRIS", exact: true }).click();
   await expect(
     page.getByRole("alert").filter({ hasText: "harga berubah" }),
   ).toBeVisible();
@@ -205,6 +198,7 @@ test("changed menu price is rejected before taking payment and can be refreshed"
   await page
     .getByRole("button", { name: "Ubah pesanan, belum dibayar", exact: true })
     .click();
+  await page.getByRole("button", { name: "Ubah", exact: true }).click();
   await page
     .getByRole("button", { name: "Hapus pesanan", exact: true })
     .click();

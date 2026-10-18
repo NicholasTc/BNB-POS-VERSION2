@@ -27,11 +27,11 @@ test("pair, provision, concurrent shifts, switch, refresh, process restart and l
   }
   await page.getByRole("link", { name: "Kasir", exact: true }).click();
   await pin(page, "Mulai kerja", "0123", "Mulai kerja");
-  await expect(page.getByText("Kasir: Ayu", { exact: true })).toBeVisible();
+  await expect(page.getByLabel("Kasir: Ayu", { exact: true })).toBeVisible();
   await pin(page, "Mulai kerja", "4567", "Mulai kerja");
   await pin(page, "Ganti kasir", "4567", "Jadi kasir");
   await page.reload();
-  await expect(page.getByText("Kasir: Bima", { exact: true })).toBeVisible();
+  await expect(page.getByLabel("Kasir: Bima", { exact: true })).toBeVisible();
   // A fresh application process must read the same durable identity/attendance.
   const server = spawn(
     process.execPath,
@@ -77,10 +77,11 @@ test("pair, provision, concurrent shifts, switch, refresh, process restart and l
   }
   await pin(page, "Selesai kerja", "4567", "Selesai kerja");
   await expect(
-    page.getByText("Kasir: Bima", { exact: true }),
+    page.getByLabel("Kasir: Bima", { exact: true }),
   ).not.toBeVisible();
   await pin(page, "Ganti kasir", "0123", "Jadi kasir");
   await pin(page, "Selesai kerja", "0123", "Selesai kerja");
+  await page.getByRole("button", { name: "Staf", exact: true }).click();
   await expect(
     page.getByText("Belum ada yang mulai kerja.", { exact: true }),
   ).toBeVisible();

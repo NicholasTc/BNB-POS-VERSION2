@@ -1,0 +1,782 @@
+/* Cashier reference styling is scoped so the owner dashboard stays unchanged. */
+.cashier-app {
+  --leaf: #195638;
+  --coffee: #30201a;
+  --muted: #7b6f66;
+  --line: #e5e1da;
+  background: #faf8f3;
+  min-height: 100dvh;
+  font-family: Arial, Helvetica, sans-serif;
+  color: var(--coffee);
+}
+.cashier-app .cashier-header {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  max-width: 1000px;
+  margin: 0 auto;
+  padding: 14px 26px 24px;
+}
+.cashier-brand {
+  color: var(--leaf);
+  display: block;
+  line-height: 0;
+}
+.lisi-logo {
+  width: 88px;
+  height: 78px;
+}
+.cashier-identity {
+  display: flex;
+  gap: 20px;
+  align-items: center;
+  font-size: 22px;
+}
+.cashier-app .staff-toggle {
+  background: transparent;
+  border: 1px solid var(--line);
+  color: #65554c;
+  font-weight: 400;
+  padding: 10px 18px;
+  border-radius: 20px;
+}
+.cashier-app .staff-toggle svg {
+  width: 20px;
+}
+.cashier-app .staff-panel {
+  position: absolute;
+  right: 26px;
+  top: 100px;
+  z-index: 5;
+  width: min(400px, calc(100vw - 32px));
+  padding: 24px;
+  background: white;
+  border: 1px solid var(--line);
+  border-radius: 20px;
+  box-shadow: 0 12px 35px #30201a20;
+  max-height: calc(100dvh - 130px);
+  overflow-y: auto;
+}
+.cashier-app .staff-attendance {
+  border-top: 1px solid var(--line);
+  padding-top: 18px;
+}
+.cashier-app .staff-attendance h2 {
+  font-size: 18px;
+}
+.cashier-app .staff-attendance .shift-list li {
+  gap: 10px;
+  font-size: 14px;
+}
+.cashier-app .content {
+  max-width: 1000px;
+  padding: 0 26px 0;
+}
+.cashier-app .sales-layout {
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+}
+.cashier-app .catalog {
+  width: 100%;
+}
+.cashier-app .catalog-tabs {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 14px;
+  margin: 4px 0 20px;
+}
+.cashier-app .catalog-tabs button {
+  background: #efebe5;
+  color: #563b2d;
+  border-radius: 17px;
+  font-weight: 400;
+  font-size: clamp(17px, 3.7vw, 24px);
+  min-height: 64px;
+}
+.cashier-app .catalog-tabs .active {
+  background: var(--leaf);
+  color: white;
+  font-weight: 700;
+}
+.cashier-app .product-grid {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 14px 16px;
+}
+.cashier-app .product {
+  display: flex;
+  flex-direction: row;
+  position: relative;
+  align-items: center;
+  padding: 14px;
+  gap: 18px;
+  border: 1px solid #e9e6e1;
+  border-radius: 12px;
+  min-height: 184px;
+  background: #fff;
+  box-shadow: none;
+  color: var(--coffee);
+  overflow: hidden;
+}
+.cashier-app .product.in-cart {
+  border: 2px solid var(--leaf);
+  padding: 13px;
+  box-shadow: inset 0 0 0 1px var(--leaf);
+}
+.cashier-app .product:disabled {
+  opacity: 0.65;
+}
+.cashier-app .product-photo {
+  width: 37%;
+  height: 154px;
+  object-fit: cover;
+  border-radius: 10px;
+  flex: none;
+}
+.cashier-app .product-copy {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  gap: 8px;
+}
+.cashier-app .product-name {
+  font-size: clamp(15px, 3.5vw, 24px);
+  line-height: 1.18;
+  font-weight: 700;
+  overflow-wrap: anywhere;
+}
+.cashier-app .product-price {
+  color: var(--coffee);
+  margin: 0;
+  font-size: clamp(14px, 3.4vw, 23px);
+  font-weight: 400;
+  line-height: 1.25;
+}
+.cashier-app .product-quantity {
+  position: absolute;
+  top: 9px;
+  right: 9px;
+  width: 35px;
+  height: 35px;
+  border-radius: 50%;
+  background: var(--leaf);
+  color: #fff;
+  display: grid;
+  place-items: center;
+  font-size: 18px;
+}
+.cashier-app .catalog-hint {
+  text-align: center;
+  color: #78665b;
+  font-size: 20px;
+  margin: 30px 0 26px;
+}
+.cashier-app .catalog-empty {
+  padding: 40px 20px;
+  text-align: center;
+  color: var(--muted);
+}
+.cashier-app .cart {
+  position: static;
+  width: calc(100% + 52px);
+  margin: 0 -26px;
+  padding: 24px 32px 26px;
+  border-radius: 28px 28px 0 0;
+  border: 0;
+  background: white;
+  box-shadow: 0 -7px 28px #30201a07;
+}
+.cashier-app .order-heading {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding-bottom: 16px;
+  border-bottom: 1px solid var(--line);
+  gap: 12px;
+}
+.cashier-app .order-heading h2 {
+  font-size: 25px;
+  font-weight: 700;
+  margin: 0;
+  letter-spacing: -0.025em;
+}
+.cashier-app .text-button {
+  background: transparent;
+  border: 0;
+  color: var(--leaf);
+  padding: 8px 4px;
+  font-size: 20px;
+  min-height: 44px;
+}
+.cashier-app .cart-lines {
+  display: block;
+  max-height: none;
+  overflow: visible;
+}
+.cashier-app .cart-line {
+  display: block;
+  padding: 24px 0;
+  border-bottom: 1px solid var(--line);
+}
+.cashier-app .compact-line {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  gap: 22px;
+  align-items: baseline;
+  font-size: 23px;
+}
+.cashier-app .compact-line strong {
+  font-weight: 400;
+  overflow-wrap: anywhere;
+}
+.cashier-app .cart-edit-controls {
+  padding-top: 16px;
+}
+.cashier-app .quantity-controls button {
+  min-width: 44px;
+}
+.cashier-app .clear-order {
+  width: 100%;
+}
+.cashier-app .cart-total-row {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  align-items: baseline;
+  font-size: 28px;
+  padding: 20px 0 22px;
+}
+.cashier-app .cart-total {
+  font-size: 32px;
+  font-weight: 800;
+  line-height: 1.2;
+}
+.cashier-app .checkout-buttons {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+}
+.cashier-app .checkout-buttons button {
+  border-radius: 12px;
+  min-height: 88px;
+  font-size: 26px;
+  gap: 22px;
+}
+.cashier-app .checkout-buttons button.secondary {
+  border: 3px solid var(--leaf);
+  color: var(--leaf);
+}
+.cashier-app .checkout-buttons svg {
+  width: 42px;
+  height: 42px;
+}
+.cashier-app .checkout-caption {
+  display: block;
+  text-align: center;
+  font-size: 16px;
+  margin-top: 16px;
+}
+.cashier-app .receipt,
+.cashier-app .saved-order {
+  padding: 10px 0;
+}
+.cashier-app .saved-order .compact-line {
+  border-bottom: 1px solid var(--line);
+  padding: 16px 0;
+}
+.cashier-app .shift-toolbar {
+  padding: 22px;
+}
+.cashier-app .success {
+  position: fixed;
+  z-index: 8;
+  bottom: 20px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: max-content;
+  max-width: calc(100vw - 32px);
+  box-shadow: 0 5px 25px #30201a15;
+}
+.cashier-app .pos-payment-sheet {
+  --leaf: #195638;
+  width: min(590px, 100%);
+  max-width: min(590px, 100%);
+  max-height: 94dvh;
+  margin: auto auto 0;
+  padding: 24px 28px 18px;
+  border: 1px solid #e6e1d9;
+  border-radius: 28px 28px 0 0;
+  font-family: Arial, Helvetica, sans-serif;
+}
+.cashier-app .pos-payment-sheet::backdrop {
+  background: #16120f99;
+}
+.cashier-app .pos-payment-sheet > .stack {
+  gap: 16px;
+}
+.cashier-app .pos-payment-sheet .row.between {
+  flex-wrap: nowrap;
+}
+.cashier-app .pos-payment-sheet h2 {
+  font-size: 30px;
+  font-weight: 700;
+  letter-spacing: -0.03em;
+}
+.cashier-app .pos-payment-sheet > .stack > .row > button {
+  padding: 4px 0 4px 12px;
+  background: transparent;
+  border: 0;
+  min-height: 44px;
+  font-size: 20px;
+  font-weight: 400;
+}
+.cashier-app .sheet-total {
+  display: flex;
+  justify-content: space-between;
+  gap: 16px;
+  align-items: center;
+  padding-bottom: 16px;
+  border-bottom: 1px solid var(--line);
+  font-size: 21px;
+}
+.cashier-app .sheet-total strong {
+  font-size: 38px;
+  line-height: 1.15;
+  letter-spacing: -0.035em;
+}
+.cashier-app .cash-entry label {
+  font-weight: 400;
+  font-size: 20px;
+}
+.cashier-app .cash-entry input {
+  font-size: 38px;
+  font-weight: 700;
+  line-height: 1.2;
+  height: 78px;
+  border-radius: 13px;
+}
+.cashier-app .cash-suggestions {
+  display: flex;
+  gap: 10px;
+}
+.cashier-app .cash-suggestions button {
+  flex: 1;
+  padding: 10px 4px;
+  min-width: 0;
+  border-radius: 10px;
+  font-size: 17px;
+  border-color: #dedbd6;
+}
+.cashier-app .cash-suggestions .selected {
+  border: 2px solid var(--leaf);
+  background: #f0f8e9;
+  color: var(--leaf);
+}
+.cashier-app .cash-change {
+  display: flex;
+  flex-direction: column;
+  padding: 16px 20px;
+  background: #eef8e7;
+  border-radius: 16px;
+  color: #154a26;
+}
+.cashier-app .cash-change span {
+  font-size: 20px;
+  font-weight: 700;
+  color: #30201a;
+}
+.cashier-app .cash-change strong {
+  font-size: 46px;
+  font-weight: 800;
+  line-height: 1.2;
+  letter-spacing: -0.04em;
+}
+.cashier-app .cash-keypad {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 8px;
+}
+.cashier-app .cash-keypad button {
+  min-height: 54px;
+  border-radius: 10px;
+  border-color: #dedbd6;
+  font-size: 28px;
+  padding: 4px;
+}
+.cashier-app .payment-save {
+  width: 100%;
+  border-radius: 12px;
+  min-height: 64px;
+  font-size: 23px;
+}
+.cashier-app .payment-save:disabled {
+  background: #dcdcdc;
+  color: #858585;
+  opacity: 1;
+}
+.cashier-app .sheet-caption {
+  display: block;
+  text-align: center;
+  font-size: 15px;
+  margin-top: -8px;
+}
+.cashier-app .qris-total {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  border-bottom: 1px solid var(--line);
+  padding: 6px 0 24px;
+  font-size: 21px;
+}
+.cashier-app .qris-total strong {
+  font-size: 48px;
+  line-height: 1.15;
+  font-weight: 800;
+  letter-spacing: -0.035em;
+}
+.cashier-app .qris-instruction {
+  display: flex;
+  gap: 18px;
+  align-items: center;
+  border: 1px solid #dedbd6;
+  border-radius: 14px;
+  padding: 24px 16px;
+  font-size: 20px;
+}
+.cashier-app .qris-instruction p {
+  margin: 10px 0 0;
+  color: #70635b;
+  font-size: 19px;
+}
+.cashier-app .scan-mark {
+  display: grid;
+  place-items: center;
+  background: #f0eeec;
+  border-radius: 50%;
+  width: 80px;
+  height: 80px;
+  flex: none;
+}
+.cashier-app .scan-mark svg {
+  width: 44px;
+  height: 44px;
+}
+.cashier-app .merchant-steps {
+  list-style: none;
+  counter-reset: merchant;
+  background: #fdf7ec;
+  border-radius: 16px;
+  padding: 20px 22px;
+  margin: 0;
+  display: grid;
+  gap: 16px;
+}
+.cashier-app .merchant-steps li {
+  display: flex;
+  align-items: center;
+  gap: 18px;
+  font-size: 20px;
+  counter-increment: merchant;
+}
+.cashier-app .merchant-steps li::before {
+  content: counter(merchant);
+  display: grid;
+  place-items: center;
+  border-radius: 50%;
+  width: 36px;
+  height: 36px;
+  background: #655753;
+  color: white;
+  flex: none;
+}
+.cashier-app .qris-status {
+  display: flex;
+  align-items: center;
+  gap: 18px;
+  border-block: 1px solid var(--line);
+  margin: 6px 0;
+  padding: 24px 0;
+  font-size: 22px;
+  font-weight: 700;
+}
+.cashier-app .qris-status > span {
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  background: #e8a10a;
+}
+.cashier-app .qris-status.confirmed > span {
+  background: var(--leaf);
+}
+.cashier-app .qris-confirm {
+  display: flex;
+  align-items: center;
+  gap: 18px;
+  font-weight: 400;
+  font-size: 21px;
+  padding: 10px 0 16px;
+  margin: 0;
+}
+.cashier-app .qris-confirm input {
+  width: 32px;
+  height: 32px;
+  min-height: 32px;
+  flex: none;
+  accent-color: var(--leaf);
+}
+.cashier-app .transaction-details {
+  font-size: 13px;
+  color: var(--muted);
+  border-top: 1px solid var(--line);
+  padding-top: 4px;
+}
+.cashier-app .transaction-details summary {
+  min-height: 44px;
+  display: flex;
+  align-items: center;
+  cursor: pointer;
+}
+.cashier-app .transaction-details p {
+  margin: 8px 0;
+}
+.cashier-app .transaction-details button {
+  font-size: 15px;
+}
+.cashier-app .payment-warning {
+  background: #fff6dc;
+  padding: 14px;
+  border-radius: 12px;
+  margin: 0;
+  font-size: 15px;
+}
+.cashier-app .payment-saved {
+  color: var(--leaf);
+  font-size: 15px;
+  margin: 0;
+}
+@media (max-width: 480px) {
+  .cashier-app .cashier-header {
+    padding: 10px 16px 18px;
+  }
+  .cashier-app .lisi-logo {
+    width: 64px;
+    height: 58px;
+  }
+  .cashier-app .cashier-identity {
+    gap: 12px;
+    font-size: 16px;
+  }
+  .cashier-app .staff-toggle {
+    padding: 7px 12px;
+    border-radius: 16px;
+  }
+  .cashier-app .content {
+    padding: 0 16px;
+  }
+  .cashier-app .catalog-tabs {
+    gap: 9px;
+    margin-bottom: 14px;
+  }
+  .cashier-app .catalog-tabs button {
+    min-height: 44px;
+    border-radius: 12px;
+    padding: 8px;
+  }
+  .cashier-app .product-grid {
+    gap: 10px;
+  }
+  .cashier-app .product {
+    gap: 10px;
+    padding: 9px;
+    min-height: 116px;
+    border-radius: 10px;
+  }
+  .cashier-app .product.in-cart {
+    padding: 8px;
+  }
+  .cashier-app .product-photo {
+    height: 96px;
+    border-radius: 7px;
+  }
+  .cashier-app .product-copy {
+    gap: 7px;
+  }
+  .cashier-app .product-name {
+    font-size: 15px;
+  }
+  .cashier-app .product-price {
+    font-size: 14px;
+  }
+  .cashier-app .product-quantity {
+    width: 24px;
+    height: 24px;
+    font-size: 13px;
+    top: 5px;
+    right: 5px;
+  }
+  .cashier-app .catalog-hint {
+    font-size: 15px;
+    margin: 22px 0;
+  }
+  .cashier-app .cart {
+    width: calc(100% + 32px);
+    margin: 0 -16px;
+    padding: 16px 20px 22px;
+    border-radius: 24px 24px 0 0;
+  }
+  .cashier-app .order-heading {
+    padding-bottom: 10px;
+  }
+  .cashier-app .order-heading h2 {
+    font-size: 19px;
+  }
+  .cashier-app .text-button {
+    font-size: 16px;
+  }
+  .cashier-app .compact-line {
+    font-size: 16px;
+    gap: 14px;
+  }
+  .cashier-app .cart-line {
+    padding: 20px 0;
+  }
+  .cashier-app .cart-total-row {
+    font-size: 22px;
+    padding: 18px 0;
+  }
+  .cashier-app .cart-total {
+    font-size: 25px;
+  }
+  .cashier-app .checkout-buttons {
+    gap: 10px;
+  }
+  .cashier-app .checkout-buttons button {
+    font-size: 20px;
+    gap: 12px;
+    min-height: 64px;
+    padding: 10px;
+  }
+  .cashier-app .checkout-buttons svg {
+    width: 30px;
+    height: 30px;
+  }
+  .cashier-app .checkout-caption {
+    font-size: 12px;
+    margin-top: 14px;
+  }
+  .cashier-app .staff-panel {
+    top: 80px;
+    right: 16px;
+  }
+  .cashier-app .pos-payment-sheet {
+    padding: 18px 20px 12px;
+    border-radius: 24px 24px 0 0;
+  }
+  .cashier-app .pos-payment-sheet > .stack {
+    gap: 12px;
+  }
+  .cashier-app .pos-payment-sheet h2 {
+    font-size: 24px;
+  }
+  .cashier-app .pos-payment-sheet > .stack > .row > button {
+    font-size: 16px;
+  }
+  .cashier-app .sheet-total {
+    font-size: 16px;
+    padding-bottom: 12px;
+  }
+  .cashier-app .sheet-total strong {
+    font-size: 28px;
+  }
+  .cashier-app .cash-entry label {
+    font-size: 16px;
+  }
+  .cashier-app .cash-entry input {
+    font-size: 28px;
+    height: 60px;
+  }
+  .cashier-app .cash-suggestions button {
+    font-size: 13px;
+    min-height: 44px;
+  }
+  .cashier-app .cash-change {
+    padding: 12px 16px;
+  }
+  .cashier-app .cash-change span {
+    font-size: 16px;
+  }
+  .cashier-app .cash-change strong {
+    font-size: 35px;
+  }
+  .cashier-app .cash-keypad {
+    gap: 6px;
+  }
+  .cashier-app .cash-keypad button {
+    font-size: 23px;
+    min-height: 44px;
+  }
+  .cashier-app .payment-save {
+    font-size: 18px;
+    min-height: 52px;
+  }
+  .cashier-app .sheet-caption {
+    font-size: 12px;
+    margin-top: -4px;
+  }
+  .cashier-app .qris-total {
+    font-size: 17px;
+    padding-bottom: 18px;
+  }
+  .cashier-app .qris-total strong {
+    font-size: 36px;
+  }
+  .cashier-app .qris-instruction {
+    padding: 18px 12px;
+    gap: 12px;
+    font-size: 16px;
+  }
+  .cashier-app .qris-instruction p {
+    font-size: 15px;
+    margin-top: 8px;
+  }
+  .cashier-app .scan-mark {
+    width: 54px;
+    height: 54px;
+  }
+  .cashier-app .scan-mark svg {
+    width: 32px;
+    height: 32px;
+  }
+  .cashier-app .merchant-steps {
+    padding: 18px 14px;
+    gap: 12px;
+  }
+  .cashier-app .merchant-steps li {
+    font-size: 15px;
+    gap: 12px;
+  }
+  .cashier-app .merchant-steps li::before {
+    width: 28px;
+    height: 28px;
+  }
+  .cashier-app .qris-status {
+    font-size: 17px;
+    padding: 18px 0;
+    gap: 12px;
+  }
+  .cashier-app .qris-status > span {
+    width: 18px;
+    height: 18px;
+  }
+  .cashier-app .qris-confirm {
+    font-size: 16px;
+    gap: 12px;
+    padding-bottom: 10px;
+  }
+  .cashier-app .qris-confirm input {
+    width: 28px;
+    height: 28px;
+    min-height: 28px;
+  }
+}

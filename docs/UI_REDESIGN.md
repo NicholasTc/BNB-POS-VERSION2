@@ -1,0 +1,31 @@
+# Reference UI migration
+
+Requested 2026-10-18. Targets are the user's final two attached images: compact cashier catalog/order summary, and Tunai/QRIS payment sheets. The first three images show the current UI. Preserve the target composition, colors, spacing, typography, labels and visual hierarchy; do not introduce an alternative design.
+
+Status: user clarified all four questions. Keep owner dashboard styling/layout unchanged; add owner-editable photos/categories while preserving products; use one Save action for acknowledgment and completion; create matching temporary artwork. Implementation complete. Full sequential gate passed: 20 unit / 43 PostgreSQL integration / 16 Chromium browser tests, lint/typecheck/build, no migration drift, client-secret scan and backup/restore. Local migration 0004 applied; development products/history preserved.
+
+## Screen and function mapping
+
+- Cashier header: target green LISI logo, active cashier name and Staf dropdown. Move existing clock-in, cashier switch, clock-out, lock, attendance list, owner navigation and manual refresh into the staff menu/panels. Preserve four-digit PIN authentication, cart-discard confirmation, final-shift locking and owner sign-out on handoff. Locked/unpaired states still expose their existing setup/unlock actions.
+- Catalog: target Semua / Minuman / Makanan tabs, two-column photo cards, name/price, green selected border and quantity badge. Existing product IDs, authoritative prices, availability and safe automatic refresh remain. Categories/photos require menu metadata absent from the current schema; no inference from product names and no replacement of existing menu records.
+- Order summary: target Pesanan · quantity, Ubah, compact quantity/name/subtotal rows, total, Tunai/QRIS buttons and confirmation caption. Ubah opens the existing quantity decrease/increase, individual removal and explicit whole-cart deletion controls. Cashier ownership, quantity/product/total limits and local cart persistence remain enforced.
+- Payment entry: selecting Tunai/QRIS opens the corresponding target sheet using a durably prepared server quote. Keep the quoted amount immutable and background menu refresh paused during payment/recovery. The existing local recovery key must be persisted before every financial request.
+- Cash sheet: target total, received-amount field, exact/rounded quick amounts, change panel, numeric keypad and save action. Received amount/change are new UI helpers; they must use integer rupiah and cannot authorize a sale or replace server pricing. One Save action sequentially performs the existing durable acknowledgment/completion transitions with the same recovery reference.
+- QRIS sheet: target quoted total, shop-QR instruction, merchant verification steps, unconfirmed status, explicit verification checkbox and disabled-until-confirmed save action. QRIS stays cashier-attested; no merchant integration or fabricated scannable QR. One Save action acknowledges and completes with the same recovery reference.
+- Close/cancel/recovery: sheet visibility and financial transaction state must remain separate. Tutup must not silently cancel a saved transaction or discard payment uncertainty. Keep explicit unpaid cancellation, recovery/status lookup, same-reference retry, original-cashier reauthentication and no-second-payment guidance available within the reference styling.
+- Success: existing completed-sale confirmation, saved reference, amount, cashier/payment method and new-order action remain reachable. Show success only after authoritative completion/status confirmation; owner reports continue automatic refresh.
+- Owner area (no supplied screen): preserve authentication/logout, persistent Indonesian/English switch, applied/draft report dates, summaries, independent pagination, expanded sale details, attendance overlap reporting, employee/PIN management, menu availability/pricing and device pair/revoke. Owner dashboard styling/layout stays unchanged, with only the requested photo/category menu fields added.
+
+## Visual implementation constraints
+
+- Reference palette: warm ivory backdrop, white cards/sheets, deep green logo/actions/selected borders, dark brown text, quiet gray dividers, pale green change panel and amber QRIS status. Sample exact tokens during implementation; image previews cannot provide original font/logo assets.
+- Cashier layout follows the supplied catalog above the order summary. Keep all controls usable on smaller mobile screens and wider tablet/desktop screens without horizontal page overflow. Preserve native dialog focus containment/restoration, keyboard navigation, visible focus, reduced motion and subtle button feedback.
+- The two target images differ in background catalog tabs/header. Use the dedicated cashier image for the main screen and the payment image for foreground sheets; keep this distinction explicit during visual comparison.
+- Product names/prices in reference artwork are examples, not authorization to overwrite saved products or historical sales. User authorized good-looking temporary artwork; generated local photos and editable SVG logo are recorded in assets/PRODUCT_ARTWORK.md.
+
+## Verification completed
+
+- Full sequential `npm run gate` passed against the guarded isolated test database; financial/authentication assertions retained while UI selectors follow the approved interactions.
+- Added coverage for catalog filters/metadata, selected quantity badges, Ubah editing, cash input/change boundaries, QRIS confirmation gating and sheet close/reopen. Existing staff/PIN/lock, lost-response and actual-database-outage recovery checks pass with the new flow.
+- Existing cross-browser-context live-update, cart/quote immutability, report-filter and language-persistence regressions pass. Dynamic metadata changes/filtering and failed-image local fallback tested without losing the cart.
+- Inspected mobile/630px reference/desktop screenshots against the main screen and both sheets. Local review captures: test-results/reference-catalog.png, reference-cash.png and reference-qris.png. Generated placeholder photography and an editable SVG logo substitute for original assets; exact original font/logo assets were not supplied. Owner layout is retained as requested.

@@ -8,7 +8,7 @@ import {
 import { Pool } from "pg";
 import { hashPin, pinLookup } from "../../src/lib/credentials";
 import { businessToday } from "../../src/lib/dates";
-import { login, pin } from "./helpers";
+import { login, pin, openPayment, confirmPayment } from "./helpers";
 const origin = "http://127.0.0.1:3100";
 let coffee: string, pastry: string, ayu: string;
 function testPool() {
@@ -80,11 +80,8 @@ async function sell(page: Page) {
   await page
     .getByRole("button", { name: "Tambah Kopi susu", exact: true })
     .click();
-  await page
-    .getByRole("button", { name: "Lanjut pembayaran", exact: true })
-    .click();
-  await page.getByLabel("Pembayaran sudah diterima", { exact: true }).click();
-  await page.getByRole("button", { name: "Selesai", exact: true }).click();
+  await openPayment(page);
+  await confirmPayment(page);
   await expect(
     page.getByRole("heading", { name: "Penjualan tersimpan!" }),
   ).toBeVisible();
@@ -110,6 +107,7 @@ test("owner listing/status changes refresh safely while an unpaid cart survives"
       await product.evaluate((el) => getComputedStyle(el).filter),
     ).not.toBe("none");
     await page.mouse.up();
+    await page.getByRole("button", { name: "Ubah", exact: true }).click();
     await page
       .getByRole("button", { name: "Tambah jumlah Kopi susu", exact: true })
       .click();
@@ -164,7 +162,7 @@ test("owner listing/status changes refresh safely while an unpaid cart survives"
       active: true,
     });
     await expect(
-      page.getByText("Kasir: Ayu Sari", { exact: true }),
+      page.getByLabel("Kasir: Ayu Sari", { exact: true }),
     ).toBeVisible({ timeout: 12000 });
     await update(admin, "/api/owner/employees", {
       id: ayu,
@@ -173,9 +171,10 @@ test("owner listing/status changes refresh safely while an unpaid cart survives"
       active: true,
     });
     await expect(
-      page.getByText("Kasir: Ayu Sari", { exact: true }),
+      page.getByLabel("Kasir: Ayu Sari", { exact: true }),
     ).not.toBeVisible({ timeout: 12000 });
     await expect(cart.locator(".cart-total")).toHaveText(/Rp\s*36\.000/);
+    await page.getByRole("button", { name: "Staf", exact: true }).click();
     await expect(page.getByText("Ayu Sari", { exact: true })).toBeVisible();
   } finally {
     await admin.close();
@@ -191,11 +190,9 @@ test("background listing refresh pauses during payment and preserves the saved q
     await page
       .getByRole("button", { name: "Tambah Kopi susu", exact: true })
       .click();
-    await page
-      .getByRole("button", { name: "Lanjut pembayaran", exact: true })
-      .click();
+    await openPayment(page);
     await expect(
-      page.getByRole("heading", { name: "Pesanan sudah tepat?" }),
+      page.getByRole("heading", { name: "QRIS", exact: true }),
     ).toBeVisible();
     let reads = 0;
     page.on("request", (r) => {
@@ -210,13 +207,11 @@ test("background listing refresh pauses during payment and preserves the saved q
     });
     await page.clock.runFor(11000);
     expect(reads).toBe(0);
-    const cart = page.getByRole("complementary", { name: "Pesanan" });
-    await expect(
-      cart.getByText("1 × Kopi susu", { exact: true }),
-    ).toBeVisible();
-    await expect(cart.locator(".cart-total")).toHaveText(/Rp\s*18\.000/);
-    await page.getByLabel("Pembayaran sudah diterima", { exact: true }).click();
-    await page.getByRole("button", { name: "Selesai", exact: true }).click();
+    const cart = page.getByRole("dialog", { name: "QRIS", exact: true });
+    await cart.locator("summary").click();
+    await expect(cart.locator(".reference")).toBeVisible();
+    await expect(cart.locator(".qris-total strong")).toHaveText(/Rp\s*18\.000/);
+    await confirmPayment(page);
     await expect(
       page.getByRole("heading", { name: "Penjualan tersimpan!" }),
     ).toBeVisible();

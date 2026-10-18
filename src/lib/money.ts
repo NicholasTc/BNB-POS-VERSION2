@@ -4,6 +4,8 @@ export const rupiah = (amount: number) =>
     currency: "IDR",
     maximumFractionDigits: 0,
   }).format(amount);
+export const compactRupiah = (amount: number) =>
+  rupiah(amount).replace(/\s/g, "");
 export function priceLines(lines: { unitPrice: number; quantity: number }[]) {
   if (!lines.length || lines.length > 50)
     throw new Error("Pilih 1 sampai 50 jenis menu.");

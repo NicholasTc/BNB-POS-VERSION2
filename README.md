@@ -19,6 +19,8 @@ For a guided first test with sample employees, menu items and expected report to
 
 Visible cashier listings/status and owner reports now check for changes every five seconds, with additional checks on focus/reconnection and cross-tab updates. Listing refresh pauses during payment and preserves existing carts and saved quotes. Owner reports retain filters and expanded details. The owner header's **Bahasa / Language** selector saves Indonesian/English to the owner account across sessions; cashier language, rupiah amounts and Jakarta business dates remain unchanged.
 
+Cashier design follows the supplied reference: **Staf** contains attendance/lock/owner access, **Ubah** edits the cart, and **Tunai/QRIS** open payment sheets. One Save action acknowledges and completes the same transaction. Owner menu management now includes category and optional photo URL/placeholder fields; existing products and owner dashboard layout are preserved. See [UI mapping](docs/UI_REDESIGN.md) and [placeholder artwork](docs/assets/PRODUCT_ARTWORK.md).
+
 Production-mode local verification: `npm run build && npm start`. No public deployment is configured or authorized. Never change localhost credentials into production credentials by reuse.
 
 ## Checks

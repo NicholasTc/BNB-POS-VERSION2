@@ -8,10 +8,15 @@ import {
 } from "react";
 import { z } from "zod";
 import { api, ApiError } from "@/lib/client";
-import { rupiah, priceLines } from "@/lib/money";
+import { compactRupiah as rupiah, priceLines } from "@/lib/money";
 import type { PosState } from "./pos";
 import { useAutoRefresh } from "@/lib/use-auto-refresh";
-type Item = { id: string; name: string; price: number };
+import type { MenuProduct } from "@/lib/menu";
+import { ProductPhoto } from "./product-photo";
+import { PaymentSheet } from "./payment-sheet";
+import { PosIcon } from "./pos-icons";
+type Item = Pick<MenuProduct, "id" | "name" | "price"> &
+  Partial<Pick<MenuProduct, "category" | "imageUrl">>;
 type Cart = { cashierId: string; items: (Item & { quantity: number })[] };
 type Quote = {
   id: string;
@@ -68,6 +73,7 @@ export type SalesHandle = {
   hasCart: boolean;
   pending: boolean;
   clearCart: () => void;
+  check: () => Promise<void>;
 };
 export function Sales({
   state,
@@ -80,7 +86,9 @@ export function Sales({
     [cart, setCart] = useState<Cart | null>(null),
     [quote, setQuote] = useState<Quote | null>(null),
     [recovery, setRecovery] = useState<Recovery | null>(null),
-    [payment, setPayment] = useState<"cash" | "qris">("qris"),
+    [category, setCategory] = useState<"all" | "drink" | "food">("all"),
+    [editing, setEditing] = useState(false),
+    [sheetOpen, setSheetOpen] = useState(false),
     [loading, setLoading] = useState(true),
     [busy, setBusy] = useState(false),
     [error, setError] = useState(""),
@@ -91,17 +99,13 @@ export function Sales({
     !!recovery || (!!quote && ["pending", "paid"].includes(quote.status));
   const clearCart = useCallback(() => {
     setCart(null);
+    setEditing(false);
     try {
       localStorage.removeItem(CART_KEY);
     } catch {
       /* Recovery key is independent and never removed here. */
     }
   }, []);
-  useImperativeHandle(
-    ref,
-    () => ({ hasCart: !!cart?.items.length, pending, clearCart }),
-    [cart, pending, clearCart],
-  );
   const writeRecovery = useCallback((record: Recovery | null) => {
     try {
       if (record) localStorage.setItem(RECOVERY_KEY, JSON.stringify(record));
@@ -117,6 +121,7 @@ export function Sales({
   const acceptQuote = useCallback(
     (q: Quote | null) => {
       setQuote(q);
+      setSheetOpen(!!q && ["pending", "paid"].includes(q.status));
       setMissing(false);
       if (q?.status === "completed" || q?.status === "cancelled") {
         writeRecovery(null);
@@ -238,7 +243,7 @@ export function Sales({
         : null,
     );
   }
-  async function prepare() {
+  async function prepare(payment: "cash" | "qris") {
     if (!state.cashier || !cart?.items.length || pending) return;
     setBusy(true);
     setError("");
@@ -268,10 +273,10 @@ export function Sales({
       setBusy(false);
     }
   }
-  async function change(action: "attest" | "complete" | "cancel") {
-    if (!quote) return;
+  async function cancelQuote() {
     if (
-      action === "cancel" &&
+      !quote ||
+      busy ||
       !window.confirm(
         "Pastikan belum menerima pembayaran. Batalkan pesanan ini?",
       )
@@ -280,23 +285,54 @@ export function Sales({
     setBusy(true);
     setError("");
     try {
-      if (action !== "cancel")
-        writeRecovery({
-          ...(recovery ?? { id: quote.id }),
-          stage: action === "attest" ? "attest" : "complete",
+      acceptQuote(
+        await api<Quote>("/api/sales", {
+          id: quote.id,
+          action: "cancel",
+          paymentNotReceived: true,
+        }),
+      );
+    } catch (e) {
+      setError((e as Error).message);
+    } finally {
+      setBusy(false);
+    }
+  }
+  async function savePayment() {
+    if (
+      !quote ||
+      busy ||
+      blocked ||
+      state.cashier?.employeeId !== quote.cashierId
+    )
+      return;
+    setBusy(true);
+    setError("");
+    try {
+      let current = quote;
+      if (current.status === "pending") {
+        writeRecovery({ ...(recovery ?? { id: current.id }), stage: "attest" });
+        current = await api<Quote>("/api/sales", {
+          id: current.id,
+          action: "attest",
+          paymentReceived: true,
         });
-      const q = await api<Quote>("/api/sales", {
-        id: quote.id,
-        action,
-        ...(action === "attest"
-          ? { paymentReceived: true }
-          : action === "cancel"
-            ? { paymentNotReceived: true }
-            : {}),
-      });
-      if (q.status === "paid")
-        writeRecovery({ ...(recovery ?? { id: quote.id }), stage: "paid" });
-      acceptQuote(q);
+        if (current.status === "paid") {
+          writeRecovery({ ...(recovery ?? { id: current.id }), stage: "paid" });
+          setQuote(current);
+        }
+      }
+      if (current.status === "paid") {
+        writeRecovery({
+          ...(recovery ?? { id: current.id }),
+          stage: "complete",
+        });
+        current = await api<Quote>("/api/sales", {
+          id: current.id,
+          action: "complete",
+        });
+      }
+      acceptQuote(current);
     } catch (e) {
       setError(
         "Belum terkonfirmasi. Jangan meminta pembayaran lagi. " +
@@ -306,7 +342,7 @@ export function Sales({
       setBusy(false);
     }
   }
-  async function check() {
+  const check = useCallback(async () => {
     setBusy(true);
     setError("");
     try {
@@ -319,7 +355,12 @@ export function Sales({
     } finally {
       setBusy(false);
     }
-  }
+  }, [recover]);
+  useImperativeHandle(
+    ref,
+    () => ({ hasCart: !!cart?.items.length, pending, clearCart, check }),
+    [cart, pending, clearCart, check],
+  );
   async function retryPreparation() {
     if (!recovery?.prepare) return;
     setBusy(true);
@@ -341,28 +382,35 @@ export function Sales({
     cart?.items.reduce((sum, i) => sum + i.price * i.quantity, 0) ?? 0;
   const canPay =
     !busy && !blocked && state.cashier?.employeeId === quote?.cashierId;
+  const count = cart?.items.reduce((n, i) => n + i.quantity, 0) ?? 0;
   return (
     <section className="sales-layout" aria-label="Penjualan">
-      <div className="stack">
-        <div className="row between">
-          <div>
-            <h2>Yang enak hari ini</h2>
-            <p className="muted">Ketuk menu untuk menambah pesanan.</p>
-          </div>
-          {menuStale && (
-            <small role="status">
-              Pembaruan menu tertunda. Pesanan Anda tetap tersimpan.
-            </small>
-          )}
-          <button
-            className="secondary"
-            onClick={() => void check()}
-            disabled={busy}
-          >
-            {busy ? "Memeriksa…" : "Perbarui & periksa"}
-          </button>
+      <div className="catalog">
+        <h1 className="sr-only">Menu kafe</h1>
+        <div className="catalog-tabs" role="group" aria-label="Kategori menu">
+          {(
+            [
+              ["all", "Semua"],
+              ["drink", "Minuman"],
+              ["food", "Makanan"],
+            ] as const
+          ).map(([value, label]) => (
+            <button
+              key={value}
+              aria-pressed={category === value}
+              className={category === value ? "active" : ""}
+              onClick={() => setCategory(value)}
+            >
+              {label}
+            </button>
+          ))}
         </div>
-        {error && (
+        {menuStale && (
+          <p className="sync-note" role="status">
+            Pembaruan menu tertunda. Pesanan Anda tetap tersimpan.
+          </p>
+        )}
+        {error && !sheetOpen && (
           <p className="error" role="alert">
             {error}
           </p>
@@ -370,29 +418,55 @@ export function Sales({
         {loading ? (
           <p role="status">Memuat menu…</p>
         ) : menu.length ? (
-          <div className="product-grid">
-            {menu.map((item, i) => (
-              <button
-                key={item.id}
-                className={`product product-${i % 4}`}
-                disabled={
-                  !state.cashier || !belongs || pending || busy || blocked
-                }
-                onClick={() => add(item)}
-                aria-label={`Tambah ${item.name}`}
-              >
-                <span className="product-mark" aria-hidden="true">
-                  {item.name
-                    .split(" ")
-                    .slice(0, 2)
-                    .map((w) => w[0])
-                    .join("")}
-                </span>
-                <span className="product-name">{item.name}</span>
-                <span className="product-price">{rupiah(item.price)}</span>
-              </button>
-            ))}
-          </div>
+          <>
+            <div className="product-grid">
+              {menu
+                .filter(
+                  (item) => category === "all" || item.category === category,
+                )
+                .map((item) => {
+                  const selected =
+                    cart?.items.find((i) => i.id === item.id)?.quantity ?? 0;
+                  return (
+                    <button
+                      key={item.id}
+                      className={`product ${selected ? "in-cart" : ""}`}
+                      disabled={
+                        !state.cashier || !belongs || pending || busy || blocked
+                      }
+                      onClick={() => add(item)}
+                      aria-label={`Tambah ${item.name}`}
+                    >
+                      <ProductPhoto
+                        imageUrl={item.imageUrl ?? ""}
+                        category={item.category ?? "uncategorized"}
+                      />
+                      <span className="product-copy">
+                        <span className="product-name">{item.name}</span>
+                        <span className="product-price">
+                          {rupiah(item.price)}
+                        </span>
+                      </span>
+                      {selected > 0 && (
+                        <span
+                          className="product-quantity"
+                          aria-label={`${selected} dalam pesanan`}
+                        >
+                          {selected}
+                        </span>
+                      )}
+                    </button>
+                  );
+                })}
+            </div>
+            {category !== "all" &&
+              !menu.some((item) => item.category === category) && (
+                <p className="catalog-empty">
+                  Belum ada menu dalam kategori ini.
+                </p>
+              )}
+            <p className="catalog-hint">Ketuk menu untuk menambah</p>
+          </>
         ) : (
           <div className="card">
             <h3>Menu belum tersedia.</h3>
@@ -402,9 +476,9 @@ export function Sales({
           </div>
         )}
       </div>
-      <aside className="cart card stack" aria-label="Pesanan">
+      <aside className="cart" aria-label="Pesanan">
         {quote?.status === "completed" ? (
-          <>
+          <div className="receipt stack">
             <span className="receipt-mark" aria-hidden="true">
               ✓
             </span>
@@ -418,100 +492,49 @@ export function Sales({
               {quote.cashierName}
             </p>
             <p className="reference">{quote.reference}</p>
-            <button onClick={() => setQuote(null)}>Pesanan baru</button>
-          </>
+            <button
+              onClick={() => {
+                setQuote(null);
+                setEditing(false);
+              }}
+            >
+              Pesanan baru
+            </button>
+          </div>
         ) : quote && ["pending", "paid"].includes(quote.status) ? (
-          <>
-            <span className="badge">
-              {quote.status === "paid"
-                ? "Pembayaran dicatat"
-                : "Periksa pembayaran"}
-            </span>
+          <div className="saved-order stack">
             <h2>
               {quote.status === "paid"
-                ? "Siap diselesaikan."
-                : "Pesanan sudah tepat?"}
+                ? "Pembayaran dicatat"
+                : "Pesanan tersimpan"}
             </h2>
-            <p className="muted">
-              Kasir {quote.cashierName}. Harga ini telah disimpan.
-            </p>
             <div className="cart-lines">
               {quote.lines.map((l) => (
-                <div className="row between" key={l.id}>
-                  <span>
-                    {l.quantity} × {l.name}
-                  </span>
-                  <strong>{rupiah(l.subtotal)}</strong>
+                <div className="compact-line" key={l.id}>
+                  <span>{l.quantity}×</span>
+                  <strong>{l.name}</strong>
+                  <span>{rupiah(l.subtotal)}</span>
                 </div>
               ))}
             </div>
-            <div className="row between">
-              <span>
-                Total {quote.paymentMethod === "qris" ? "QRIS" : "tunai"}
-              </span>
+            <div className="cart-total-row">
+              <strong>Total</strong>
               <strong className="cart-total">{rupiah(quote.total)}</strong>
             </div>
+            <button onClick={() => setSheetOpen(true)}>
+              Lanjutkan pembayaran
+            </button>
+            <button
+              className="text-button"
+              disabled={busy}
+              onClick={() => void check()}
+            >
+              Periksa status transaksi
+            </button>
             <p className="reference">{quote.reference}</p>
-            {!canPay && (
-              <p className="muted">
-                Masukkan PIN {quote.cashierName} melalui Ganti kasir jika kasir
-                terkunci.
-              </p>
-            )}
-            {quote.status === "pending" ? (
-              <>
-                <p className="payment-note">
-                  Periksa pembayaran pelanggan secara langsung. QRIS tidak
-                  diverifikasi otomatis.
-                </p>
-                {recovery && ["attest", "complete"].includes(recovery.stage) ? (
-                  <button
-                    disabled={!canPay}
-                    onClick={() => void change("attest")}
-                  >
-                    Ulangi pencatatan pembayaran
-                  </button>
-                ) : (
-                  <label className="payment-confirm">
-                    <input
-                      type="checkbox"
-                      checked={
-                        !!recovery &&
-                        ["attest", "paid", "complete"].includes(recovery.stage)
-                      }
-                      disabled={!canPay}
-                      onChange={() => void change("attest")}
-                    />
-                    Pembayaran sudah diterima
-                  </label>
-                )}
-                {(!recovery ||
-                  ["prepared", "prepare"].includes(recovery.stage)) && (
-                  <button
-                    className="secondary"
-                    disabled={!canPay}
-                    onClick={() => void change("cancel")}
-                  >
-                    Kembali, belum dibayar
-                  </button>
-                )}
-              </>
-            ) : (
-              <>
-                <p className="success">
-                  Penerimaan pembayaran telah dicatat oleh kasir.
-                </p>
-                <button
-                  disabled={!canPay}
-                  onClick={() => void change("complete")}
-                >
-                  {busy ? "Menyimpan…" : "Selesai"}
-                </button>
-              </>
-            )}
-          </>
+          </div>
         ) : recovery ? (
-          <>
+          <div className="stack">
             <h2>Periksa transaksi dahulu.</h2>
             <p className="muted">
               Jangan meminta pembayaran lagi atau membuat transaksi pengganti
@@ -552,64 +575,74 @@ export function Sales({
                 </button>
               </>
             )}
-          </>
+          </div>
         ) : (
           <>
-            <div className="row between">
-              <h2>Pesanan</h2>
-              <span className="badge">
-                {cart?.items.reduce((n, i) => n + i.quantity, 0) ?? 0} item
-              </span>
+            <div className="order-heading">
+              <h2>Pesanan · {count} item</h2>
+              <button
+                className="text-button"
+                aria-expanded={editing}
+                disabled={!cart?.items.length}
+                onClick={() => setEditing(!editing)}
+              >
+                {editing ? "Selesai ubah" : "Ubah"}
+              </button>
             </div>
             {cart?.items.length ? (
               <>
                 <div className="cart-lines">
                   {cart.items.map((i) => (
                     <div className="cart-line" key={i.id}>
-                      <div className="row between">
+                      <div className="compact-line">
+                        <span>{i.quantity}×</span>
                         <strong>{i.name}</strong>
                         <span>{rupiah(i.price * i.quantity)}</span>
                       </div>
-                      <div className="row between">
-                        <span className="quantity-controls">
+                      {editing && (
+                        <div className="row between cart-edit-controls">
+                          <span className="quantity-controls">
+                            <button
+                              className="secondary"
+                              aria-label={`Kurangi ${i.name}`}
+                              disabled={busy || !belongs}
+                              onClick={() => quantity(i.id, -1)}
+                            >
+                              −
+                            </button>
+                            <output aria-label={`Jumlah ${i.name}`}>
+                              {i.quantity}
+                            </output>
+                            <button
+                              className="secondary"
+                              aria-label={`Tambah jumlah ${i.name}`}
+                              disabled={busy || !belongs || i.quantity >= 99}
+                              onClick={() => quantity(i.id, 1)}
+                            >
+                              +
+                            </button>
+                          </span>
                           <button
-                            className="secondary"
-                            aria-label={`Kurangi ${i.name}`}
+                            className="text-button"
                             disabled={busy || !belongs}
-                            onClick={() => quantity(i.id, -1)}
+                            aria-label={`Hapus ${i.name}`}
+                            onClick={() =>
+                              setCart((c) =>
+                                c
+                                  ? {
+                                      ...c,
+                                      items: c.items.filter(
+                                        (x) => x.id !== i.id,
+                                      ),
+                                    }
+                                  : c,
+                              )
+                            }
                           >
-                            −
+                            Hapus
                           </button>
-                          <output aria-label={`Jumlah ${i.name}`}>
-                            {i.quantity}
-                          </output>
-                          <button
-                            className="secondary"
-                            aria-label={`Tambah jumlah ${i.name}`}
-                            disabled={busy || !belongs || i.quantity >= 99}
-                            onClick={() => quantity(i.id, 1)}
-                          >
-                            +
-                          </button>
-                        </span>
-                        <button
-                          className="text-button"
-                          disabled={busy || !belongs}
-                          onClick={() =>
-                            setCart((c) =>
-                              c
-                                ? {
-                                    ...c,
-                                    items: c.items.filter((x) => x.id !== i.id),
-                                  }
-                                : c,
-                            )
-                          }
-                          aria-label={`Hapus ${i.name}`}
-                        >
-                          Hapus
-                        </button>
-                      </div>
+                        </div>
+                      )}
                     </div>
                   ))}
                 </div>
@@ -619,58 +652,71 @@ export function Sales({
                     tersebut atau hapus pesanan sebelum melanjutkan.
                   </p>
                 )}
-                <button
-                  className="text-button"
-                  onClick={() => {
-                    if (
-                      window.confirm(
-                        "Hapus seluruh pesanan yang belum dibayar?",
+                {editing && (
+                  <button
+                    className="text-button clear-order"
+                    onClick={() => {
+                      if (
+                        window.confirm(
+                          "Hapus seluruh pesanan yang belum dibayar?",
+                        )
                       )
-                    )
-                      clearCart();
-                  }}
-                >
-                  Hapus pesanan
-                </button>
+                        clearCart();
+                    }}
+                  >
+                    Hapus pesanan
+                  </button>
+                )}
               </>
             ) : (
               <div className="cart-empty">
-                <span aria-hidden="true">☕</span>
                 <h3>Mulai dari satu pilihan.</h3>
                 <p className="muted">Menu yang diketuk akan muncul di sini.</p>
               </div>
             )}
-            <div className="row between">
-              <span>Total</span>
+            <div className="cart-total-row">
+              <strong>Total</strong>
               <strong className="cart-total">{rupiah(total)}</strong>
             </div>
-            <fieldset disabled={busy || !belongs}>
-              <legend>Metode pembayaran</legend>
-              <div className="payment-options">
-                {(["qris", "cash"] as const).map((p) => (
-                  <label key={p} className={payment === p ? "selected" : ""}>
-                    <input
-                      type="radio"
-                      name="payment"
-                      value={p}
-                      checked={payment === p}
-                      onChange={() => setPayment(p)}
-                    />
-                    {p === "qris" ? "QRIS" : "Tunai"}
-                  </label>
-                ))}
-              </div>
-            </fieldset>
-            <button
-              disabled={!cart?.items.length || !belongs || busy || blocked}
-              onClick={() => void prepare()}
-            >
-              {busy ? "Memeriksa…" : "Lanjut pembayaran"}
-            </button>
-            <small>Periksa total sebelum menerima pembayaran.</small>
+            <div className="checkout-buttons">
+              <button
+                disabled={!cart?.items.length || !belongs || busy || blocked}
+                onClick={() => void prepare("cash")}
+              >
+                <PosIcon name="cash" />
+                {busy ? "Memeriksa…" : "Tunai"}
+              </button>
+              <button
+                className="secondary"
+                disabled={!cart?.items.length || !belongs || busy || blocked}
+                onClick={() => void prepare("qris")}
+              >
+                <PosIcon name="qris" />
+                QRIS
+              </button>
+            </div>
+            <small className="checkout-caption">
+              Konfirmasi pembayaran di langkah berikutnya
+            </small>
           </>
         )}
       </aside>
+      {sheetOpen && quote && ["pending", "paid"].includes(quote.status) && (
+        <PaymentSheet
+          key={quote.id}
+          quote={quote}
+          busy={busy}
+          canPay={canPay}
+          uncertain={
+            !!recovery && ["attest", "complete"].includes(recovery.stage)
+          }
+          error={error}
+          onSave={() => void savePayment()}
+          onCheck={() => void check()}
+          onCancel={() => void cancelQuote()}
+          onClose={() => setSheetOpen(false)}
+        />
+      )}
     </section>
   );
 }

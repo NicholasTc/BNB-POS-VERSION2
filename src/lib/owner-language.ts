@@ -1,5 +1,19 @@
 export type OwnerLanguage = "id" | "en";
 export const ownerEnglish = {
+  Kategori: "Category",
+  "Belum dikategorikan": "Uncategorized",
+  Minuman: "Drinks",
+  Makanan: "Food",
+  "Foto menu (opsional)": "Product photo (optional)",
+  "Contoh mangga": "Mango placeholder",
+  "Contoh stroberi": "Strawberry placeholder",
+  "Contoh kopi": "Coffee placeholder",
+  "Contoh makanan": "Food placeholder",
+  "Contoh alpukat": "Avocado placeholder",
+  "Contoh teh": "Tea placeholder",
+  "Contoh air mineral": "Mineral water placeholder",
+  "Gunakan URL HTTPS atau pilih foto contoh. Kosongkan untuk foto bawaan.":
+    "Use an HTTPS URL or choose a placeholder. Leave empty for the default photo.",
   "ruang pemilik": "owner area",
   "Ruang pemilik": "Owner dashboard",
   Kasir: "Cashier",

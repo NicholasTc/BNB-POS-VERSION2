@@ -7,6 +7,11 @@ import { user, account, ownerPreferences, session } from "../../src/db/schema";
 import { auth } from "../../src/lib/auth";
 import { GET } from "../../src/app/api/owner/route";
 import { POST } from "../../src/app/api/owner/preferences/route";
+import {
+  POST as saveMenuRoute,
+  GET as menuRoute,
+} from "../../src/app/api/owner/menu/route";
+import { saveMenu } from "../../src/modules/sales";
 const origin = "http://127.0.0.1:3100";
 let cookie: string;
 beforeAll(async () => {
@@ -92,6 +97,78 @@ describe("persistent owner preference", () => {
     ).toBe("en");
     expect((await POST(request({ language: "id" }))).status).toBe(200);
     expect(await db.select().from(ownerPreferences)).toHaveLength(1);
+  });
+  it("requires owner/origin for menu metadata and rejects unsafe photos/categories", async () => {
+    const input = {
+      name: "Metadata test",
+      price: 12000,
+      active: true,
+      category: "drink",
+      imageUrl: "/menu/mango.webp",
+    };
+    expect((await saveMenuRoute(request(input, ""))).status).toBe(401);
+    expect(
+      (await saveMenuRoute(request(input, cookie, "https://evil.example")))
+        .status,
+    ).toBe(403);
+    for (const invalid of [
+      { category: "other" },
+      { imageUrl: "javascript:alert(1)" },
+      { imageUrl: "//evil.example/photo" },
+    ]) {
+      expect(
+        (await saveMenuRoute(request({ ...input, ...invalid }))).status,
+      ).toBe(400);
+    }
+  });
+  it("persists category/photo and legacy edits preserve those fields", async () => {
+    const input = {
+      name: "Photo test",
+      price: 12000,
+      active: true,
+      category: "food",
+      imageUrl: "/menu/pastry.webp",
+    };
+    expect((await saveMenuRoute(request(input))).status).toBe(200);
+    const saved = await pool.query(
+      "SELECT id,category,image_url FROM menu_item WHERE name='Photo test'",
+    );
+    expect(saved.rows[0]).toMatchObject({
+      category: "food",
+      image_url: "/menu/pastry.webp",
+    });
+    await saveMenu({
+      id: saved.rows[0].id,
+      name: "Photo test updated",
+      price: 13000,
+      active: true,
+    });
+    const response = await menuRoute(
+      new Request(origin + "/api/owner/menu", { headers: { cookie } }),
+    );
+    expect(
+      (await response.json()).find(
+        (i: { id: string }) => i.id === saved.rows[0].id,
+      ),
+    ).toMatchObject({
+      category: "food",
+      imageUrl: "/menu/pastry.webp",
+      price: 13000,
+    });
+  });
+  it("keeps old products valid with neutral defaults and constrains metadata in PostgreSQL", async () => {
+    const result = await pool.query(
+      "INSERT INTO menu_item (name,price) VALUES ('Legacy item',1000) RETURNING id,category,image_url",
+    );
+    expect(result.rows[0]).toMatchObject({
+      category: "uncategorized",
+      image_url: "",
+    });
+    await expect(
+      pool.query("UPDATE menu_item SET category='invalid' WHERE id=$1", [
+        result.rows[0].id,
+      ]),
+    ).rejects.toThrow();
   });
   it("background reads validate but never extend the owner session", async () => {
     const expires = new Date(Date.now() + 30 * 60000);
