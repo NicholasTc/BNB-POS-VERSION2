@@ -23,6 +23,8 @@ Updated: 2026-10-18 (Asia/Jakarta).
 ## Next action
 Human setup: run `python3 scripts/provision-owner.py`, then `npm run dev`; open http://127.0.0.1:3000/owner, authorize this device and supply real employees/PINs/menu/prices. No development owner or café data was seeded. Perform actual staff/tablet trial and production prerequisites before seeking deployment authorization. No further MVP implementation blocker remains.
 
+Manual testing preparation (2026-10-18): confirmed existing LISI dev server responds HTTP 200 at port 3000 and both Compose databases are healthy. Development counts: owner 0, employees 0, menu items 0, completed sales 0. Follow `MANUAL_TESTING.md` for first owner setup, two sample sales totaling Rp73.000, attendance checks and optional connection recovery. No app tests rerun for this documentation-only guide. Preserve the user's existing next-env.d.ts modification.
+
 ## Resume notes / limits
 - Use `npm run gate` for regression after changes. Test runners and backup verification hold a shared advisory lock; never bypass loopback /lisi_test URL guards.
 - Docker/npm/local network/browser execution may require sandbox escalation. Preserve generated ignored .env.local (mode 0600); never print/commit secrets or backups. No tests against real data.

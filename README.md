@@ -15,6 +15,8 @@ Requires Node 22.12+ (22.x) or 24.x, npm, Python 3 for interactive provisioning,
 
 The local environment and databases have already been prepared in this checkout. The development database has **no owner or employees** seeded: run the interactive owner command, then sign in at `/owner`, scroll to Pengaturan kafe, connect this device, add employees with unique four-digit PINs, and add menu names/final prices. Select Kasir to return; this signs out the owner. Leading-zero PINs work. See [operations](docs/OPERATIONS.md) for resets and recovery.
 
+For a guided first test with sample employees, menu items and expected report totals, follow [manual testing](docs/MANUAL_TESTING.md).
+
 Production-mode local verification: `npm run build && npm start`. No public deployment is configured or authorized. Never change localhost credentials into production credentials by reuse.
 
 ## Checks
