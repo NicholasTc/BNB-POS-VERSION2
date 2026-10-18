@@ -1,5 +1,6 @@
 export type OwnerLanguage = "id" | "en";
 export const ownerEnglish = {
+  "Memeriksa akses pemilik…": "Checking owner access…",
   Kategori: "Category",
   "Belum dikategorikan": "Uncategorized",
   Minuman: "Drinks",

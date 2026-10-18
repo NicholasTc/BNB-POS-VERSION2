@@ -52,6 +52,16 @@ Verified existing owner access is independent of cashier pairing. New Chromium r
 
 Full sequential gate passed: **20 unit / 43 PostgreSQL integration / 18 Chromium browser tests**, lint/typecheck, no migration drift, build, browser-secret scan (13 assets) and 15-table backup/restore. No database, dependency or authorization changes.
 
+## Owner/cashier authentication hardening (2026-10-18)
+
+Full sequential `npm run gate` passed: **20 unit / 56 real PostgreSQL integration / 22 Chromium browser tests**, typecheck, zero-warning lint, no migration drift, production build and browser-secret scan (13 JS assets). Backup/restore compared all 15 public/Drizzle tables, content digests, row counts, sequences and completed-sale totals successfully. Test fixtures targeted only guarded loopback lisi_test. No schema/dependency changes or development-account resets.
+
+Thirteen additional integration cases cover the anonymous/paired/employee/forged-cookie authorization matrix across every owner read/write route; expired/revoked/absolute-expiry/idle-expiry sessions; passive reads without activity touches; cookie attributes/cache headers; copied-cookie replay after logout; independent owner sessions; a real PostgreSQL trigger that rejects session deletion (logout must return 503); durable login-failure budgets; indistinguishable credential failures; exact Origin/media-type checks and forbidden auth fields/endpoints. Failure budgets were read from a fresh database connection, not process memory.
+
+Four additional Chromium regressions cover direct cashier navigation/history and related owner tabs, session expiry/remote revocation removing private data/forms, focus revalidation preserving authorized drafts, failed handoff blocking cashier access until logout retry, and 15-minute idle locking despite passive checks. A genuine keyboard event renews only the idle timestamp while the absolute expiry remains unchanged. All previous payment recovery, duplicate protection, database outage, attendance, live-update, language and multi-device cases remain passing.
+
+Runtime `npm audit --omit=dev --json` was re-run: **0 vulnerabilities**. Dependencies were unchanged; the earlier full-development audit findings remain documented and were not re-audited in this follow-up. Password-only authentication and the 15-minute owner idle policy were explicitly approved. Server enforcement and local Chromium behavior were verified; deployed HTTPS cookies, Safari/Firefox, physical-device and penetration testing remain outside this coverage. See RELIABILITY.md for implementation details and review sources.
+
 ## Review and remaining verification limits
 
 Security/integrity review checked every route's trust boundary, cookie/origin behavior, employee attribution and revocation, lock order, transactional state changes, immutable rows, money overflow, idempotency/payload mismatch and database failure handling. Default third-party auth SQL logging is disabled; custom logs do not include credentials or raw errors. Built browser assets were scanned for actual configured server secrets without exposing them.

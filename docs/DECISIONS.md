@@ -26,6 +26,8 @@
 
 ## Technical conventions
 
+- Owner security follow-up (2026-10-18): password-only sign-in retained by explicit user choice; authenticator 2FA deferred. Owner access locks after **15 minutes of inactivity** and expires absolutely eight hours after sign-in. Genuine visible-page interaction counts as activity; automatic updates/focus checks do not. Require the owner password again after expiry. Entering the cashier screen in the same browser revokes that browser's owner session, including direct navigation/history restoration; independent personal-device sessions remain available.
+
 - Modular monolith; Next.js App Router, strict TypeScript, React, Tailwind, PostgreSQL, Drizzle, npm lockfile, Vitest, Playwright. Five stage gates follow the preserved project brief.
 - Better Auth evaluated for owner email/password auth: use its PostgreSQL/Drizzle adapter, no public signup; employee PIN/device authorization remains a separate, server-controlled workflow. See [Better Auth installation](https://better-auth.com/docs/installation) and [options](https://better-auth.com/docs/reference/options).
 - Bind databases and the development app to loopback. Do not deploy. Runtime migrations are explicit administrative commands.

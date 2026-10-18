@@ -1,4 +1,5 @@
 import { notifyDataUpdated } from "./live-updates";
+import { notifyOwnerSignedOut } from "./owner-session-events";
 export class ApiError extends Error {
   constructor(
     public status: number,
@@ -25,11 +26,19 @@ export async function api<T>(
     signal: options.signal,
   });
   const result = await response.json();
-  if (!response.ok)
+  if (!response.ok) {
+    if (
+      response.status === 401 &&
+      (path === "/api/owner" || path.startsWith("/api/owner/")) &&
+      !options.signal?.aborted
+    )
+      notifyOwnerSignedOut();
     throw new ApiError(
       response.status,
       result.error ?? result.message ?? "Permintaan belum berhasil. Coba lagi.",
     );
+  }
+  if (path === "/api/auth/sign-out") notifyOwnerSignedOut();
   if (
     payload !== undefined &&
     (path.startsWith("/api/owner/") ||

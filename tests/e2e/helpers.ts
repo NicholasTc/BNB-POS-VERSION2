@@ -1,5 +1,6 @@
 import { expect, type Page } from "@playwright/test";
 export async function login(page: Page) {
+  await page.bringToFront();
   await page.goto("/owner");
   await page.getByLabel("Email", { exact: true }).fill("owner@test.local");
   await page.getByLabel("Kata sandi").fill("test-owner-password-2026");

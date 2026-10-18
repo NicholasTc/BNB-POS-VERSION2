@@ -10,7 +10,9 @@ The owner may sign in at `/owner` from any personal device, with multiple sessio
 
 At `/owner`, use Pengaturan kafe on the actual cashier browser to connect the shared POS, create employee names and unique **four-digit** PINs, and enter final menu prices. Deliver PINs privately. Reset PINs through Ubah karyawan; existing hashes cannot be viewed. A reset clears that employee's cashier access but keeps their shift and unfinished transaction. Employees must finish their shift before being deactivated. Menu items are made unavailable rather than deleted; historical sale lines remain unchanged.
 
-Returning through Kasir signs the owner out. Owner session maximum lifetime is eight hours with database verification. Device pairing lasts 30 days and can be explicitly revoked/replaced. Device re-pairing does not delete attendance or unresolved payments. Do not leave an owner dashboard unlocked in employee hands.
+Entering the cashier screen signs the owner out of that browser, including direct URL/history navigation. Cashier handoff waits for confirmed database revocation; retry if service is unavailable. Owner access requires the password again after 15 minutes without activity or eight hours after sign-in. Automatic updates/focus checks do not extend access. Background/restored dashboards are hidden until access is validated; expiry/revocation removes private forms and reports. Device pairing lasts 30 days and can be explicitly revoked/replaced. Device re-pairing does not delete attendance or unresolved payments. Do not leave an owner dashboard unlocked in employee hands or share/save its password on the shared terminal. Password-only sign-in remains the approved policy; 2FA is deferred.
+
+Owner sign-in allows 10 requests/minute and 10 failed/reserved attempts per 15-minute window, globally and durably in PostgreSQL. Earlier failures are not erased by successful sign-in. Repeated failures may temporarily block a correct password: wait for the window and investigate access rather than repeatedly retrying.
 
 ## Café recovery
 

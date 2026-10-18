@@ -348,6 +348,7 @@ test("owner language preserves form drafts and persists through reload, logout a
   const { admin, owner } = await setup(page, browser);
   let fresh: BrowserContext | undefined;
   try {
+    await owner.bringToFront();
     await owner.getByLabel("Nama menu", { exact: true }).fill("Draft item");
     await owner.getByLabel("Harga akhir (Rp)", { exact: true }).fill("12345");
     await owner.getByLabel("Dari tanggal", { exact: true }).fill("2020-01-01");
@@ -459,6 +460,7 @@ test("personal owner browsers need no cashier pairing and can use reports concur
     await expect(second.getByTestId("sales-count")).toHaveText("1", {
       timeout: 12000,
     });
+    await first.bringToFront();
     await first.getByRole("button", { name: "Keluar", exact: true }).click();
     await expect(
       first.getByRole("button", { name: "Masuk", exact: true }),

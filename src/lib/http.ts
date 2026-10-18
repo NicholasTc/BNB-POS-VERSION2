@@ -1,8 +1,9 @@
 import { z } from "zod";
-import { auth } from "./auth";
+import { auth, OWNER_SESSION_SECONDS, OWNER_IDLE_SECONDS } from "./auth";
 import { env } from "./env";
 import { db } from "@/db";
-import { sql } from "drizzle-orm";
+import { eq, sql } from "drizzle-orm";
+import { session as ownerSession } from "@/db/schema";
 export class AppError extends Error {
   constructor(
     public status: number,
@@ -14,7 +15,10 @@ export class AppError extends Error {
 export function assertOrigin(request: Request) {
   if (request.headers.get("origin") !== new URL(env().BETTER_AUTH_URL).origin)
     throw new AppError(403, "Permintaan tidak diizinkan. Muat ulang halaman.");
-  if (!request.headers.get("content-type")?.startsWith("application/json"))
+  if (
+    request.headers.get("content-type")?.split(";")[0].trim().toLowerCase() !==
+    "application/json"
+  )
     throw new AppError(415, "Format permintaan tidak didukung.");
 }
 export async function limitedText(request: Request) {
@@ -55,8 +59,8 @@ export async function body<T extends z.ZodType>(
 export async function requireOwner(request: Request) {
   const session = await auth.api.getSession({
     headers: request.headers,
-    // Passive refreshes validate expiration/revocation without keeping an
-    // unattended owner tab signed in. Interactive requests retain prior behavior.
+    // Library refresh is disabled globally. Activity below updates only the
+    // idle timestamp; neither passive nor interactive requests extend expiry.
     query: {
       disableRefresh:
         request.method === "GET" &&
@@ -65,6 +69,27 @@ export async function requireOwner(request: Request) {
   });
   if (session?.user.id !== "owner")
     throw new AppError(401, "Silakan masuk sebagai pemilik.");
+  const now = Date.now();
+  if (
+    now - session.session.createdAt.getTime() >= OWNER_SESSION_SECONDS * 1000 ||
+    now - session.session.updatedAt.getTime() >= OWNER_IDLE_SECONDS * 1000
+  ) {
+    await db
+      .delete(ownerSession)
+      .where(eq(ownerSession.id, session.session.id));
+    throw new AppError(401, "Silakan masuk sebagai pemilik.");
+  }
+  if (!(
+    request.method === "GET" && request.headers.get("x-lisi-background") === "1"
+  )) {
+    const updated = await db
+      .update(ownerSession)
+      .set({ updatedAt: new Date(now) })
+      .where(eq(ownerSession.id, session.session.id))
+      .returning({ id: ownerSession.id });
+    if (!updated.length)
+      throw new AppError(401, "Silakan masuk sebagai pemilik.");
+  }
   return session.user;
 }
 export async function limit(key: string, max: number, seconds: number) {

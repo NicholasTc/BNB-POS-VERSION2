@@ -84,15 +84,25 @@ For local testing, use separate browser profiles to simulate independent devices
 
 ## Optional: automatic updates and owner language
 
-Use separate browser profiles/windows (one can be private) for the owner and cashier. Pair the cashier browser as usual, then sign the owner out there before using the owner in the other profile. Ordinary tabs in the same profile share login cookies; selecting Kasir signs that owner session out.
+Use separate browser profiles/windows (one can be private) for the owner and cashier. Pair the cashier browser as usual, then sign the owner out there before using the owner in the other profile. Ordinary tabs in the same profile share login cookies; entering the cashier screen signs that owner session out, including direct URL navigation.
 
 1. Keep the cashier visible with an unpaid item in the cart. Change a product name/price or active status in the owner dashboard. The cashier listing should update within about five seconds. The existing cart should retain its quantities and prices; a stale price is still rejected before payment using the existing refresh workflow.
 2. Repeat a menu change after opening a saved payment quote. Its amount must stay unchanged; listing refresh resumes after checkout/recovery finishes. Do not request another payment when a response is uncertain.
 3. Change an employee name or reset a PIN in the owner dashboard. Cashier status should reflect the change automatically. PIN reset still revokes access and requires reauthentication; it must not close attendance or erase an unpaid cart or unfinished sale.
 4. Keep the owner report visible on dates containing the next sale. Expand an existing sale and type, but do not apply, another date range. Complete a cashier test sale. Report totals/history should update within about five seconds; the expanded record and draft date inputs should remain. Applied historical dates must not reset to today.
-5. Briefly disconnect the owner browser. Existing report data should remain with a quiet stale-data message; restore connectivity and focus the page to resume updates. Background updates must not prolong an idle owner login or cashier inactivity timer.
+5. Briefly disconnect the owner browser. A report refresh failure may show a quiet stale-data message; when the owner-access check fails, private content is hidden pending revalidation. Restore connectivity and focus the page: valid access restores the existing form drafts. Background updates must not prolong an idle owner login or cashier inactivity timer.
 6. Buttons should show a subtle pressed state. Async actions show a working label/disabled state until their result is known; failed saves must not show success.
 7. In the owner header, select **English** under **Bahasa / Language**. Check reports, employee/menu management and settings; partially entered forms should remain. Reload, sign out/in, and sign in from a fresh browser profile: English should persist. Switch back to **Bahasa Indonesia** and verify the same persistence. Product/employee names, rupiah values and Jakarta business dates do not change language or meaning.
+
+## Owner security checks
+
+Use simulated transactions and separate owner/cashier browser profiles.
+
+1. On the employee cashier browser, open `/owner`: only owner sign-in should appear. An employee PIN must not work as the owner password; never give employees the owner password. Opening the sign-in page is allowed; private data and management actions require owner authentication.
+2. Sign in as owner on the shared browser, then enter `/` directly in the address bar. Wait for the cashier screen, then use Back or another owner tab in that profile. It must require owner sign-in again and show no private reports/forms. If handoff fails during an outage, cashier access stays blocked until retry confirms logout.
+3. On a separate owner profile, leave the dashboard untouched for 15 minutes while its reports refresh. It must return to sign-in; the owner password is required again. Typing/clicking in the visible dashboard counts as activity; background updates and switching focus do not. All sessions expire eight hours after sign-in even with activity.
+4. While signed in, enter an unsaved menu draft and switch tabs briefly. Return: access is checked and the draft should remain. Sign out from another tab in that same profile: private forms/reports should disappear. Reopening the dashboard must require sign-in. Independent owner browser profiles remain signed in.
+5. Avoid repeatedly testing wrong passwords against your ordinary local account: 10 failed/reserved attempts trigger a shared 15-minute limit, including correct-password retries. Automated security tests cover throttling, forged identities/cookies, direct protected API calls and failed database revocation using only the isolated test database.
 
 ## Report an issue
 

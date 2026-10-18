@@ -1,7 +1,7 @@
 "use client";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { api } from "@/lib/client";
 import { Employees } from "@/components/employees";
 import { DeviceSettings } from "@/components/device-settings";
@@ -13,6 +13,7 @@ import {
   applyOwnerLanguage,
 } from "@/components/owner-language";
 import { ownerMessage, type OwnerLanguage } from "@/lib/owner-language";
+import { useOwnerAccess } from "@/lib/use-owner-access";
 export default function Owner() {
   return (
     <OwnerLanguageProvider>
@@ -29,14 +30,23 @@ function OwnerContent() {
     [error, setError] = useState(""),
     [savingLanguage, setSavingLanguage] = useState(false),
     [languageNotice, setLanguageNotice] = useState(false);
+  const clearOwner = useCallback(() => setName(null), []);
+  const access = useOwnerAccess(!!name, clearOwner);
   useEffect(() => {
+    let live = true;
     api<{ name: string; language: OwnerLanguage }>("/api/owner")
       .then((x) => {
+        if (!live) return;
         applyOwnerLanguage(x.language);
         setName(x.name);
       })
       .catch(() => {})
-      .finally(() => setLoading(false));
+      .finally(() => {
+        if (live) setLoading(false);
+      });
+    return () => {
+      live = false;
+    };
   }, []);
   async function login(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
@@ -134,10 +144,22 @@ function OwnerContent() {
             {ownerMessage(error, language)}
           </p>
         )}
+        {name && access.checking && (
+          <p role="status">
+            {access.error
+              ? ownerMessage(access.error, language)
+              : t("Memeriksa akses pemilik…")}
+          </p>
+        )}
         {loading ? (
           <p role="status">{t("Memuat…")}</p>
         ) : name ? (
-          <>
+          <div
+            className="stack"
+            hidden={access.checking}
+            style={access.checking ? { display: "none" } : undefined}
+            inert={access.checking}
+          >
             <div className="row between">
               <h1>
                 {t("Halo,")} {name}.
@@ -167,7 +189,7 @@ function OwnerContent() {
             <DeviceSettings />
             <Employees />
             <MenuManagement />
-          </>
+          </div>
         ) : (
           <form className="card stack" onSubmit={login}>
             <h1>{t("Ruang pemilik")}</h1>

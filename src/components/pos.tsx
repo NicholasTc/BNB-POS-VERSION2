@@ -17,6 +17,7 @@ export type PosState = {
 };
 export function Pos() {
   const salesRef = useRef<SalesHandle>(null);
+  const handoffReady = useRef(false);
   const [state, setState] = useState<PosState | null>(null),
     [loading, setLoading] = useState(true),
     [error, setError] = useState(""),
@@ -28,22 +29,30 @@ export function Pos() {
     ),
     [dialog, setDialog] = useState(false),
     [notice, setNotice] = useState("");
-  const refresh = useCallback(
-    () =>
-      api<PosState>("/api/pos")
-        .then((x) => {
-          setState(x);
-          setError("");
-        })
-        .catch((e) => {
-          if (e instanceof ApiError && e.status === 401) setState(null);
-          setError((e as Error).message);
-        })
-        .finally(() => setLoading(false)),
-    [],
-  );
+  const refresh = useCallback(async () => {
+    try {
+      if (!handoffReady.current) {
+        await api("/api/auth/sign-out", {});
+        handoffReady.current = true;
+      }
+      setState(await api<PosState>("/api/pos"));
+      setError("");
+    } catch (e) {
+      if (!handoffReady.current || (e instanceof ApiError && e.status === 401))
+        setState(null);
+      setError((e as Error).message);
+    } finally {
+      setLoading(false);
+    }
+  }, []);
   useEffect(() => {
-    void refresh();
+    void Promise.resolve().then(refresh);
+    const onRestore = () => {
+      handoffReady.current = false;
+      void refresh();
+    };
+    window.addEventListener("pageshow", onRestore);
+    return () => window.removeEventListener("pageshow", onRestore);
   }, [refresh]);
   const refreshStatus = useCallback(async (signal: AbortSignal) => {
     try {
