@@ -6,21 +6,25 @@ Use this for local manual acceptance testing. Automated verification is recorded
 
 On 2026-10-18 the databases were healthy and LISI was already serving at http://127.0.0.1:3000. Use that exact address, rather than localhost or another port. Leave the existing server running. On later days, start Docker Desktop, run `docker compose up -d --wait`, then `npm run dev` if the app is not running.
 
-The development database had no owner, employees, menu or completed sales when this guide was prepared. In a separate terminal:
+## Local test credentials
 
-```sh
-cd /Users/nicholaschan/Desktop/Programming/BNB-POS-VERSION2
-python3 scripts/provision-owner.py
-```
+Created in the local development database on 2026-10-18 at your request. These credentials are intentionally recorded in plaintext for manual testing only. Do not reuse them for real café accounts.
 
-Enter your owner email and a password of 12–128 characters; repeat the password. Hidden password entry is normal. Answer **N** to resetting an existing owner on first setup. Keep credentials private; do not paste them into chat.
+- Owner login: http://127.0.0.1:3000/owner
+- Owner email: `owner@lisi.test`
+- Owner password: `LisiTest-c7a88OvMaYq4YO3VECtk`
+- Employee **Ayu**: PIN **0123** (active)
+- Employee **Bima**: PIN **4567** (active)
 
+The owner and both employee accounts already exist. Skip owner provisioning and employee creation; sign in with the credentials above. Menu items, attendance and sales have not been created by this account setup.
+
+If you intentionally need to reset the owner later, run `python3 scripts/provision-owner.py` from the project directory. Resetting revokes existing owner sessions; update this guide if you change the testing password.
 ## 2. Configure a sample café
 
 Open http://127.0.0.1:3000/owner and sign in. Scroll to **Pengaturan kafe**.
 
 - Select **Hubungkan perangkat ini** and confirm.
-- Add active employees **Ayu**, PIN **0123**, and **Bima**, PIN **4567**. These are test examples only.
+- **Ayu** and **Bima** are already created and active. Do not add duplicates.
 - Add available menu items **Kopi susu** for **18000**, **Croissant** for **22000**, and **Teh lemon** for **15000**. Enter whole rupiah without dots or commas.
 - Select **Kasir** at the top to return. This signs the owner out.
 

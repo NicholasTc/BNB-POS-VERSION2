@@ -21,9 +21,9 @@ Updated: 2026-10-18 (Asia/Jakarta).
 - Runtime audit: **0 findings**. Full audit: **5 high entries in one unpatched development-only braces/Next ESLint chain**, plus plugin-compatible ESLint 9 EOL. Risk and mitigation documented; do not claim full audit clean. No known critical application defect remains from local review.
 
 ## Next action
-Human setup: run `python3 scripts/provision-owner.py`, then `npm run dev`; open http://127.0.0.1:3000/owner, authorize this device and supply real employees/PINs/menu/prices. No development owner or café data was seeded. Perform actual staff/tablet trial and production prerequisites before seeking deployment authorization. No further MVP implementation blocker remains.
+Local manual-test owner (`owner@lisi.test`) and active employees Ayu/Bima were created on 2026-10-18 at the user's explicit request. Their development-only password/PINs are recorded in MANUAL_TESTING.md as requested; do not reuse for production. Owner HTTP login/authorization/logout and both employee PIN hashes verified. No attendance, menu or sales records created by provisioning. Sign in at http://127.0.0.1:3000/owner, connect the shared device, add the three sample menu items and follow the manual walkthrough.
 
-Manual testing preparation (2026-10-18): confirmed existing LISI dev server responds HTTP 200 at port 3000 and both Compose databases are healthy. Development counts: owner 0, employees 0, menu items 0, completed sales 0. Follow `MANUAL_TESTING.md` for first owner setup, two sample sales totaling Rp73.000, attendance checks and optional connection recovery. No app tests rerun for this documentation-only guide. Preserve the user's existing next-env.d.ts modification.
+Existing LISI dev server was confirmed on port 3000 and both databases healthy. Human café/device trial and production prerequisites remain before deployment authorization. Preserve the existing next-env.d.ts modification. Application regression results above are unchanged; this update provisioned local data and documentation only.
 
 ## Resume notes / limits
 - Use `npm run gate` for regression after changes. Test runners and backup verification hold a shared advisory lock; never bypass loopback /lisi_test URL guards.

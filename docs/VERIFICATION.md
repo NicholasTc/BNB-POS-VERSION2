@@ -30,6 +30,6 @@ Security/integrity review checked every route's trust boundary, cookie/origin be
 
 Inspected tablet/mobile/dashboard screenshots; native PIN dialog adds explicit focus wrapping/restoration. No known critical application defects remain from this review. Source was formatted and checked for unnecessary modules/duplication; domain transactions stay in three focused modules.
 
-Not fully verified: Safari/Firefox, real café hardware and staff training, screen-reader certification, adversarial penetration testing, deployed performance, real-data recovery objectives, production roles/TLS/monitoring/hosting. No public deployment, real merchant integration, owner credentials or real café records were created.
+Not fully verified: Safari/Firefox, real café hardware and staff training, screen-reader certification, adversarial penetration testing, deployed performance, real-data recovery objectives, production roles/TLS/monitoring/hosting. At initial MVP verification, no public deployment, real merchant integration, owner credentials or real café records were created. Subsequently, local development-only test accounts were provisioned at the user's request; see MANUAL_TESTING.md for their credentials and PROGRESS.md for the provisioning checks.
 
 Deferred/excluded: features in SCOPE.md, including customer ordering, refunds/voids/edits, settlement, inventory/payroll/accounting, multi-branch and native apps. No empty future modules were added. No application implementation blockers remain; operational prerequisites are in OPERATIONS.md.

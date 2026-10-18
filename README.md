@@ -13,7 +13,7 @@ Requires Node 22.12+ (22.x) or 24.x, npm, Python 3 for interactive provisioning,
 5. `python3 scripts/provision-owner.py` (first owner, or explicit reset that revokes existing owner sessions).
 6. `npm run dev`; open <http://127.0.0.1:3000>. Use this exact origin; cookies and CSRF checks depend on `BETTER_AUTH_URL`.
 
-The local environment and databases have already been prepared in this checkout. The development database has **no owner or employees** seeded: run the interactive owner command, then sign in at `/owner`, scroll to Pengaturan kafe, connect this device, add employees with unique four-digit PINs, and add menu names/final prices. Select Kasir to return; this signs out the owner. Leading-zero PINs work. See [operations](docs/OPERATIONS.md) for resets and recovery.
+The local environment and databases have already been prepared in this checkout. At your request, a **local test owner and two active test employees** have been created; their development-only credentials are in [manual testing](docs/MANUAL_TESTING.md). For this checkout, skip owner provisioning and employee creation. Sign in at `/owner`, scroll to Pengaturan kafe, connect this device, and add menu names/final prices. Select Kasir to return; this signs out the owner. Leading-zero PINs work. A fresh database still requires the setup steps above. See [operations](docs/OPERATIONS.md) for resets and recovery.
 
 For a guided first test with sample employees, menu items and expected report totals, follow [manual testing](docs/MANUAL_TESTING.md).
 
