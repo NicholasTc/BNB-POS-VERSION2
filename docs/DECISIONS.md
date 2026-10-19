@@ -1,5 +1,10 @@
 # Decisions
 
+## Cashier entry follow-up (2026-10-19)
+
+- Add a prominent **Cashier login** shortcut using the existing four-digit PIN actions. Existing-shift login switches/reauthenticates without new attendance; an explicit new-shift choice uses clock-in. Preserve staff controls, cart-discard guards, unfinished-sale recovery and owner-session revocation before cashier entry.
+- The shortcut does not override device authorization or grant owner access. Unpaired/revoked browsers require explicit owner pairing; the setup link opens the owner device settings after password authentication. A navigation query never pairs a device. Successful pairing provides a return-to-cashier link; owner login alone is not pairing. Keep the existing one-browser/30-day pairing policy.
+
 ## Owner navigation follow-up (2026-10-18)
 
 - User explicitly requested the supplied phone/iPad/laptop owner reference as inspiration to reduce scrolling, preserving every existing capability. This supersedes the earlier owner-layout freeze. Four destinations: Ringkasan, Transaksi, Staf, Pengaturan; desktop/tablet sidebar and phone bottom navigation.

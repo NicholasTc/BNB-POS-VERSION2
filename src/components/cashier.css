@@ -119,11 +119,78 @@
 }
 .cashier-app .cashier-sign-in {
   flex: none;
-  min-width: clamp(100px, 26.8vw, 210px);
+  min-width: clamp(112px, 26.8vw, 210px);
   min-height: clamp(44px, 10.2vw, 80px);
-  font-size: clamp(18px, 4.08vw, 32px);
-  padding: 8px 20px;
+  font-size: clamp(15px, 2.8vw, 22px);
+  padding: 8px 12px;
   border-radius: clamp(12px, 2.5vw, 20px);
+}
+.cashier-app .cashier-welcome {
+  width: min(100%, 520px);
+  margin: clamp(20px, 5vh, 48px) auto 0;
+  padding: 0 20px 32px;
+}
+.cashier-app .cashier-welcome-card {
+  padding: clamp(22px, 5vw, 36px);
+  gap: 20px;
+}
+.cashier-app .cashier-welcome-card h1 {
+  font-size: clamp(28px, 6vw, 36px);
+  line-height: 1.15;
+  letter-spacing: -0.04em;
+}
+.cashier-app .cashier-welcome-card > p {
+  font-size: 17px;
+  line-height: 1.5;
+  margin: 0;
+}
+.cashier-app .cashier-welcome-icon {
+  display: grid;
+  place-items: center;
+  width: 52px;
+  height: 52px;
+  border-radius: 16px;
+  background: #eef4e9;
+  color: var(--leaf);
+}
+.cashier-app .cashier-setup-note {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  padding-top: 18px;
+  border-top: 1px solid var(--line);
+  color: var(--muted);
+  font-size: 14px;
+  line-height: 1.5;
+}
+.cashier-app .cashier-setup-note svg {
+  flex: none;
+  width: 20px;
+  height: 24px;
+}
+.cashier-app .cashier-setup-note p {
+  margin: 0;
+}
+.cashier-app .cashier-pin-dialog {
+  width: min(440px, calc(100vw - 24px));
+  padding: clamp(18px, 4vw, 28px);
+}
+.cashier-app .cashier-pin-dialog h2 {
+  font-size: 24px;
+}
+.cashier-app .cashier-login-options {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+}
+.cashier-app .cashier-login-options button {
+  font-size: 14px;
+  padding: 10px;
+}
+.cashier-app .cashier-login-options button[aria-pressed="true"] {
+  border-color: var(--leaf);
+  color: var(--leaf);
+  background: #eef4e9;
 }
 .cashier-app .cashier-active {
   display: flex;

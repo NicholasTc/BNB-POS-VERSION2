@@ -44,6 +44,7 @@ export function Reports({
   staff,
   settings,
   device,
+  initialSettingsTab = "menu",
 }: {
   view: OwnerView;
   onNavigate: (view: OwnerView) => void;
@@ -51,6 +52,7 @@ export function Reports({
   staff: ReactNode;
   settings: ReactNode;
   device: ReactNode;
+  initialSettingsTab?: "menu" | "device";
 }) {
   const { language, t } = useOwnerLanguage();
   const [initial] = useState<Query>(() => ({
@@ -70,7 +72,9 @@ export function Reports({
   const [staffTab, setStaffTab] = useState<"attendance" | "employees">(
     "attendance",
   );
-  const [settingsTab, setSettingsTab] = useState<"menu" | "device">("menu");
+  const [settingsTab, setSettingsTab] = useState<"menu" | "device">(
+    initialSettingsTab,
+  );
   const version = useRef(0);
   const manualError = useRef(false);
   useEffect(() => {

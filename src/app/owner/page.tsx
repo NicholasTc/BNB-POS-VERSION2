@@ -34,11 +34,21 @@ function OwnerContent() {
     [savingLanguage, setSavingLanguage] = useState(false),
     [languageNotice, setLanguageNotice] = useState(false);
   const [view, setView] = useState<OwnerView>("summary");
+  const [cashierSetup, setCashierSetup] = useState(false);
   const [products, setProducts] = useState<MenuProduct[]>([]);
   const clearOwner = useCallback(() => setName(null), []);
   const access = useOwnerAccess(!!name, clearOwner);
   useEffect(() => {
     let live = true;
+    const setup =
+      new URLSearchParams(window.location.search).get("setup") === "cashier";
+    // This is only a navigation hint; pairing still requires owner auth and
+    // an explicit confirmation through the existing owner-only API.
+    void Promise.resolve().then(() => {
+      if (!live) return;
+      setCashierSetup(setup);
+      if (setup) setView("settings");
+    });
     api<{ name: string; language: OwnerLanguage }>("/api/owner")
       .then((x) => {
         if (!live) return;
@@ -67,7 +77,7 @@ function OwnerContent() {
         "/api/owner",
       );
       applyOwnerLanguage(x.language);
-      setView("summary");
+      setView(cashierSetup ? "settings" : "summary");
       setName(x.name);
     } catch (e) {
       setError(e instanceof Error ? e.message : "Belum berhasil masuk.");
@@ -223,12 +233,19 @@ function OwnerContent() {
                   </>
                 }
                 device={<DeviceSettings />}
+                initialSettingsTab={cashierSetup ? "device" : "menu"}
               />
             </div>
           ) : (
             <form className="card stack" onSubmit={login}>
               <h1>{t("Ruang pemilik")}</h1>
-              <p className="muted">{t("Masuk untuk mengelola kafe.")}</p>
+              <p className="muted">
+                {t(
+                  cashierSetup
+                    ? "Masuk sebagai pemilik, lalu konfirmasi Hubungkan perangkat ini. PIN karyawan tidak dapat menghubungkan perangkat."
+                    : "Masuk untuk mengelola kafe.",
+                )}
+              </p>
               <div>
                 <label htmlFor="email">{t("Email")}</label>
                 <input

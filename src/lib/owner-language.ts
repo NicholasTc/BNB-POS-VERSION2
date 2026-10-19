@@ -1,5 +1,8 @@
 export type OwnerLanguage = "id" | "en";
 export const ownerEnglish = {
+  "Lanjut ke Cashier login": "Continue to Cashier login",
+  "Masuk sebagai pemilik, lalu konfirmasi Hubungkan perangkat ini. PIN karyawan tidak dapat menghubungkan perangkat.":
+    "Sign in as the owner, then confirm Connect this device. Employee PINs cannot authorize a device.",
   "Belum ada transaksi terbaru.": "No recent transactions.",
   Ringkasan: "Overview",
   Transaksi: "Transactions",
