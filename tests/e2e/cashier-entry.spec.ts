@@ -41,7 +41,18 @@ async function enterPin(page: Page, code: string, capture = false) {
     name: "Cashier login",
     exact: true,
   });
-  if (capture) await page.screenshot({path: "test-results/cashier-entry-pin.png"});
+  if (capture) {
+    const bounds = await dialog.boundingBox();
+    const viewport = page.viewportSize();
+    if (!bounds || !viewport) throw new Error("Missing login layout");
+    expect(
+      Math.abs(bounds.x + bounds.width / 2 - viewport.width / 2),
+    ).toBeLessThan(1);
+    expect(
+      Math.abs(bounds.y + bounds.height / 2 - viewport.height / 2),
+    ).toBeLessThan(1);
+    await page.screenshot({ path: "test-results/cashier-entry-pin.png" });
+  }
   await dialog.getByLabel("PIN karyawan", { exact: true }).fill(code);
   await dialog
     .getByRole("button", { name: "Masuk kasir", exact: true })
@@ -72,12 +83,21 @@ test("unpaired entry guides owner to explicit authorization before cashier PIN l
     fullPage: true,
   });
   for (const width of [320, 820, 1440]) {
-    await page.setViewportSize({width, height: 900});
-    expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
-    await expect(page.getByRole("button", {name: "Cashier login", exact: true})).toBeInViewport();
-    await page.screenshot({path: `test-results/cashier-entry-${width}.png`, fullPage: true});
+    await page.setViewportSize({ width, height: 900 });
+    expect(
+      await page.evaluate(
+        () => document.documentElement.scrollWidth <= innerWidth,
+      ),
+    ).toBe(true);
+    await expect(
+      page.getByRole("button", { name: "Cashier login", exact: true }),
+    ).toBeInViewport();
+    await page.screenshot({
+      path: `test-results/cashier-entry-${width}.png`,
+      fullPage: true,
+    });
   }
-  await page.setViewportSize({width: 390, height: 844});
+  await page.setViewportSize({ width: 390, height: 844 });
   await page
     .getByRole("button", { name: "Cashier login", exact: true })
     .click();

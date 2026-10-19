@@ -173,6 +173,10 @@
 }
 .cashier-app .cashier-pin-dialog {
   width: min(440px, calc(100vw - 24px));
+  max-width: calc(100vw - 24px);
+  max-height: calc(100dvh - 24px);
+  margin: auto;
+  overflow-y: auto;
   padding: clamp(18px, 4vw, 28px);
 }
 .cashier-app .cashier-pin-dialog h2 {

@@ -1,6 +1,12 @@
 # Verification record
 
-Local verification on 2026-10-18 (Asia/Jakarta); this records an MVP, not certification for public production use.
+Local verification through 2026-10-19 (Asia/Jakarta); this records an MVP, not certification for public production use.
+
+## Cashier login follow-up (2026-10-19)
+
+Final sequential `npm run gate` passed: **21 unit / 56 real PostgreSQL integration / 28 Chromium browser tests**; strict typecheck, zero-warning lint, no schema drift, production build, client-secret scan (13 JS assets) and backup/restore (15 public/Drizzle tables with matching contents, sequences and sale totals). Fixtures only used the guarded loopback test database.
+
+New checks cover guided explicit owner pairing, no implicit authorization from owner login/setup URLs, unpaired/revoked valid-PIN denial, wrong PIN feedback, durable browser pairing, unchanged shift IDs after login/reload, a second employee starting a shift, owner API denial and blocking passive reads/PIN entry until owner logout succeeds. Existing checkout, payment uncertainty, immutable snapshots, live updates, report navigation/language and attendance tests remain green. Welcome screenshots reviewed at 320/390/820/1440px and the centered phone PIN dialog inspected. No deployment or production mutations performed by this UI task.
 
 ## Implemented and tested
 
