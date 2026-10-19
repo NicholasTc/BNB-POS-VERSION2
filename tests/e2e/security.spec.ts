@@ -46,6 +46,7 @@ async function expectEmployeeDenied(page: Page) {
     "/api/owner/report",
     "/api/owner/employees",
     "/api/owner/menu",
+    "/api/owner/sheets",
   ])
     expect(
       (
@@ -57,6 +58,7 @@ async function expectEmployeeDenied(page: Page) {
   for (const path of [
     "/api/owner/employees",
     "/api/owner/menu",
+    "/api/owner/sheets",
     "/api/owner/device",
     "/api/owner/preferences",
   ])

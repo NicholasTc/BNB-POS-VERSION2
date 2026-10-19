@@ -2,6 +2,14 @@
 
 Local verification through 2026-10-19 (Asia/Jakarta); this records an MVP, not certification for public production use.
 
+## Google Sheets module (2026-10-19)
+
+Final sequential gate: **29 unit / 62 real PostgreSQL integration / 29 Chromium browser tests passed**; typecheck, zero-warning lint, migration drift check, production build, client-secret scan (13 JS assets) and backup/restore (18 tables with matching contents, sequences and sale totals) passed. Runtime dependency audit: zero vulnerabilities; existing full-audit development findings remain below.
+
+New coverage: transactional queue rollback/capture, historical backfill, frozen sale snapshots, same-row lost-response recovery, new sale completion while Google is down, concurrent workers, disabled/destination/environment guards, clock-out revision races, permissions/backoff, daily reconciliation, numeric Jakarta dates, formula-safe RAW input, conflicting row identities and owner-only status/retry. Browser controls retain bilingual owner preferences and show the outstanding live-link reminder. Mobile screenshot: test-results/sheets-owner-mobile.png. Existing cashier/payment/attendance/security regressions remain green.
+
+Real service-account test separately accessed only the supplied test spreadsheet. It contains 7 completed sales, 12 sale-item rows and 5 attendance records from lisi_dev; counts, gross total, unique IDs and open-shift blanks reconcile to PostgreSQL. Queue pending zero and repeated worker run processed zero. Local data was not modified to manufacture trial sales/shifts. No production database or live spreadsheet used. Migration 0005 applied to local dev/test. See SHEETS_SYNC.md for worker setup, failure semantics and deployment prerequisites.
+
 ## Cashier login follow-up (2026-10-19)
 
 Final sequential `npm run gate` passed: **21 unit / 56 real PostgreSQL integration / 28 Chromium browser tests**; strict typecheck, zero-warning lint, no schema drift, production build, client-secret scan (13 JS assets) and backup/restore (15 public/Drizzle tables with matching contents, sequences and sale totals). Fixtures only used the guarded loopback test database.

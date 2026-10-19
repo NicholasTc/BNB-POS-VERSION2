@@ -36,6 +36,13 @@
       "when": 1792299063082,
       "tag": "0004_tough_maddog",
       "breakpoints": true
+    },
+    {
+      "idx": 5,
+      "version": "7",
+      "when": 1792415968232,
+      "tag": "0005_white_meltdown",
+      "breakpoints": true
     }
   ]
 }

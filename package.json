@@ -21,7 +21,8 @@
     "gate": "npm run typecheck && npm run lint && npm test && npm run test:integration && npm run db:generate && npm run build && npm run check:secrets && npm run test:e2e && npm run backup:verify",
     "backup:dev": "node scripts/backup.mjs",
     "backup:verify": "node scripts/verify-backup.mjs",
-    "check:secrets": "node scripts/check-client-secrets.mjs"
+    "check:secrets": "node scripts/check-client-secrets.mjs",
+    "sheets:worker": "tsx scripts/sheets-worker.ts"
   },
   "dependencies": {
     "next": "16.4.2",
@@ -31,7 +32,8 @@
     "drizzle-orm": "0.45.4",
     "pg": "8.23.1",
     "zod": "4.6.7",
-    "@next/env": "16.4.2"
+    "@next/env": "16.4.2",
+    "google-auth-library": "11.3.1"
   },
   "devDependencies": {
     "typescript": "5.9.3",

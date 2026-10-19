@@ -1,5 +1,11 @@
 # Decisions
 
+## Optional spreadsheet copy (2026-10-19)
+
+- User authorized implementation/testing for all existing and future sales and attendance, using only the supplied test spreadsheet. Completed sales, immutable lines and open/closed attendance export to three managed tabs. No cashier workflow changes, Google calls in cashier transactions or credentials/owner sessions in exports.
+- Additive transactional outbox triggers and an independent worker preserve durable capture, stable row reservations, retry/backoff and clock-out updates. Owner-only status/retry supplements existing settings. PostgreSQL and its full backups remain authoritative. This supersedes the original no-worker MVP scope only for this explicitly requested integration.
+- **Reminder for every future rollout:** obtain the separate LIVE spreadsheet URL/access and explicit production authorization before live enablement. No live link is supplied yet. Persist this outstanding action in PROGRESS.md across new feature sessions. Local/test configuration cannot write to a production destination.
+
 ## Cashier entry follow-up (2026-10-19)
 
 - Add a prominent **Cashier login** shortcut using the existing four-digit PIN actions. Existing-shift login switches/reauthenticates without new attendance; an explicit new-shift choice uses clock-in. Preserve staff controls, cart-discard guards, unfinished-sale recovery and owner-session revocation before cashier entry.

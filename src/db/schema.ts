@@ -12,6 +12,7 @@ import {
   index,
   pgEnum,
   unique,
+  primaryKey,
 } from "drizzle-orm/pg-core";
 import { sql } from "drizzle-orm";
 export const user = pgTable(
@@ -250,6 +251,86 @@ export const saleLine = pgTable(
     check(
       "sale_line_subtotal",
       sql`${t.subtotal}::bigint = ${t.unitPrice}::bigint * ${t.quantity} AND ${t.subtotal} BETWEEN 1 AND 1000000000`,
+    ),
+  ],
+);
+
+// Optional export module. No credentials or financial snapshots live here.
+export const sheetsJob = pgTable(
+  "sheets_sync_job",
+  {
+    id: bigint("id", { mode: "number" })
+      .primaryKey()
+      .generatedAlwaysAsIdentity(),
+    kind: text("kind").notNull(),
+    sourceId: uuid("source_id").notNull(),
+    saleId: uuid("sale_id").references(() => sale.id, { onDelete: "cascade" }),
+    attendanceId: uuid("attendance_id").references(() => attendance.id, {
+      onDelete: "cascade",
+    }),
+    revision: integer("revision").notNull().default(1),
+    syncedRevision: integer("synced_revision").notNull().default(0),
+    attempts: integer("attempts").notNull().default(0),
+    nextAttemptAt: timestamp("next_attempt_at", { withTimezone: true })
+      .notNull()
+      .defaultNow(),
+    lastError: text("last_error"),
+    syncedAt: timestamp("synced_at", { withTimezone: true }),
+    updatedAt: timestamp("updated_at", { withTimezone: true })
+      .notNull()
+      .defaultNow(),
+  },
+  (t) => [
+    unique("sheets_source").on(t.kind, t.sourceId),
+    check(
+      "sheets_job_source",
+      sql`(${t.kind}='sale' AND ${t.sourceId}=${t.saleId} AND ${t.saleId} IS NOT NULL AND ${t.attendanceId} IS NULL) OR (${t.kind}='attendance' AND ${t.sourceId}=${t.attendanceId} AND ${t.attendanceId} IS NOT NULL AND ${t.saleId} IS NULL)`,
+    ),
+    check(
+      "sheets_job_versions",
+      sql`${t.revision}>0 AND ${t.syncedRevision}>=0 AND ${t.syncedRevision}<=${t.revision} AND ${t.attempts}>=0`,
+    ),
+    index("sheets_due")
+      .on(t.nextAttemptAt)
+      .where(sql`${t.syncedRevision}<${t.revision}`),
+  ],
+);
+export const sheetsRow = pgTable(
+  "sheets_sync_row",
+  {
+    tab: text("tab").notNull(),
+    sourceId: uuid("source_id").notNull(),
+    jobId: bigint("job_id", { mode: "number" })
+      .notNull()
+      .references(() => sheetsJob.id, { onDelete: "cascade" }),
+    rowNumber: integer("row_number").notNull(),
+  },
+  (t) => [
+    primaryKey({ columns: [t.tab, t.sourceId] }),
+    unique("sheets_row_position").on(t.tab, t.rowNumber),
+    check(
+      "sheets_row_valid",
+      sql`${t.rowNumber}>=2 AND ${t.tab} IN ('Sales','Sale items','Attendance')`,
+    ),
+  ],
+);
+export const sheetsTarget = pgTable(
+  "sheets_sync_target",
+  {
+    id: text("id").primaryKey().default("primary"),
+    spreadsheetId: text("spreadsheet_id").notNull(),
+    mode: text("mode").notNull(),
+    lastAttemptAt: timestamp("last_attempt_at", { withTimezone: true }),
+    lastSuccessAt: timestamp("last_success_at", { withTimezone: true }),
+    lastError: text("last_error"),
+    reconciledAt: timestamp("reconciled_at", { withTimezone: true })
+      .notNull()
+      .defaultNow(),
+  },
+  (t) => [
+    check(
+      "sheets_target_valid",
+      sql`${t.id}='primary' AND ${t.mode} IN ('test','live')`,
     ),
   ],
 );
