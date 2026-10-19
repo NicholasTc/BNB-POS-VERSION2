@@ -16,3 +16,4 @@ if (
   throw new Error("Tests require isolated loopback /lisi_test database.");
 process.env.DATABASE_URL = url;
 process.env.BETTER_AUTH_URL = "http://127.0.0.1:3100";
+process.env.SHEETS_SYNC_MODE = "off";

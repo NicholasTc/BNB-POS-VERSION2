@@ -9,3 +9,8 @@ test-results/
 .DS_Store
 backups/
 .verification/
+
+# Private Google service-account credentials (including downloaded copies).
+bnb-pos-*.json
+*sheets-key*.json
+*service-account*.json

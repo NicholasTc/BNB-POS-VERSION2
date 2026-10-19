@@ -24,6 +24,8 @@ export default defineConfig({
     env: {
       DATABASE_URL: process.env.TEST_DATABASE_URL!,
       BETTER_AUTH_URL: "http://127.0.0.1:3100",
+      // Automated browser fixtures never contact Google or a live destination.
+      SHEETS_SYNC_MODE: "off",
     },
   },
 });

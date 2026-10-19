@@ -2,6 +2,50 @@
 
 Local verification through 2026-10-19 (Asia/Jakarta); this records an MVP, not certification for public production use.
 
+## Separate approved spreadsheet destinations (2026-10-19)
+
+Final sequential `npm run gate` passed: **39 unit / 73 PostgreSQL integration / 35 Chromium browser tests (147 total)**, typecheck, zero-warning lint, no schema drift, production build, 13-asset browser-secret scan and 21-table backup/restore with matching contents/sequences/financial totals. No domain, schema, account, dependency or private .env.local changes.
+
+The approved TEST and LIVE IDs are pinned separately in server config. Tests reject swapped/unapproved destinations, missing live confirmation, common local/loopback aliases, IPv6 loopback/unspecified hosts, local database names (including encoded names), hostless URLs, non-PostgreSQL schemes, encoded Unix sockets and PostgreSQL host query overrides. A normal explicit remote production URL with the approved live target/confirmation succeeds. Owner UI now says the live destination is selected and activation is still required; its authorization regression passed.
+
+The supplied LIVE spreadsheet (`1Pmv5xiEUWUmG1VnI1dRkqDZoP96APAgPsVLYYRvh_GU`) accepted service-account metadata reads and a write request setting its current title to itself. An initial empty batch was rejected; it was not treated as proof of access. The valid same-title request succeeded. No cells, sheets, sales or attendance data were modified/uploaded. The probe asserted that local configuration still selects the original TEST ID before accessing live metadata; it did not import/connect a production SQL database or run a sync/backfill.
+
+Production settings are prepared in deploy/sheets.production.env.example and documented in SHEETS_SYNC.md. This task did not configure Railway variables/services, start/deploy a hosted worker or verify production record delivery. Link/access registration is complete; operational activation remains a separate step. The live link is no longer missing and should not be requested again.
+
+## Preparation queue and work sessions (2026-10-19)
+
+Final sequential `npm run gate` passed: **38 unit / 73 real PostgreSQL integration / 35 Chromium browser tests (146 total)**, strict typecheck, zero-warning lint, no schema drift, production build, browser-secret scan (13 JS assets), and backup/restore of **21 public/Drizzle tables** with matching contents, sequences and financial totals.
+
+Ten module integration checks cover completion-only/once-only ticket capture, immutable item/cashier attribution, concurrent/idempotent finish, no financial/attendance/Sheets-job mutation, session continuity across midnight/re-pairing/staff, concurrent final clock-outs, carry-over and session-specific history, bounded keyset pages/ties, exact-origin/strict-schema/device/generation authorization, passive no-store reads, clock skew, and capture rollback. Raw Drizzle SQL timestamps are normalized explicitly; finish timestamps cannot precede receipt despite small app/DB clock offsets. No external requests or dependencies were added.
+
+Two real browser flows cover paid-order refresh/reload, lost applied finish reply without automatic POST retry, preservation of the next cart, owner API denial, team/product counts, warning for pending orders, 59-second visibility and dismissal after 60 seconds, manual dismissal, locked API denial, carry-over and a fresh next-session history. Existing attendance test now explicitly closes the new farewell before using staff controls; it still verifies persisted attendance across a fresh app process. Mobile lists and centered desktop/mobile farewell screenshots were reviewed: test-results/orders-mobile.png, session-farewell.png, session-farewell-mobile.png. No page overflow or clipped modal at 390px.
+
+Migration 0007 applied to guarded local dev/test only. One existing local active shift was adopted into one work session; no historical transactions were queued. Source sale, line, attendance and employee digests were unchanged. The unpublished trigger was refreshed in the disposable test DB during development; local dev received the final migration directly. All source records and test/live Sheets configuration remain unchanged. This task did not deploy to Railway or access production.
+
+Limits: session totals/lists begin with newly completed sales after upgrade. Farewell is a transient PIN-authenticated response; a lost clock-out reply/refresh can dismiss or prevent the celebration while durable attendance/session data remains committed. No private summary is exposed through a locked-device endpoint or stored in browser storage. Safari/physical-device/hosted operational checks remain separate.
+
+## Combined spreadsheet Sales layout (2026-10-19)
+
+Final sequential `npm run gate` passed after the row-height correction: **38 unit / 63 PostgreSQL integration / 33 Chromium browser tests (134 total)**, typecheck, zero-warning lint, no schema drift, production build, 13-asset client-secret scan and backup/restore of 18 tables with matching contents, sequences and sale totals.
+
+New checks cover multiple immutable items on a single transaction/cashier row, numeric totals and quantities, exact known-header upgrades, rejection of customized headers, reversible retirement of recognized legacy details, preservation of unrelated tabs and old row reservations, and historical-sale requeue into the same row. Existing lost-response, concurrent-worker, clock-out, Google-outage, payment/recovery and owner authorization checks remain green. Migration 0006 changes only export-job revisions; no source transaction, attendance, account or financial code changed.
+
+Applied migration 0006 only to local dev/test. Real Google reconciliation verified **8 completed local sales and 6 attendance records**, every exported cell against PostgreSQL (including all historical item details), unique sale IDs, pending zero and a repeated worker run processing zero. Source sale/line/attendance digests were unchanged. The recognized old Sale items tab is hidden with its cells/maps preserved. Combined details are wrapped in a 440px column with explicit row heights fitted to item text after writes (Google auto-resize left rows at 21px in the real API check). Saved wrapping, column width and expanded multi-item row heights were read back and verified. Native visual inspection was unavailable because the active browser changed during inspection; values and API layout settings were verified. Restarted continuous local test worker in managed terminal session 69534; no daemon installed. No production access/deployment.
+
+## Cashier startup loading (2026-10-19)
+
+Final sequential gate passed: **35 unit / 62 real PostgreSQL integration / 33 Chromium browser tests**; typecheck, zero-warning lint, no migration drift, production build, client-secret scan (13 JS assets) and 18-table backup/restore with matching contents/sequences/sale totals. No dependencies, server domain logic, schema, accounts or production environment changed.
+
+Reproduced transient logout/POS/recovery failures and a stalled menu request in Chromium. They recover without a refresh click; the stalled-menu test retains its two-item cart and sends no financial write. Failed owner logout continues to block all POS reads and PIN entry, including during automatic retry. Unit checks exercise 10-second cancellation, at most three attempts, external abort, GET-only startup reads and idempotent logout. Authorization rejections do not retry. Existing uncertain-payment, real database-outage, owner/session, attendance and Sheets authorization regressions passed. Recovery reads remain distinct from payment writes and preserve explicit same-reference financial actions.
+
+## Google Sheets module (2026-10-19)
+
+Final sequential gate: **29 unit / 62 real PostgreSQL integration / 29 Chromium browser tests passed**; typecheck, zero-warning lint, migration drift check, production build, client-secret scan (13 JS assets) and backup/restore (18 tables with matching contents, sequences and sale totals) passed. Runtime dependency audit: zero vulnerabilities; existing full-audit development findings remain below.
+
+New coverage: transactional queue rollback/capture, historical backfill, frozen sale snapshots, same-row lost-response recovery, new sale completion while Google is down, concurrent workers, disabled/destination/environment guards, clock-out revision races, permissions/backoff, daily reconciliation, numeric Jakarta dates, formula-safe RAW input, conflicting row identities and owner-only status/retry. Browser controls retain bilingual owner preferences and show the outstanding live-link reminder. Mobile screenshot: test-results/sheets-owner-mobile.png. Existing cashier/payment/attendance/security regressions remain green.
+
+Real service-account test separately accessed only the supplied test spreadsheet. It contains 7 completed sales, 12 sale-item rows and 5 attendance records from lisi_dev; counts, gross total, unique IDs and open-shift blanks reconcile to PostgreSQL. Queue pending zero and repeated worker run processed zero. Local data was not modified to manufacture trial sales/shifts. No production database or live spreadsheet used. Migration 0005 applied to local dev/test. See SHEETS_SYNC.md for worker setup, failure semantics and deployment prerequisites.
+
 ## Cashier login follow-up (2026-10-19)
 
 Final sequential `npm run gate` passed: **21 unit / 56 real PostgreSQL integration / 28 Chromium browser tests**; strict typecheck, zero-warning lint, no schema drift, production build, client-secret scan (13 JS assets) and backup/restore (15 public/Drizzle tables with matching contents, sequences and sale totals). Fixtures only used the guarded loopback test database.

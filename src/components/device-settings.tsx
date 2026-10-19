@@ -4,6 +4,7 @@ import Link from "next/link";
 import { api } from "@/lib/client";
 import { useOwnerLanguage } from "@/components/owner-language";
 import { ownerMessage } from "@/lib/owner-language";
+import { SpreadsheetBackup } from "./spreadsheet-backup";
 export function DeviceSettings() {
   const { language, t } = useOwnerLanguage();
   const [message, setMessage] = useState(""),
@@ -43,38 +44,43 @@ export function DeviceSettings() {
     }
   }
   return (
-    <section className="card stack">
-      <h2>{t("Perangkat kasir")}</h2>
-      <p className="muted">
-        {t(
-          "Dasbor pemilik dapat dibuka di perangkat apa pun dengan akun pemilik. Tidak perlu menghubungkan perangkat untuk membuka dasbor.",
+    <div className="stack">
+      <section className="card stack">
+        <h2>{t("Perangkat kasir")}</h2>
+        <p className="muted">
+          {t(
+            "Dasbor pemilik dapat dibuka di perangkat apa pun dengan akun pemilik. Tidak perlu menghubungkan perangkat untuk membuka dasbor.",
+          )}
+        </p>
+        <p className="muted">
+          {t(
+            "Hubungkan hanya browser yang akan dipakai sebagai kasir. Menghubungkan ulang mencabut akses kasir sebelumnya; penjualan dan shift tetap tersimpan.",
+          )}
+        </p>
+        <div className="row">
+          <button disabled={busy} onClick={() => void change("pair")}>
+            {pendingAction === "pair"
+              ? t("Menghubungkan…")
+              : t("Hubungkan perangkat ini")}
+          </button>
+          <button
+            className="danger"
+            disabled={busy}
+            onClick={() => void change("revoke")}
+          >
+            {pendingAction === "revoke"
+              ? t("Memutuskan…")
+              : t("Putuskan akses")}
+          </button>
+        </div>
+        {message && <p role="status">{ownerMessage(message, language)}</p>}
+        {paired && (
+          <Link className="button" href="/">
+            {t("Lanjut ke Cashier login")}
+          </Link>
         )}
-      </p>
-      <p className="muted">
-        {t(
-          "Hubungkan hanya browser yang akan dipakai sebagai kasir. Menghubungkan ulang mencabut akses kasir sebelumnya; penjualan dan shift tetap tersimpan.",
-        )}
-      </p>
-      <div className="row">
-        <button disabled={busy} onClick={() => void change("pair")}>
-          {pendingAction === "pair"
-            ? t("Menghubungkan…")
-            : t("Hubungkan perangkat ini")}
-        </button>
-        <button
-          className="danger"
-          disabled={busy}
-          onClick={() => void change("revoke")}
-        >
-          {pendingAction === "revoke" ? t("Memutuskan…") : t("Putuskan akses")}
-        </button>
-      </div>
-      {message && <p role="status">{ownerMessage(message, language)}</p>}
-      {paired && (
-        <Link className="button" href="/">
-          {t("Lanjut ke Cashier login")}
-        </Link>
-      )}
-    </section>
+      </section>
+      <SpreadsheetBackup />
+    </div>
   );
 }

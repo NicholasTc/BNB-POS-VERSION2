@@ -2,7 +2,12 @@ import { readdir, readFile } from "node:fs/promises";
 import { createRequire } from "node:module";
 const { loadEnvConfig } = createRequire(import.meta.url)("@next/env");
 loadEnvConfig(process.cwd());
-const secrets = ["DATABASE_URL", "BETTER_AUTH_SECRET", "PIN_PEPPER"]
+const secrets = [
+  "DATABASE_URL",
+  "BETTER_AUTH_SECRET",
+  "PIN_PEPPER",
+  "GOOGLE_SERVICE_ACCOUNT_JSON",
+]
   .map((k) => process.env[k])
   .filter(Boolean);
 async function files(directory) {
@@ -18,7 +23,7 @@ async function files(directory) {
   ).flat();
 }
 const paths = (await files(".next/static")).filter((p) => p.endsWith(".js"));
-if (!paths.length || secrets.length !== 3)
+if (!paths.length || secrets.length < 3)
   throw new Error("Build assets and validated local secrets are required.");
 for (const path of paths) {
   const text = await readFile(path, "utf8");
@@ -26,5 +31,7 @@ for (const path of paths) {
     throw new Error(
       "Server secret detected in client assets; do not distribute this build.",
     );
+  if (/-----BEGIN (?:RSA )?PRIVATE KEY-----/.test(text))
+    throw new Error("Private key material detected in client assets.");
 }
 console.log(`Client secret scan passed (${paths.length} JavaScript assets).`);

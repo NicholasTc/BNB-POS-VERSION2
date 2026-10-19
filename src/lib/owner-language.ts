@@ -1,5 +1,24 @@
 export type OwnerLanguage = "id" | "en";
 export const ownerEnglish = {
+  "Cadangan spreadsheet": "Spreadsheet backup",
+  "Salinan penjualan selesai dan kehadiran. Kasir tetap berjalan saat Google tidak tersedia.":
+    "A copy of completed sales and attendance. Checkout keeps working when Google is unavailable.",
+  "Sinkronisasi nonaktif": "Sync disabled",
+  "Mode pengujian": "Test mode",
+  "Sinkronisasi aktif": "Sync enabled",
+  "Periksa konfigurasi sinkronisasi": "Check sync configuration",
+  "Menunggu sinkronisasi": "Waiting to sync",
+  "Sinkronisasi terakhir": "Last successful sync",
+  "Belum pernah": "Never",
+  "Worker belum memeriksa antrean baru-baru ini. Periksa proses sinkronisasi.":
+    "The worker has not checked recently. Check the sync process.",
+  "Sinkronisasi tertunda. Periksa akses spreadsheet, koneksi, dan worker. Data POS tetap tersimpan.":
+    "Sync delayed. Check spreadsheet access, connection and worker. POS records remain saved.",
+  "Spreadsheet live sudah dipilih. Sinkronisasi produksi masih perlu diaktifkan.":
+    "The live spreadsheet is selected. Production sync still needs to be enabled.",
+  "Coba sinkronisasi lagi": "Retry sync",
+  "Antrean siap dicoba kembali oleh worker.":
+    "The queue is ready for the worker to retry.",
   "Lanjut ke Cashier login": "Continue to Cashier login",
   "Masuk sebagai pemilik, lalu konfirmasi Hubungkan perangkat ini. PIN karyawan tidak dapat menghubungkan perangkat.":
     "Sign in as the owner, then confirm Connect this device. Employee PINs cannot authorize a device.",

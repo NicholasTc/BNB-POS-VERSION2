@@ -4,6 +4,7 @@ import {
   useEffect,
   useImperativeHandle,
   useState,
+  useRef,
   type Ref,
 } from "react";
 import { z } from "zod";
@@ -15,6 +16,7 @@ import type { MenuProduct } from "@/lib/menu";
 import { ProductPhoto } from "./product-photo";
 import { PaymentSheet } from "./payment-sheet";
 import { PosIcon } from "./pos-icons";
+import { loadCashier } from "@/lib/cashier-load";
 type Item = Pick<MenuProduct, "id" | "name" | "price"> &
   Partial<Pick<MenuProduct, "category" | "imageUrl">>;
 type Cart = { cashierId: string; items: (Item & { quantity: number })[] };
@@ -92,9 +94,16 @@ export function Sales({
     [loading, setLoading] = useState(true),
     [busy, setBusy] = useState(false),
     [error, setError] = useState(""),
-    [blocked, setBlocked] = useState(false),
+    [blocked, setBlocked] = useState(true),
+    [startupFailed, setStartupFailed] = useState(false),
     [menuStale, setMenuStale] = useState(false),
     [missing, setMissing] = useState(false);
+  const restoredCart = useRef(false);
+  const startupReady = useRef(false);
+  const startupLoad = useRef<{
+    controller: AbortController;
+    promise: Promise<void>;
+  } | null>(null);
   const pending =
     !!recovery || (!!quote && ["pending", "paid"].includes(quote.status));
   const clearCart = useCallback(() => {
@@ -130,62 +139,102 @@ export function Sales({
     },
     [clearCart, writeRecovery],
   );
-  const recover = useCallback(async () => {
-    const raw = localStorage.getItem(RECOVERY_KEY);
-    const r = raw ? recoverySchema.parse(JSON.parse(raw)) : null;
-    setRecovery(r);
-    try {
-      const q = await api<Quote | null>(
-        "/api/sales" + (r ? "?id=" + r.id : ""),
-      );
-      if (q && ["pending", "paid"].includes(q.status) && !r)
-        writeRecovery({
-          id: q.id,
-          stage: q.status === "paid" ? "paid" : "prepared",
-        });
-      acceptQuote(q);
-      setBlocked(false);
-      if (
-        q?.status === "pending" &&
-        r &&
-        ["attest", "complete"].includes(r.stage)
-      )
-        setError(
-          "Jawaban pembayaran belum pasti. Periksa atau ulangi pencatatan dengan referensi yang sama. Jangan meminta pembayaran lagi.",
+  const recover = useCallback(
+    async (signal?: AbortSignal) => {
+      if (signal?.aborted) return;
+      const raw = localStorage.getItem(RECOVERY_KEY);
+      const r = raw ? recoverySchema.parse(JSON.parse(raw)) : null;
+      setRecovery(r);
+      try {
+        const q = await loadCashier<Quote | null>(
+          r ? `/api/sales?id=${r.id}` : "/api/sales",
+          signal,
         );
-    } catch (e) {
-      if (e instanceof ApiError && e.status === 404 && r) {
-        setMissing(true);
-        setQuote(null);
-        setError(
-          "Transaksi belum ditemukan. Gunakan referensi yang sama untuk mencoba kembali.",
-        );
-      } else throw e;
-    }
-  }, [acceptQuote, writeRecovery]);
-  useEffect(() => {
-    let live = true;
-    api<Item[]>("/api/menu")
-      .then(async (items) => {
-        if (!live) return;
+        if (signal?.aborted) return;
+        if (q && ["pending", "paid"].includes(q.status) && !r)
+          writeRecovery({
+            id: q.id,
+            stage: q.status === "paid" ? "paid" : "prepared",
+          });
+        acceptQuote(q);
+        setBlocked(false);
+        if (
+          q?.status === "pending" &&
+          r &&
+          ["attest", "complete"].includes(r.stage)
+        )
+          setError(
+            "Jawaban pembayaran belum pasti. Periksa atau ulangi pencatatan dengan referensi yang sama. Jangan meminta pembayaran lagi.",
+          );
+      } catch (e) {
+        if (signal?.aborted) return;
+        if (e instanceof ApiError && e.status === 404 && r) {
+          setBlocked(false);
+          setMissing(true);
+          setQuote(null);
+          setError(
+            "Transaksi belum ditemukan. Gunakan referensi yang sama untuk mencoba kembali.",
+          );
+        } else throw e;
+      }
+    },
+    [acceptQuote, writeRecovery],
+  );
+  const loadStartup = useCallback(() => {
+    if (startupLoad.current) return startupLoad.current.promise;
+    const controller = new AbortController();
+    const promise = Promise.resolve().then(async () => {
+      try {
+        // Restore before network access: a failed menu load must not erase a
+        // saved cart when persistence resumes after the error.
+        if (!restoredCart.current) {
+          const saved = localStorage.getItem(CART_KEY);
+          if (saved) setCart(cartSchema.parse(JSON.parse(saved)));
+          const savedRecovery = localStorage.getItem(RECOVERY_KEY);
+          if (savedRecovery)
+            setRecovery(recoverySchema.parse(JSON.parse(savedRecovery)));
+          restoredCart.current = true;
+        }
+        const items = await loadCashier<Item[]>("/api/menu", controller.signal);
+        if (controller.signal.aborted) return;
         setMenu(items);
-        const saved = localStorage.getItem(CART_KEY);
-        if (saved) setCart(cartSchema.parse(JSON.parse(saved)));
-        await recover();
-      })
-      .catch((e) => {
-        if (live) {
+        setError("");
+        setMenuStale(false);
+        await recover(controller.signal);
+        if (!controller.signal.aborted) {
+          startupReady.current = true;
+          setStartupFailed(false);
+        }
+      } catch (e) {
+        if (!controller.signal.aborted) {
           setError((e as Error).message);
           setBlocked(true);
+          setStartupFailed(true);
         }
-      })
-      .finally(() => {
-        if (live) setLoading(false);
-      });
+      } finally {
+        if (!controller.signal.aborted) setLoading(false);
+        if (startupLoad.current?.controller === controller)
+          startupLoad.current = null;
+      }
+    });
+    startupLoad.current = { controller, promise };
+    return promise;
+  }, [recover]);
+  useEffect(() => {
+    let live = true;
+    void Promise.resolve().then(() => {
+      if (live) void loadStartup();
+    });
     return () => {
       live = false;
+      startupLoad.current?.controller.abort();
+      startupLoad.current = null;
     };
-  }, [recover]);
+  }, [loadStartup]);
+  const retryStartup = useCallback(async () => {
+    await loadStartup();
+  }, [loadStartup]);
+  useAutoRefresh(retryStartup, startupFailed && !busy);
   const refreshMenu = useCallback(async (signal: AbortSignal) => {
     try {
       const items = await api<Item[]>("/api/menu", undefined, { signal });
@@ -198,9 +247,9 @@ export function Sales({
       if (!signal.aborted) setMenuStale(true);
     }
   }, []);
-  useAutoRefresh(refreshMenu, !loading && !busy && !pending);
+  useAutoRefresh(refreshMenu, !loading && !startupFailed && !busy && !pending);
   useEffect(() => {
-    if (loading) return;
+    if (loading || !restoredCart.current) return;
     try {
       if (cart?.items.length)
         localStorage.setItem(CART_KEY, JSON.stringify(cart));
@@ -343,6 +392,10 @@ export function Sales({
     }
   }
   const check = useCallback(async () => {
+    if (!startupReady.current) {
+      await loadStartup();
+      return;
+    }
     setBusy(true);
     setError("");
     try {
@@ -355,7 +408,7 @@ export function Sales({
     } finally {
       setBusy(false);
     }
-  }, [recover]);
+  }, [recover, loadStartup]);
   useImperativeHandle(
     ref,
     () => ({ hasCart: !!cart?.items.length, pending, clearCart, check }),

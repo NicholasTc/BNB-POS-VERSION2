@@ -40,8 +40,12 @@ const req = (
     headers: { cookie, origin, "content-type": "application/json", ...extra },
     ...(payload !== undefined ? { body: JSON.stringify(payload) } : {}),
   });
-const reads = [owner, reports, employees, menu];
-const writes = [editEmployee, editMenu, device, preferences];
+import {
+  GET as sheets,
+  POST as retrySheets,
+} from "../../src/app/api/owner/sheets/route";
+const reads = [owner, reports, employees, menu, sheets];
+const writes = [editEmployee, editMenu, device, preferences, retrySheets];
 async function denied(cookie = "", extra: Record<string, string> = {}) {
   for (const route of reads)
     expect(

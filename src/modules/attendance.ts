@@ -4,6 +4,8 @@ import { db } from "@/db";
 import { employee, attendance, device, audit, sale } from "@/db/schema";
 import { AppError, limit } from "@/lib/http";
 import { digest, pinLookup, verifyPin, hashPin } from "@/lib/credentials";
+import { sessionFarewell } from "./orders/sessions";
+import type { SessionFarewell } from "./orders/types";
 export const DEVICE_COOKIE = "lisi_device";
 export const IDLE_MS = 15 * 60 * 1000;
 export type Transaction = Parameters<Parameters<typeof db.transaction>[0]>[0];
@@ -115,6 +117,7 @@ export async function attendanceAction(
       : await authenticatePin(pin ?? "");
   return db.transaction(async (tx) => {
     const d = await lockedDevice(tx, token);
+    let farewell: SessionFarewell | null = null;
     if (action === "lock") {
       await tx
         .update(device)
@@ -187,6 +190,7 @@ export async function attendanceAction(
         .update(attendance)
         .set({ clockOut: new Date() })
         .where(eq(attendance.id, shift.id));
+      farewell = await sessionFarewell(tx, shift.id);
       if (d.cashierId === e.id)
         await tx
           .update(device)
@@ -200,6 +204,7 @@ export async function attendanceAction(
     await tx
       .insert(audit)
       .values({ actor: e.id, action: "attendance." + action });
+    return farewell;
   });
 }
 export async function posState(token: string) {
