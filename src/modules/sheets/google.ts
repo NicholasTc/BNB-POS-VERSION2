@@ -2,16 +2,23 @@ import { readFile } from "node:fs/promises";
 import { JWT } from "google-auth-library";
 import { z } from "zod";
 import { SheetsError, type SheetsConfig } from "./config";
-import { tabs, headers, cellRange, type Tab, type MappedRow } from "./rows";
+import {
+  tabs,
+  headers,
+  legacyItemHeaders,
+  cellRange,
+  type RowMapping,
+  type MappedRow,
+} from "./rows";
 
 export interface SheetsTransport {
-  prepare(
-    mappings: { tab: Tab; sourceId: string; rowNumber: number }[],
-  ): Promise<void>;
+  prepare(mappings: RowMapping[]): Promise<void>;
   write(rows: MappedRow[]): Promise<void>;
 }
 export class GoogleSheets implements SheetsTransport {
   private base: string;
+  private legacySheetId?: number;
+  private salesSheetId = 81001;
   constructor(
     config: SheetsConfig,
     private authorization: () => Promise<Headers>,
@@ -43,19 +50,23 @@ export class GoogleSheets implements SheetsTransport {
       );
     return await response.json();
   }
-  async prepare(mappings: { tab: Tab; sourceId: string; rowNumber: number }[]) {
+  async prepare(mappings: RowMapping[]) {
+    this.legacySheetId = undefined;
     const metadata = await this.call("?fields=sheets.properties");
     const props = (
       metadata.sheets as {
         properties: {
           sheetId: number;
           title: string;
+          hidden?: boolean;
           gridProperties: { rowCount: number; columnCount: number };
         };
       }[]
     ).map((s) => s.properties);
+    this.salesSheetId =
+      props.find((p) => p.title === "Sales")?.sheetId ?? 81001;
     const structural: unknown[] = [];
-    for (const [i, tab] of tabs.entries()) {
+    for (const tab of tabs) {
       const existing = props.find((p) => p.title === tab);
       const capacity = Math.max(
         1000,
@@ -63,7 +74,7 @@ export class GoogleSheets implements SheetsTransport {
           .filter((r) => r.tab === tab)
           .map((r) => Math.ceil((r.rowNumber + 1) / 1000) * 1000),
       );
-      const id = existing?.sheetId ?? 81001 + i;
+      const id = existing?.sheetId ?? (tab === "Sales" ? 81001 : 81003);
       if (!existing) {
         structural.push({
           addSheet: {
@@ -102,6 +113,9 @@ export class GoogleSheets implements SheetsTransport {
     if (structural.length)
       await this.call(":batchUpdate", { requests: structural });
     const ranges = tabs.flatMap((tab) => [cellRange(tab, 1), `'${tab}'!A2:A`]);
+    const legacy = props.find((p) => p.title === "Sale items");
+    if (legacy && !legacy.hidden)
+      ranges.push("'Sale items'!A1:H1", "'Sale items'!A2:A");
     const query = new URLSearchParams({
       valueRenderOption: "UNFORMATTED_VALUE",
     });
@@ -110,7 +124,15 @@ export class GoogleSheets implements SheetsTransport {
     const values = current.valueRanges as { values?: (string | number)[][] }[];
     for (const [i, tab] of tabs.entries()) {
       const head = values[2 * i]?.values?.[0] ?? [];
-      if (head.length && JSON.stringify(head) !== JSON.stringify(headers[tab]))
+      // Only the exact known nine-column Sales header can be upgraded in place.
+      const oldSales =
+        tab === "Sales" &&
+        JSON.stringify(head) === JSON.stringify(headers.Sales.slice(0, 9));
+      if (
+        head.length &&
+        !oldSales &&
+        JSON.stringify(head) !== JSON.stringify(headers[tab])
+      )
         throw new SheetsError("layout_conflict");
       const expected = new Map(
         mappings
@@ -126,6 +148,25 @@ export class GoogleSheets implements SheetsTransport {
           throw new SheetsError("layout_conflict");
       }
     }
+    if (legacy && !legacy.hidden) {
+      const head = values[2 * tabs.length]?.values?.[0] ?? [];
+      const expected = new Map(
+        mappings
+          .filter((m) => m.tab === "Sale items")
+          .map((m) => [m.rowNumber, m.sourceId]),
+      );
+      const keys = values[2 * tabs.length + 1]?.values ?? [];
+      // Never hide an unrelated same-named tab. Preserve all legacy cells/maps.
+      if (
+        expected.size &&
+        JSON.stringify(head) === JSON.stringify(legacyItemHeaders) &&
+        keys.every(
+          (r, n) =>
+            r[0] === undefined || r[0] === "" || r[0] === expected.get(n + 2),
+        )
+      )
+        this.legacySheetId = legacy.sheetId;
+    }
     // Idempotent header writes and formatting are safe after an ambiguous reply.
     await this.call("/values:batchUpdate", {
       valueInputOption: "RAW",
@@ -135,8 +176,10 @@ export class GoogleSheets implements SheetsTransport {
       })),
     });
     const format: unknown[] = [];
-    for (const [i, tab] of tabs.entries()) {
-      const id = props.find((p) => p.title === tab)?.sheetId ?? 81001 + i;
+    for (const tab of tabs) {
+      const id =
+        props.find((p) => p.title === tab)?.sheetId ??
+        (tab === "Sales" ? 81001 : 81003);
       format.push(
         {
           repeatCell: {
@@ -173,9 +216,42 @@ export class GoogleSheets implements SheetsTransport {
           },
         },
       );
+      if (tab === "Sales")
+        format.push(
+          {
+            updateDimensionProperties: {
+              range: {
+                sheetId: id,
+                dimension: "COLUMNS",
+                startIndex: 9,
+                endIndex: 10,
+              },
+              properties: { pixelSize: 440 },
+              fields: "pixelSize",
+            },
+          },
+          {
+            repeatCell: {
+              range: {
+                sheetId: id,
+                startRowIndex: 1,
+                startColumnIndex: 9,
+                endColumnIndex: 10,
+              },
+              cell: {
+                userEnteredFormat: {
+                  wrapStrategy: "WRAP",
+                  verticalAlignment: "TOP",
+                  textFormat: { fontSize: 10 },
+                },
+              },
+              fields:
+                "userEnteredFormat.wrapStrategy,userEnteredFormat.verticalAlignment,userEnteredFormat.textFormat.fontSize",
+            },
+          },
+        );
       const dates = tab === "Sales" ? [2] : tab === "Attendance" ? [3, 4] : [];
-      const numbers =
-        tab === "Sales" ? [6, 7] : tab === "Sale items" ? [5, 6, 7] : [5];
+      const numbers = tab === "Sales" ? [6, 7] : [5];
       for (const column of [...dates, ...numbers])
         format.push({
           repeatCell: {
@@ -212,6 +288,48 @@ export class GoogleSheets implements SheetsTransport {
     if (Buffer.byteLength(JSON.stringify(data)) > 1500000)
       throw new SheetsError("batch_too_large");
     await this.call("/values:batchUpdate", { valueInputOption: "RAW", data });
+    const sales = rows.filter((r) => r.tab === "Sales");
+    if (sales.length) {
+      // Archive only after a successful combined-row write. Hiding is reversible.
+      const requests: unknown[] = sales.map((row) => ({
+        updateDimensionProperties: {
+          range: {
+            sheetId: this.salesSheetId,
+            dimension: "ROWS",
+            startIndex: row.rowNumber - 1,
+            endIndex: row.rowNumber,
+          },
+          // Google auto-resize can leave API-written wrapped cells at 21px.
+          // Allow a conservative 32 characters per line in the 440px/10pt cell,
+          // plus padding. This also accommodates long product names without
+          // changing or truncating the exported text.
+          properties: {
+            pixelSize: Math.max(
+              32,
+              12 +
+                18 *
+                  String(row.values[9] ?? "")
+                    .split("\n")
+                    .reduce(
+                      (n, line) => n + Math.max(1, Math.ceil(line.length / 32)),
+                      0,
+                    ),
+            ),
+          },
+          fields: "pixelSize",
+        },
+      }));
+      if (this.legacySheetId !== undefined)
+        requests.push({
+          updateSheetProperties: {
+            properties: { sheetId: this.legacySheetId, hidden: true },
+            fields: "hidden",
+          },
+        });
+      await this.call(":batchUpdate", {
+        requests,
+      });
+    }
   }
 }
 export async function googleSheets(config: SheetsConfig, signal?: AbortSignal) {

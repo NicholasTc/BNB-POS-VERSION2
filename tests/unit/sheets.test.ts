@@ -12,6 +12,8 @@ import {
   headers,
   tabs,
   type Tab,
+  saleRows,
+  legacyItemHeaders,
 } from "../../src/modules/sheets/rows";
 import { GoogleSheets } from "../../src/modules/sheets/google";
 const config = { mode: "test" as const, spreadsheetId: TEST_SPREADSHEET_ID };
@@ -22,6 +24,49 @@ const input = {
   DATABASE_URL: "postgresql://unused@127.0.0.1/lisi_test",
 };
 describe("optional Sheets module boundaries", () => {
+  it("keeps every historical item on one sale row with numeric totals and the same cashier", () => {
+    const rows = saleRows(
+      {
+        id: "sale",
+        reference: "ref",
+        completed_at: new Date("2026-10-19T01:00:00Z"),
+        cashier_id: "cashier",
+        cashier_name: "Ayu",
+        payment_method: "cash",
+        total: 65000,
+      },
+      [
+        {
+          id: "a",
+          menu_item_id: "a",
+          name: "Juice A",
+          quantity: 2,
+          unit_price: 20000,
+          subtotal: 40000,
+        },
+        {
+          id: "b",
+          menu_item_id: "b",
+          name: "=Juice B",
+          quantity: 1,
+          unit_price: 25000,
+          subtotal: 25000,
+        },
+      ],
+      1,
+    );
+    expect(rows).toHaveLength(1);
+    expect(rows[0].tab).toBe("Sales");
+    expect(rows[0].values.slice(3)).toEqual([
+      "cashier",
+      "Ayu",
+      "Tunai",
+      65000,
+      3,
+      "completed",
+      "Juice A ×2 @ Rp20.000 = Rp40.000\n=Juice B ×1 @ Rp25.000 = Rp25.000",
+    ]);
+  });
   it("defaults off without requiring Google credentials or changing core config", () => {
     expect(sheetsConfig({})).toBeNull();
     expect(sheetsConfig({ ...input, SHEETS_SYNC_MODE: "off" })).toBeNull();
@@ -74,28 +119,52 @@ describe("Google API adapter", () => {
   function transport(
     keys: Record<Tab, string[][]> = {
       Sales: [],
-      "Sale items": [],
       Attendance: [],
     },
+    options: { legacy?: boolean; salesHeader?: string[] } = {},
   ) {
     const request = vi.fn<typeof fetch>(async (url) => {
       const path = String(url);
       if (path.includes("values:batchGet"))
         return Response.json({
-          valueRanges: tabs.flatMap((tab) => [
-            { values: [headers[tab]] },
-            { values: keys[tab] },
-          ]),
+          valueRanges: [
+            ...tabs.flatMap((tab) => [
+              {
+                values: [
+                  tab === "Sales"
+                    ? (options.salesHeader ?? headers[tab])
+                    : headers[tab],
+                ],
+              },
+              { values: keys[tab] },
+            ]),
+            ...(options.legacy
+              ? [{ values: [legacyItemHeaders] }, { values: [["line"]] }]
+              : []),
+          ],
         });
       if (path.endsWith("?fields=sheets.properties"))
         return Response.json({
-          sheets: tabs.map((title, i) => ({
-            properties: {
-              title,
-              sheetId: 81001 + i,
-              gridProperties: { rowCount: 1000, columnCount: 10 },
-            },
-          })),
+          sheets: [
+            ...tabs.map((title, i) => ({
+              properties: {
+                title,
+                sheetId: 81001 + i,
+                gridProperties: { rowCount: 1000, columnCount: 10 },
+              },
+            })),
+            ...(options.legacy
+              ? [
+                  {
+                    properties: {
+                      title: "Sale items",
+                      sheetId: 81002,
+                      gridProperties: { rowCount: 1000, columnCount: 8 },
+                    },
+                  },
+                ]
+              : []),
+          ],
         });
       return Response.json({});
     });
@@ -123,7 +192,7 @@ describe("Google API adapter", () => {
     const options = request.mock.calls[0][1]!;
     expect(JSON.parse(options.body as string)).toEqual({
       valueInputOption: "RAW",
-      data: [{ range: "'Sales'!A7:I7", values: [["id", "=1+1", 20000]] }],
+      data: [{ range: "'Sales'!A7:J7", values: [["id", "=1+1", 20000]] }],
     });
     expect(options.redirect).toBe("error");
   });
@@ -131,7 +200,6 @@ describe("Google API adapter", () => {
     for (const keys of [[["different"]], [["id"], ["id"]]]) {
       const { api, request } = transport({
         Sales: keys,
-        "Sale items": [],
         Attendance: [],
       });
       await expect(
@@ -145,7 +213,6 @@ describe("Google API adapter", () => {
   it("accepts stable mapped IDs and never clears unrelated tabs", async () => {
     const { api, request } = transport({
       Sales: [["id"]],
-      "Sale items": [],
       Attendance: [],
     });
     await api.prepare([{ tab: "Sales", sourceId: "id", rowNumber: 2 }]);
@@ -176,5 +243,79 @@ describe("Google API adapter", () => {
         },
       ]),
     ).rejects.toThrow("batch_too_large");
+  });
+  it("upgrades only the known Sales header and archives legacy details after a successful write", async () => {
+    const { api, request } = transport(
+      { Sales: [["sale"]], Attendance: [] },
+      { legacy: true, salesHeader: headers.Sales.slice(0, 9) },
+    );
+    await api.prepare([
+      { tab: "Sales", sourceId: "sale", rowNumber: 2 },
+      { tab: "Sale items", sourceId: "line", rowNumber: 2 },
+    ]);
+    expect(JSON.stringify(request.mock.calls)).not.toContain('"hidden":true');
+    await api.write([
+      {
+        tab: "Sales",
+        sourceId: "sale",
+        jobId: 1,
+        rowNumber: 2,
+        values: ["sale"],
+      },
+    ]);
+    const bodies = request.mock.calls
+      .filter(([, o]) => o?.body)
+      .map(([, o]) => JSON.parse(o!.body as string));
+    expect(bodies.at(-1)).toEqual({
+      requests: [
+        {
+          updateDimensionProperties: {
+            range: {
+              sheetId: 81001,
+              dimension: "ROWS",
+              startIndex: 1,
+              endIndex: 2,
+            },
+            properties: { pixelSize: 32 },
+            fields: "pixelSize",
+          },
+        },
+        {
+          updateSheetProperties: {
+            properties: { sheetId: 81002, hidden: true },
+            fields: "hidden",
+          },
+        },
+      ],
+    });
+    expect(JSON.stringify(bodies)).not.toMatch(
+      /deleteSheet|deleteDimension|clear/,
+    );
+    expect(
+      bodies.some((b) =>
+        b.data?.some(
+          (d: { values: string[][] }) =>
+            d.values[0][9] === "Rincian item (IDR)",
+        ),
+      ),
+    ).toBe(true);
+  });
+  it("rejects customized Sales headers and leaves unrelated legacy-named tabs visible", async () => {
+    const bad = transport(undefined, {
+      salesHeader: [...headers.Sales.slice(0, 9), "Owner notes"],
+    });
+    await expect(bad.api.prepare([])).rejects.toThrow("layout_conflict");
+    const { api, request } = transport(undefined, { legacy: true });
+    await api.prepare([]);
+    await api.write([
+      {
+        tab: "Sales",
+        sourceId: "sale",
+        jobId: 1,
+        rowNumber: 2,
+        values: ["sale"],
+      },
+    ]);
+    expect(JSON.stringify(request.mock.calls)).not.toContain('"hidden":true');
   });
 });

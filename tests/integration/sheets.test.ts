@@ -1,5 +1,6 @@
 import { beforeAll, beforeEach, afterAll, it, expect, vi } from "vitest";
 import { migrate } from "drizzle-orm/node-postgres/migrator";
+import { readFile } from "node:fs/promises";
 import { randomUUID } from "node:crypto";
 import { db, pool } from "../../src/db";
 import { menuItem } from "../../src/db/schema";
@@ -111,14 +112,19 @@ it("backfills historical records, exports immutable snapshots, updates the same 
   await pool.query("UPDATE menu_item SET name='Changed',price=25000");
   const f = fake();
   expect((await f.run()).processed).toBe(2);
-  expect(f.cells.size).toBe(3);
-  const line = [...f.cells.values()].find((r) => r.tab === "Sale items")!;
-  expect(line.values.slice(4)).toEqual(["Original coffee", 2, 18000, 36000]);
+  expect(f.cells.size).toBe(2);
+  const sale = [...f.cells.values()].find((r) => r.tab === "Sales")!;
+  expect(sale.values.slice(6)).toEqual([
+    36000,
+    2,
+    "completed",
+    "Original coffee ×2 @ Rp18.000 = Rp36.000",
+  ]);
   const shift = [...f.cells.values()].find((r) => r.tab === "Attendance")!;
   expect(shift.values[4]).toBe("");
   await attendanceAction(token, "clock-out", "0123");
   expect((await f.run()).processed).toBe(1);
-  expect(f.cells.size).toBe(3);
+  expect(f.cells.size).toBe(2);
   expect(f.cells.get("Attendance:" + shift.rowNumber)?.sourceId).toBe(
     shift.sourceId,
   );
@@ -138,7 +144,7 @@ it("recovers a lost applied reply without duplicates and leaves checkout availab
     throw new SheetsError("google_unavailable");
   };
   expect((await f.run()).state).toBe("retry");
-  expect(f.cells.size).toBe(3);
+  expect(f.cells.size).toBe(2);
   expect(
     (
       await pool.query(
@@ -151,7 +157,7 @@ it("recovers a lost applied reply without duplicates and leaves checkout availab
   f.transport.write = write;
   await pool.query("UPDATE sheets_sync_job SET next_attempt_at=now()");
   expect((await f.run()).state).toBe("synced");
-  expect(f.cells.size).toBe(5);
+  expect(f.cells.size).toBe(3);
   expect(
     (
       await pool.query(
@@ -232,4 +238,35 @@ it("reconciles daily, retries permission errors and never changes attendance on 
       )
     ).rows[0],
   ).toEqual({ last_error: "google_403", later: true });
+});
+
+it("upgrades previously synced sales in place while preserving legacy maps and attendance", async () => {
+  await complete();
+  const f = fake();
+  await f.run();
+  const sale = [...f.cells.values()].find((r) => r.tab === "Sales")!;
+  const line = (
+    await pool.query("SELECT id FROM sale_line WHERE sale_id=$1", [input.id])
+  ).rows[0];
+  await pool.query(
+    "INSERT INTO sheets_sync_row (tab,source_id,job_id,row_number) VALUES ('Sale items',$1,$2,2)",
+    [line.id, sale.jobId],
+  );
+  await pool.query(
+    await readFile("drizzle/0006_combined_sales_sheet.sql", "utf8"),
+  );
+  expect((await f.run()).processed).toBe(1);
+  expect(f.cells.size).toBe(2);
+  expect(f.cells.get("Sales:" + sale.rowNumber)?.sourceId).toBe(sale.sourceId);
+  expect(f.cells.get("Sales:" + sale.rowNumber)?.values[9]).toContain(
+    "Original coffee ×2",
+  );
+  expect(
+    (
+      await pool.query(
+        "SELECT count(*) FROM sheets_sync_row WHERE tab='Sale items'",
+      )
+    ).rows[0].count,
+  ).toBe("1");
+  expect((await f.run()).processed).toBe(0);
 });

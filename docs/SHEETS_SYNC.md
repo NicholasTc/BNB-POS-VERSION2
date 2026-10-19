@@ -17,15 +17,14 @@ Testing only. All existing and future **local development** completed sales and 
 
 ## Spreadsheet tabs
 
-- **Sales:** sale UUID/reference, completion time (WIB), cashier ID/name, payment method, total IDR, item quantity, completed status.
-- **Sale items:** line UUID, sale UUID/reference, menu ID/historical name, quantity, unit price and subtotal IDR.
+- **Sales:** one row per completed transaction: sale UUID/reference, completion time (WIB), cashier ID/name, payment method, numeric total IDR, numeric item quantity, completed status and **Rincian item (IDR)**. The final cell lists every historical item with quantity, unit price and subtotal, one item per line (for example `Juice A ×2 @ Rp20.000 = Rp40.000`). Wrapped text and calculated row heights keep the details readable beside the cashier. The total is recorded once per transaction.
 - **Attendance:** shift UUID, employee ID/name, clock-in/out (WIB), completed shift hours, working/finished status. Open clock-out/hours stay blank.
 
-The worker creates only these managed tabs and preserves unrelated tabs. Headers are frozen, fields readable and dates/money formatted. Do not insert/delete/reorder/sort rows or edit managed headers/IDs; use filter views or copy data to another tab for analysis. The worker detects conflicting row identities/headers and stops rather than overwriting unknown data. Missing values can be restored by daily reconciliation. This additional copy does not replace PostgreSQL backups, authentication records or disaster-recovery procedures.
+The worker creates only Sales and Attendance and preserves unrelated tabs (including Sheet1). Migration 0006 requeues existing sales once without changing their source data or reserved rows. The exact original nine-column Sales header is upgraded by appending the item-details column; other customized headers stop safely. After a successful combined-sales write, a recognized old Sale items tab is hidden, preserving its cells and database row reservations for recovery. It is an archived snapshot and is no longer updated; use Sales for current item details. New spreadsheets never create a Sale items tab. Headers are frozen, fields readable and dates/money formatted. Do not insert/delete/reorder/sort rows or edit managed headers/IDs; use filter views or copy data to another tab for analysis. The worker detects conflicting row identities/headers and stops rather than overwriting unknown data. Missing values can be restored by daily reconciliation. This additional copy does not replace PostgreSQL backups, authentication records or disaster-recovery procedures.
 
 ## Local setup
 
-Apply additive migration with `npm run db:migrate`. Keep the existing private key outside the repository. Add these **non-secret settings and file path** to private `.env.local`:
+Stop the old worker, apply migrations (including 0006) with `npm run db:migrate`, then restart the worker. Do not run old/new worker versions against the same spreadsheet during the upgrade. Keep the existing private key outside the repository. Add these **non-secret settings and file path** to private `.env.local`:
 
 ```dotenv
 SHEETS_SYNC_MODE=test

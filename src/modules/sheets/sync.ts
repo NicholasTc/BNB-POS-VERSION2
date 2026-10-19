@@ -6,7 +6,7 @@ import {
   retryDelay,
   type ExportRow,
   type MappedRow,
-  type Tab,
+  type RowMapping,
 } from "./rows";
 import type { SheetsTransport } from "./google";
 
@@ -132,7 +132,7 @@ export async function syncSheets(
       mapped.push({ ...row, rowNumber: mapping.rows[0].row_number });
     }
     const mappings = (
-      await client.query<{ tab: Tab; sourceId: string; rowNumber: number }>(
+      await client.query<RowMapping>(
         `SELECT tab,source_id AS "sourceId",row_number AS "rowNumber" FROM sheets_sync_row`,
       )
     ).rows;

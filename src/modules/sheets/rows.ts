@@ -1,5 +1,21 @@
-export const tabs = ["Sales", "Sale items", "Attendance"] as const;
+export const tabs = ["Sales", "Attendance"] as const;
 export type Tab = (typeof tabs)[number];
+// Retained only to recognize and preserve the retired detail tab and row map.
+export const legacyItemHeaders = [
+  "Line ID",
+  "Sale ID",
+  "Referensi",
+  "ID menu",
+  "Menu",
+  "Jumlah",
+  "Harga satuan (IDR)",
+  "Subtotal (IDR)",
+];
+export type RowMapping = {
+  tab: Tab | "Sale items";
+  sourceId: string;
+  rowNumber: number;
+};
 export const headers: Record<Tab, string[]> = {
   Sales: [
     "Sale ID",
@@ -11,16 +27,7 @@ export const headers: Record<Tab, string[]> = {
     "Total (IDR)",
     "Jumlah item",
     "Status",
-  ],
-  "Sale items": [
-    "Line ID",
-    "Sale ID",
-    "Referensi",
-    "ID menu",
-    "Menu",
-    "Jumlah",
-    "Harga satuan (IDR)",
-    "Subtotal (IDR)",
+    "Rincian item (IDR)",
   ],
   Attendance: [
     "Shift ID",
@@ -77,23 +84,14 @@ export function saleRows(
         sale.total,
         lines.reduce((n, l) => n + l.quantity, 0),
         "completed",
+        lines
+          .map(
+            (l) =>
+              `${l.name} ×${l.quantity} @ Rp${l.unit_price.toLocaleString("id-ID")} = Rp${l.subtotal.toLocaleString("id-ID")}`,
+          )
+          .join("\n"),
       ],
     },
-    ...lines.map((l) => ({
-      tab: "Sale items" as const,
-      sourceId: l.id,
-      jobId,
-      values: [
-        l.id,
-        sale.id,
-        sale.reference,
-        l.menu_item_id,
-        l.name,
-        l.quantity,
-        l.unit_price,
-        l.subtotal,
-      ],
-    })),
   ];
 }
 export function attendanceRow(

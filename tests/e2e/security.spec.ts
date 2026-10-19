@@ -219,14 +219,16 @@ test("cashier handoff stays blocked until owner logout is confirmed and safely r
       .count(),
   ).toBe(0);
   await page.unroute("**/api/auth/sign-out");
-  await page
-    .getByRole("button", { name: "Periksa koneksi", exact: true })
-    .click();
-  await expect(
-    page.getByRole("button", { name: "Cashier login", exact: true }),
-  ).toBeVisible();
+  await page.clock.runFor(1500);
+  await expect(page.getByTestId("cashier-status")).toBeVisible();
   await expectEmployeeDenied(page);
-  await pin(page, "Mulai kerja", "0123", "Mulai kerja");
+  // The waiting login may open only after database-backed logout succeeds.
+  const entry = page.getByRole("dialog", {
+    name: "Cashier login",
+    exact: true,
+  });
+  await entry.getByLabel("PIN karyawan", { exact: true }).fill("0123");
+  await entry.getByRole("button", { name: "Masuk kasir", exact: true }).click();
   await expect(page.getByLabel("Kasir: Ayu", { exact: true })).toBeVisible();
 });
 

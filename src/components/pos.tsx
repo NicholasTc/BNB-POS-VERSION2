@@ -3,6 +3,7 @@ import Link from "next/link";
 import { useCallback, useEffect, useState, useRef } from "react";
 import { api, ApiError } from "@/lib/client";
 import { useAutoRefresh } from "@/lib/use-auto-refresh";
+import { loadCashier } from "@/lib/cashier-load";
 import { PinPad } from "./pin-pad";
 import { Sales, type SalesHandle } from "./sales";
 import { Modal } from "./modal";
@@ -18,9 +19,15 @@ export type PosState = {
 export function Pos() {
   const salesRef = useRef<SalesHandle>(null);
   const handoffReady = useRef(false);
+  const activeLoad = useRef<{
+    controller: AbortController;
+    promise: Promise<PosState | null>;
+  } | null>(null);
+  const loadVersion = useRef(0);
   const [state, setState] = useState<PosState | null>(null),
     [loading, setLoading] = useState(true),
     [error, setError] = useState(""),
+    [loadError, setLoadError] = useState(""),
     [deviceRequired, setDeviceRequired] = useState(false),
     [busy, setBusy] = useState(false),
     [checking, setChecking] = useState(false),
@@ -31,52 +38,101 @@ export function Pos() {
     [dialog, setDialog] = useState(false),
     [loginEntry, setLoginEntry] = useState(false),
     [notice, setNotice] = useState("");
-  const refresh = useCallback(async () => {
-    try {
-      if (!handoffReady.current) {
-        await api("/api/auth/sign-out", {});
-        handoffReady.current = true;
+  const refresh = useCallback(() => {
+    if (activeLoad.current) return activeLoad.current.promise;
+    const controller = new AbortController();
+    loadVersion.current++;
+    const promise = Promise.resolve().then(async () => {
+      try {
+        if (!handoffReady.current) {
+          await loadCashier("/api/auth/sign-out", controller.signal);
+          if (controller.signal.aborted) return null;
+          handoffReady.current = true;
+        }
+        const current = await loadCashier<PosState>(
+          "/api/pos",
+          controller.signal,
+        );
+        if (controller.signal.aborted) return null;
+        setState(current);
+        setDeviceRequired(false);
+        setLoadError("");
+        setError("");
+        return current;
+      } catch (e) {
+        if (controller.signal.aborted) return null;
+        if (
+          !handoffReady.current ||
+          (e instanceof ApiError && e.status === 401)
+        )
+          setState(null);
+        setDeviceRequired(
+          handoffReady.current && e instanceof ApiError && e.status === 401,
+        );
+        setLoadError((e as Error).message);
+        return null;
+      } finally {
+        if (!controller.signal.aborted) setLoading(false);
+        if (activeLoad.current?.controller === controller)
+          activeLoad.current = null;
       }
-      const current = await api<PosState>("/api/pos");
-      setState(current);
-      setDeviceRequired(false);
-      setError("");
-      return current;
-    } catch (e) {
-      if (!handoffReady.current || (e instanceof ApiError && e.status === 401))
-        setState(null);
-      setDeviceRequired(
-        handoffReady.current && e instanceof ApiError && e.status === 401,
-      );
-      setError((e as Error).message);
-      return null;
-    } finally {
-      setLoading(false);
-    }
+    });
+    activeLoad.current = { controller, promise };
+    return promise;
   }, []);
   useEffect(() => {
-    void Promise.resolve().then(refresh);
-    const onRestore = () => {
+    let live = true;
+    void Promise.resolve().then(() => {
+      if (live) void refresh();
+    });
+    const onRestore = (event: PageTransitionEvent) => {
+      if (!event.persisted) return;
+      activeLoad.current?.controller.abort();
+      activeLoad.current = null;
       handoffReady.current = false;
+      setLoading(true);
+      setState(null);
       void refresh();
     };
     window.addEventListener("pageshow", onRestore);
-    return () => window.removeEventListener("pageshow", onRestore);
+    return () => {
+      live = false;
+      activeLoad.current?.controller.abort();
+      activeLoad.current = null;
+      window.removeEventListener("pageshow", onRestore);
+    };
   }, [refresh]);
-  const refreshStatus = useCallback(async (signal: AbortSignal) => {
-    if (!handoffReady.current) return;
-    try {
-      const current = await api<PosState>("/api/pos", undefined, { signal });
-      if (!signal.aborted) setState(current);
-    } catch (e) {
-      if (!signal.aborted && e instanceof ApiError && e.status === 401) {
-        setState(null);
-        setDeviceRequired(true);
-        setError(e.message);
+  const refreshStatus = useCallback(
+    async (signal: AbortSignal) => {
+      if (!handoffReady.current) {
+        await refresh();
+        return;
       }
-      // Temporary connectivity does not clear a cart or a financial error.
-    }
-  }, []);
+      if (activeLoad.current) return;
+      const version = loadVersion.current;
+      try {
+        const current = await loadCashier<PosState>("/api/pos", signal);
+        if (!signal.aborted && version === loadVersion.current) {
+          setState(current);
+          setDeviceRequired(false);
+          setLoadError("");
+        }
+      } catch (e) {
+        if (
+          !signal.aborted &&
+          version === loadVersion.current &&
+          e instanceof ApiError &&
+          e.status === 401
+        ) {
+          setState(null);
+          setDeviceRequired(true);
+          setLoadError(e.message);
+        }
+        // Temporary connectivity does not clear a cart or a financial error.
+      }
+    },
+    [refresh],
+  );
   useAutoRefresh(refreshStatus, !loading && !busy);
   useEffect(() => {
     let last = 0;
@@ -308,9 +364,9 @@ export function Pos() {
             )}
           </section>
         )}
-        {error && !deviceRequired && (
+        {(error || loadError) && !deviceRequired && (
           <p className="error" role="alert">
-            {error}
+            {error || loadError}
           </p>
         )}
         {notice && (

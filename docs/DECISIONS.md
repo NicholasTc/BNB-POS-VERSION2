@@ -2,7 +2,7 @@
 
 ## Optional spreadsheet copy (2026-10-19)
 
-- User authorized implementation/testing for all existing and future sales and attendance, using only the supplied test spreadsheet. Completed sales, immutable lines and open/closed attendance export to three managed tabs. No cashier workflow changes, Google calls in cashier transactions or credentials/owner sessions in exports.
+- User authorized implementation/testing for all existing and future sales and attendance, using only the supplied test spreadsheet. The user approved a follow-up combining Sales and Sale items: one transaction row includes its cashier and all historical item quantities/prices/subtotals in a wrapped details cell. Attendance remains separate. The old detail tab is hidden after a successful combined export, with its data retained; only Sales and Attendance are generated going forward. No cashier workflow changes, Google calls in cashier transactions or credentials/owner sessions in exports.
 - Additive transactional outbox triggers and an independent worker preserve durable capture, stable row reservations, retry/backoff and clock-out updates. Owner-only status/retry supplements existing settings. PostgreSQL and its full backups remain authoritative. This supersedes the original no-worker MVP scope only for this explicitly requested integration.
 - **Reminder for every future rollout:** obtain the separate LIVE spreadsheet URL/access and explicit production authorization before live enablement. No live link is supplied yet. Persist this outstanding action in PROGRESS.md across new feature sessions. Local/test configuration cannot write to a production destination.
 

@@ -2,6 +2,20 @@
 
 Local verification through 2026-10-19 (Asia/Jakarta); this records an MVP, not certification for public production use.
 
+## Combined spreadsheet Sales layout (2026-10-19)
+
+Final sequential `npm run gate` passed after the row-height correction: **38 unit / 63 PostgreSQL integration / 33 Chromium browser tests (134 total)**, typecheck, zero-warning lint, no schema drift, production build, 13-asset client-secret scan and backup/restore of 18 tables with matching contents, sequences and sale totals.
+
+New checks cover multiple immutable items on a single transaction/cashier row, numeric totals and quantities, exact known-header upgrades, rejection of customized headers, reversible retirement of recognized legacy details, preservation of unrelated tabs and old row reservations, and historical-sale requeue into the same row. Existing lost-response, concurrent-worker, clock-out, Google-outage, payment/recovery and owner authorization checks remain green. Migration 0006 changes only export-job revisions; no source transaction, attendance, account or financial code changed.
+
+Applied migration 0006 only to local dev/test. Real Google reconciliation verified **8 completed local sales and 6 attendance records**, every exported cell against PostgreSQL (including all historical item details), unique sale IDs, pending zero and a repeated worker run processing zero. Source sale/line/attendance digests were unchanged. The recognized old Sale items tab is hidden with its cells/maps preserved. Combined details are wrapped in a 440px column with explicit row heights fitted to item text after writes (Google auto-resize left rows at 21px in the real API check). Saved wrapping, column width and expanded multi-item row heights were read back and verified. Native visual inspection was unavailable because the active browser changed during inspection; values and API layout settings were verified. Restarted continuous local test worker in managed terminal session 69534; no daemon installed. No production access/deployment.
+
+## Cashier startup loading (2026-10-19)
+
+Final sequential gate passed: **35 unit / 62 real PostgreSQL integration / 33 Chromium browser tests**; typecheck, zero-warning lint, no migration drift, production build, client-secret scan (13 JS assets) and 18-table backup/restore with matching contents/sequences/sale totals. No dependencies, server domain logic, schema, accounts or production environment changed.
+
+Reproduced transient logout/POS/recovery failures and a stalled menu request in Chromium. They recover without a refresh click; the stalled-menu test retains its two-item cart and sends no financial write. Failed owner logout continues to block all POS reads and PIN entry, including during automatic retry. Unit checks exercise 10-second cancellation, at most three attempts, external abort, GET-only startup reads and idempotent logout. Authorization rejections do not retry. Existing uncertain-payment, real database-outage, owner/session, attendance and Sheets authorization regressions passed. Recovery reads remain distinct from payment writes and preserve explicit same-reference financial actions.
+
 ## Google Sheets module (2026-10-19)
 
 Final sequential gate: **29 unit / 62 real PostgreSQL integration / 29 Chromium browser tests passed**; typecheck, zero-warning lint, migration drift check, production build, client-secret scan (13 JS assets) and backup/restore (18 tables with matching contents, sequences and sale totals) passed. Runtime dependency audit: zero vulnerabilities; existing full-audit development findings remain below.

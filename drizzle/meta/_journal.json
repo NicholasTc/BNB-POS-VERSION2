@@ -43,6 +43,13 @@
       "when": 1792415968232,
       "tag": "0005_white_meltdown",
       "breakpoints": true
+    },
+    {
+      "idx": 6,
+      "version": "7",
+      "when": 1792419605015,
+      "tag": "0006_combined_sales_sheet",
+      "breakpoints": true
     }
   ]
 }
