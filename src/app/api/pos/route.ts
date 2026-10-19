@@ -16,6 +16,10 @@ const schema = z
 export const POST = endpoint(async (request) => {
   assertOrigin(request);
   const input = await body(request, schema);
-  await attendanceAction(deviceToken(request), input.action, input.pin);
-  return json({ ok: true });
+  const farewell = await attendanceAction(
+    deviceToken(request),
+    input.action,
+    input.pin,
+  );
+  return json({ ok: true, farewell: farewell ?? null });
 });

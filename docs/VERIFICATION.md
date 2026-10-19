@@ -2,6 +2,18 @@
 
 Local verification through 2026-10-19 (Asia/Jakarta); this records an MVP, not certification for public production use.
 
+## Preparation queue and work sessions (2026-10-19)
+
+Final sequential `npm run gate` passed: **38 unit / 73 real PostgreSQL integration / 35 Chromium browser tests (146 total)**, strict typecheck, zero-warning lint, no schema drift, production build, browser-secret scan (13 JS assets), and backup/restore of **21 public/Drizzle tables** with matching contents, sequences and financial totals.
+
+Ten module integration checks cover completion-only/once-only ticket capture, immutable item/cashier attribution, concurrent/idempotent finish, no financial/attendance/Sheets-job mutation, session continuity across midnight/re-pairing/staff, concurrent final clock-outs, carry-over and session-specific history, bounded keyset pages/ties, exact-origin/strict-schema/device/generation authorization, passive no-store reads, clock skew, and capture rollback. Raw Drizzle SQL timestamps are normalized explicitly; finish timestamps cannot precede receipt despite small app/DB clock offsets. No external requests or dependencies were added.
+
+Two real browser flows cover paid-order refresh/reload, lost applied finish reply without automatic POST retry, preservation of the next cart, owner API denial, team/product counts, warning for pending orders, 59-second visibility and dismissal after 60 seconds, manual dismissal, locked API denial, carry-over and a fresh next-session history. Existing attendance test now explicitly closes the new farewell before using staff controls; it still verifies persisted attendance across a fresh app process. Mobile lists and centered desktop/mobile farewell screenshots were reviewed: test-results/orders-mobile.png, session-farewell.png, session-farewell-mobile.png. No page overflow or clipped modal at 390px.
+
+Migration 0007 applied to guarded local dev/test only. One existing local active shift was adopted into one work session; no historical transactions were queued. Source sale, line, attendance and employee digests were unchanged. The unpublished trigger was refreshed in the disposable test DB during development; local dev received the final migration directly. All source records and test/live Sheets configuration remain unchanged. This task did not deploy to Railway or access production.
+
+Limits: session totals/lists begin with newly completed sales after upgrade. Farewell is a transient PIN-authenticated response; a lost clock-out reply/refresh can dismiss or prevent the celebration while durable attendance/session data remains committed. No private summary is exposed through a locked-device endpoint or stored in browser storage. Safari/physical-device/hosted operational checks remain separate.
+
 ## Combined spreadsheet Sales layout (2026-10-19)
 
 Final sequential `npm run gate` passed after the row-height correction: **38 unit / 63 PostgreSQL integration / 33 Chromium browser tests (134 total)**, typecheck, zero-warning lint, no schema drift, production build, 13-asset client-secret scan and backup/restore of 18 tables with matching contents, sequences and sale totals.

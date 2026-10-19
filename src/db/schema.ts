@@ -334,3 +334,71 @@ export const sheetsTarget = pgTable(
     ),
   ],
 );
+
+// Preparation is separate from the immutable financial sale state.
+export const workSession = pgTable(
+  "work_session",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    openingAttendanceId: uuid("opening_attendance_id")
+      .notNull()
+      .unique()
+      .references(() => attendance.id, { onDelete: "cascade" }),
+    openedAt: timestamp("opened_at", { withTimezone: true }).notNull(),
+    closedAt: timestamp("closed_at", { withTimezone: true }),
+  },
+  (t) => [
+    uniqueIndex("one_open_work_session")
+      .on(sql`(true)`)
+      .where(sql`${t.closedAt} IS NULL`),
+    check(
+      "valid_work_session",
+      sql`${t.closedAt} IS NULL OR ${t.closedAt}>=${t.openedAt}`,
+    ),
+  ],
+);
+export const sessionShift = pgTable(
+  "work_session_shift",
+  {
+    attendanceId: uuid("attendance_id")
+      .primaryKey()
+      .references(() => attendance.id, { onDelete: "cascade" }),
+    sessionId: uuid("session_id")
+      .notNull()
+      .references(() => workSession.id, { onDelete: "cascade" }),
+    employeeName: text("employee_name").notNull(),
+  },
+  (t) => [index("session_shift_session_idx").on(t.sessionId)],
+);
+export const orderTicket = pgTable(
+  "order_ticket",
+  {
+    saleId: uuid("sale_id")
+      .primaryKey()
+      .references(() => sale.id, { onDelete: "cascade" }),
+    sessionId: uuid("session_id")
+      .notNull()
+      .references(() => workSession.id, { onDelete: "cascade" }),
+    receivedAt: timestamp("received_at", { withTimezone: true }).notNull(),
+    finishedAt: timestamp("finished_at", { withTimezone: true }),
+    finishedBy: uuid("finished_by").references(() => employee.id),
+    finishedByName: text("finished_by_name"),
+    finishedSessionId: uuid("finished_session_id").references(
+      () => workSession.id,
+      { onDelete: "cascade" },
+    ),
+  },
+  (t) => [
+    index("order_session_idx").on(t.sessionId),
+    index("order_pending_idx")
+      .on(t.receivedAt, t.saleId)
+      .where(sql`${t.finishedAt} IS NULL`),
+    index("order_finished_idx")
+      .on(t.finishedSessionId, t.finishedAt, t.saleId)
+      .where(sql`${t.finishedAt} IS NOT NULL`),
+    check(
+      "valid_order_finish",
+      sql`(${t.finishedAt} IS NULL AND ${t.finishedBy} IS NULL AND ${t.finishedByName} IS NULL AND ${t.finishedSessionId} IS NULL) OR (${t.finishedAt} IS NOT NULL AND ${t.finishedAt}>=${t.receivedAt} AND ${t.finishedBy} IS NOT NULL AND ${t.finishedByName} IS NOT NULL AND ${t.finishedSessionId} IS NOT NULL)`,
+    ),
+  ],
+);

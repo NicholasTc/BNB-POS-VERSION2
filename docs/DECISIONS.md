@@ -1,5 +1,13 @@
 # Decisions
 
+## Preparation queue and work sessions (2026-10-19)
+
+- User explicitly approved this extension to the original MVP exclusion of kitchen preparation queues. After the existing payment/completion flow, a paid sale appears once in Sedang disiapkan. Selesai moves it to Pesanan selesai for the current work session. Preparation state is separate from financial sale status; no payment/receipt/revenue rewrite.
+- A session spans the first clock-in through the last clock-out, including midnight, employee switches and device re-pairing. Count all product quantities sold, not just smoothies. The final successful PIN-authenticated clock-out returns a server-calculated participant/product summary with a warning for all pending orders. The modal has Tutup and a 60-second close timer; it does not block the completed clock-out.
+- Pending orders persist across sessions. A carried-over order finished in the next session appears in that session's preparation history; its sale/revenue remains attributed to the original cashier/session. Finished history is bounded/paginated and remains stored after the next session starts.
+- Migration adopts existing active shifts only; old completed sales remain financial history and are not invented as pending kitchen orders. SQL session/order capture is transactional; a failed capture rolls back its originating operation rather than dropping a paid order. All normal cashier authorization, immutable snapshots and same-sale recovery remain enforced.
+- No new credentials, owner access, external service or spreadsheet schema changes. Production deployment remains separately authorized.
+
 ## Optional spreadsheet copy (2026-10-19)
 
 - User authorized implementation/testing for all existing and future sales and attendance, using only the supplied test spreadsheet. The user approved a follow-up combining Sales and Sale items: one transaction row includes its cashier and all historical item quantities/prices/subtotals in a wrapped details cell. Attendance remains separate. The old detail tab is hidden after a successful combined export, with its data retained; only Sales and Attendance are generated going forward. No cashier workflow changes, Google calls in cashier transactions or credentials/owner sessions in exports.

@@ -21,7 +21,9 @@ export async function pin(
     .getByRole("dialog")
     .getByRole("button", { name: submit, exact: true })
     .click();
-  await expect(page.getByRole("dialog")).not.toBeVisible();
+  await expect(
+    page.getByRole("dialog", { name: action, exact: true }),
+  ).not.toBeVisible();
 }
 
 export async function staffAction(page: Page, action: string) {

@@ -43,6 +43,7 @@ export async function api<T>(
     payload !== undefined &&
     (path.startsWith("/api/owner/") ||
       path === "/api/sales" ||
+      path === "/api/orders" ||
       (path === "/api/pos" &&
         (payload as { action?: string }).action !== "touch"))
   )

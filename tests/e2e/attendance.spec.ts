@@ -83,6 +83,13 @@ test("pair, provision, concurrent shifts, switch, refresh, process restart and l
   ).not.toBeVisible();
   await pin(page, "Ganti kasir", "0123", "Jadi kasir");
   await pin(page, "Selesai kerja", "0123", "Selesai kerja");
+  await expect(
+    page.getByRole("dialog", { name: "Kerja bagus!" }),
+  ).toBeVisible();
+  await page
+    .getByRole("dialog", { name: "Kerja bagus!" })
+    .getByRole("button", { name: "Tutup", exact: true })
+    .click();
   await page.getByRole("button", { name: "Staf", exact: true }).click();
   await expect(
     page.getByText("Belum ada yang mulai kerja.", { exact: true }),

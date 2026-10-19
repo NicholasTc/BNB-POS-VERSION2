@@ -1,0 +1,162 @@
+/* LISI preparation lists extend the existing cashier palette and touch targets. */
+.cashier-app .order-board {
+  padding-bottom: 32px;
+}
+.cashier-app .preparation-section {
+  padding: clamp(18px, 3vw, 28px);
+}
+.cashier-app .preparation-heading {
+  gap: 16px;
+  margin-bottom: 20px;
+  align-items: flex-start;
+  flex-wrap: wrap;
+}
+.cashier-app .preparation-heading h2 {
+  font-size: clamp(22px, 3vw, 28px);
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+.cashier-app .preparation-heading p {
+  font-size: 15px;
+  margin-top: 8px;
+  line-height: 1.5;
+}
+.cashier-app .preparation-heading button {
+  font-size: 15px;
+  flex-shrink: 0;
+}
+.cashier-app .preparation-list,
+.cashier-app .preparation-items {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+.cashier-app .preparation-order {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 24px;
+  padding: 22px 0;
+  border-top: 1px solid var(--line);
+}
+.cashier-app .preparation-order-main {
+  min-width: 0;
+  flex: 1;
+}
+.cashier-app .preparation-meta {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 10px 16px;
+  font-size: 14px;
+  color: var(--muted);
+}
+.cashier-app .preparation-meta strong {
+  color: var(--coffee);
+}
+.cashier-app .preparation-items {
+  margin: 14px 0;
+  display: grid;
+  gap: 10px;
+}
+.cashier-app .preparation-items li {
+  display: flex;
+  gap: 12px;
+  align-items: baseline;
+  font-size: 18px;
+  overflow-wrap: anywhere;
+}
+.cashier-app .preparation-quantity {
+  color: var(--leaf);
+  font-weight: bold;
+  min-width: 28px;
+}
+.cashier-app .preparation-order p,
+.cashier-app .preparation-reference {
+  font-size: 13px;
+  line-height: 1.5;
+}
+.cashier-app .preparation-reference {
+  margin-top: 8px;
+  color: var(--muted);
+  overflow-wrap: anywhere;
+}
+.cashier-app .preparation-reference summary {
+  cursor: pointer;
+  width: fit-content;
+  padding: 8px 0;
+}
+.cashier-app .preparation-order > button {
+  min-height: 48px;
+  min-width: 108px;
+}
+.cashier-app .preparation-empty {
+  border-top: 1px solid var(--line);
+  padding: 24px 0 8px;
+  line-height: 1.6;
+  font-size: 16px;
+}
+.cashier-app .preparation-pages {
+  margin-top: 12px;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+.cashier-app .preparation-pages button {
+  font-size: 14px;
+  padding: 10px 14px;
+}
+.session-farewell {
+  color: #30201a;
+  width: min(100% - 32px, 540px);
+  max-height: calc(100dvh - 32px);
+  margin: auto;
+  overflow-y: auto;
+  padding: clamp(20px, 4vw, 28px);
+  font-family: Arial, Helvetica, sans-serif;
+}
+.session-farewell .farewell-team {
+  font-size: 20px;
+  line-height: 1.5;
+  overflow-wrap: anywhere;
+}
+.session-farewell .farewell-total {
+  display: grid;
+  gap: 8px;
+  padding: 24px;
+  border-radius: 20px;
+  background: #eef4e9;
+  color: #195638;
+}
+.session-farewell .farewell-total strong {
+  font-size: clamp(48px, 12vw, 72px);
+  line-height: 1;
+  letter-spacing: -0.04em;
+}
+.session-farewell .farewell-total span {
+  font-size: 18px;
+}
+.session-farewell .farewell-pending {
+  background: #fff6e4;
+  color: #6c4b1c;
+  padding: 16px;
+  border-radius: 14px;
+  line-height: 1.6;
+}
+.session-farewell .farewell-dismiss {
+  font-size: 14px;
+}
+@media (max-width: 540px) {
+  .cashier-app .preparation-order {
+    gap: 12px;
+    align-items: flex-start;
+    flex-wrap: wrap;
+  }
+  .cashier-app .preparation-order-main {
+    flex-basis: 100%;
+  }
+  .cashier-app .preparation-order > button {
+    width: 100%;
+  }
+}

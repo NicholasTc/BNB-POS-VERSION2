@@ -8,6 +8,9 @@ import { PinPad } from "./pin-pad";
 import { Sales, type SalesHandle } from "./sales";
 import { Modal } from "./modal";
 import { LisiLogo, PosIcon } from "./pos-icons";
+import { OrderBoard } from "./order-board";
+import { SessionFarewell } from "./session-farewell";
+import type { SessionFarewell as Farewell } from "@/modules/orders/types";
 import "./cashier.css";
 export type PosState = {
   paired: true;
@@ -17,6 +20,8 @@ export type PosState = {
   expiresAt: string | null;
 };
 export function Pos() {
+  const [farewell, setFarewell] = useState<Farewell | null>(null);
+  const closeFarewell = useCallback(() => setFarewell(null), []);
   const salesRef = useRef<SalesHandle>(null);
   const handoffReady = useRef(false);
   const activeLoad = useRef<{
@@ -157,7 +162,10 @@ export function Pos() {
     setBusy(true);
     setError("");
     try {
-      await api("/api/pos", { action, pin });
+      const result = await api<{ farewell?: Farewell | null }>("/api/pos", {
+        action,
+        pin,
+      });
       setDialog(false);
       if (action !== "clock-in" && !salesRef.current?.pending)
         salesRef.current?.clearCart();
@@ -169,6 +177,7 @@ export function Pos() {
             : "Shift selesai. Terima kasih! ",
       );
       await refresh();
+      if (result.farewell) setFarewell(result.farewell);
     } catch (e) {
       setError((e as Error).message);
     } finally {
@@ -415,7 +424,13 @@ export function Pos() {
             </button>
           </section>
         ) : (
-          <Sales ref={salesRef} state={state} />
+          <>
+            <Sales ref={salesRef} state={state} />
+            <OrderBoard
+              key={`${state.generation}:${state.cashier?.employeeId ?? "locked"}`}
+              state={state}
+            />
+          </>
         )}
       </main>
       {dialog && (
@@ -511,6 +526,9 @@ export function Pos() {
             </>
           )}
         </Modal>
+      )}
+      {farewell && (
+        <SessionFarewell summary={farewell} onClose={closeFarewell} />
       )}
     </div>
   );
