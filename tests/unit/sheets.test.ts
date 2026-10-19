@@ -2,6 +2,7 @@ import { describe, it, expect, vi } from "vitest";
 import {
   sheetsConfig,
   TEST_SPREADSHEET_ID,
+  LIVE_SPREADSHEET_ID,
   SheetsError,
   sheetsErrorCode,
 } from "../../src/modules/sheets/config";
@@ -86,9 +87,63 @@ describe("optional Sheets module boundaries", () => {
         ...input,
         SHEETS_SYNC_MODE: "live",
         SHEETS_LIVE_CONFIRMED: "true",
-        SHEETS_SPREADSHEET_ID: "production-spreadsheet-123456789",
+        SHEETS_SPREADSHEET_ID: LIVE_SPREADSHEET_ID,
+        DATABASE_URL: "postgresql://unused@production-db.internal/railway",
       })?.mode,
     ).toBe("live");
+  });
+  it("rejects swapped destinations and local databases even with live confirmation", () => {
+    const live = {
+      ...input,
+      SHEETS_SYNC_MODE: "live",
+      SHEETS_LIVE_CONFIRMED: "true",
+      SHEETS_SPREADSHEET_ID: LIVE_SPREADSHEET_ID,
+      DATABASE_URL: "postgresql://unused@production-db.internal/railway",
+    };
+    for (const invalid of [
+      { ...input, SHEETS_SPREADSHEET_ID: LIVE_SPREADSHEET_ID },
+      { ...live, SHEETS_SPREADSHEET_ID: TEST_SPREADSHEET_ID },
+      { ...live, SHEETS_SPREADSHEET_ID: "unapproved-spreadsheet-123456789" },
+      { ...live, SHEETS_LIVE_CONFIRMED: "false" },
+      ...[
+        "127.0.0.1",
+        "127.0.0.2",
+        "localhost",
+        "test.localhost",
+        "0.0.0.0",
+        "[::1]",
+        "[::]",
+        "LOCALHOST",
+        "localhost.",
+        "host.docker.internal",
+        "localhost.localdomain",
+      ].map((host) => ({
+        ...live,
+        DATABASE_URL: `postgresql://unused@${host}/railway`,
+      })),
+      ...["lisi_dev", "lisi_test"].map((name) => ({
+        ...live,
+        DATABASE_URL: `postgresql://unused@production-db.internal/${name}`,
+      })),
+      { ...live, DATABASE_URL: "not-a-url" },
+      { ...live, DATABASE_URL: "postgresql:///railway" },
+      {
+        ...live,
+        DATABASE_URL:
+          "postgresql://unused@production-db.internal/railway?host=127.0.0.1",
+      },
+      {
+        ...live,
+        DATABASE_URL: "postgresql://unused@%2Fvar%2Frun%2Fpostgresql/railway",
+      },
+      {
+        ...live,
+        DATABASE_URL: "postgresql://unused@production-db.internal/lisi%5Fdev",
+      },
+      { ...live, DATABASE_URL: "https://production-db.internal/railway" },
+    ])
+      expect(() => sheetsConfig(invalid)).toThrow(SheetsError);
+    expect(LIVE_SPREADSHEET_ID).not.toBe(TEST_SPREADSHEET_ID);
   });
   it("uses numeric Jakarta dates, blank open clock-out, and stable shift identity", () => {
     expect(sheetDate(new Date("2026-10-19T17:00:00Z")) % 1).toBeCloseTo(0);

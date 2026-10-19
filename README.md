@@ -27,7 +27,7 @@ Production-mode local verification: `npm run build && npm start`. No public depl
 
 ## Checks
 
-Optional Google Sheets copy for completed sales and attendance: see [setup, worker and limits](docs/SHEETS_SYNC.md). Run `npm run sheets:worker` alongside the local app after configuring the test target; the worker runs independently of owner/cashier pages. Production export remains disabled until the owner supplies a separate live spreadsheet and authorizes deployment. PostgreSQL backups remain required.
+Optional Google Sheets copy for completed sales and attendance: see [setup, worker and limits](docs/SHEETS_SYNC.md). Run `npm run sheets:worker` alongside the local app after configuring the test target; the worker runs independently of owner/cashier pages. Separate local/test and live spreadsheet links are recorded in that guide and pinned by environment guards. The live destination has been supplied; production syncing still requires the Railway worker/server configuration in deploy/sheets.production.env.example. PostgreSQL backups remain required.
 
 - `npm run typecheck`
 - `npm run lint`

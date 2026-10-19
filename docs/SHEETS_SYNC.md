@@ -2,9 +2,12 @@
 
 ## Current authorization
 
-Testing only. All existing and future **local development** completed sales and attendance are included. Approved test spreadsheet: https://docs.google.com/spreadsheets/d/1Dw6Cu-t3zTSfG70-rVuuSuMXBl9IvQf5tOXVNDum1Sc/edit.
+Two distinct destinations are approved and pinned in the server configuration:
 
-**Before production or later feature rollout: remind the owner to provide the separate live spreadsheet link.** Confirm its service-account Editor access and obtain production deployment authorization. No live link has been supplied. Never use the test spreadsheet for production café records.
+- **Local/manual testing:** https://docs.google.com/spreadsheets/d/1Dw6Cu-t3zTSfG70-rVuuSuMXBl9IvQf5tOXVNDum1Sc/edit
+- **Production deployment:** https://docs.google.com/spreadsheets/d/1Pmv5xiEUWUmG1VnI1dRkqDZoP96APAgPsVLYYRvh_GU/edit
+
+The owner supplied the live link on 2026-10-19; do not ask for it again. Local .env.local keeps test mode/the test destination. Automated fixtures keep Sheets off and never upload fixture data. Service-account metadata read and a same-title write request succeeded on 2026-10-19; no cell, sales or attendance data was changed. Selecting the live destination does not itself start a Railway worker or deploy the app. Never run a local backfill against the live spreadsheet or copy test row maps into production.
 
 ## How it works
 
@@ -12,7 +15,7 @@ Testing only. All existing and future **local development** completed sales and 
 - No Google request runs during a cashier action. Domain functions, financial states, idempotency/recovery and login policies remain unchanged. Like any atomic database write, failure of queue persistence rolls back the original operation rather than silently omitting its export. Google outages only delay background export.
 - `npm run sheets:worker` runs independently of web pages, processes up to 25 records every 30 seconds and retries with bounded exponential backoff/jitter. Run one worker per database. A dedicated PostgreSQL session advisory lock prevents normal concurrent workers; no POS/device/employee locks are held during Google calls.
 - Durable row reservations precede Google writes. Retrying an uncertain response writes the same cell ranges, rather than appending. Attendance clock-out updates the original shift row. Revision acknowledgment cannot mark a newer clock-out as exported by an older in-flight request. Daily reconciliation requeues previously synced records to repair missing/changed values and eventually converge after an ambiguous stale request or connection loss. This is not a claim of exactly-once network delivery.
-- Destination binding prevents changing a database's configured spreadsheet/mode silently. Test mode accepts only the approved test ID and loopback `lisi_dev`/`lisi_test`. Live mode requires a different ID and explicit confirmation. A separate production database starts with its own binding and row map.
+- Destination binding prevents changing a database's configured spreadsheet/mode silently. Test mode accepts only the approved test ID and loopback `lisi_dev`/`lisi_test`. Live mode accepts only the approved LIVE ID with explicit confirmation, rejects common loopback/local host aliases and local dev/test database names, and requires the production database. Database URLs must state an explicit host; host query overrides and encoded local sockets are rejected so the PostgreSQL client's target cannot bypass the URL guard. Invalid database URL schemes are rejected safely. A separate production database starts with its own binding and row map.
 - Credentials are loaded only by the worker from a private file or server secret. Google receives only explicitly selected sales/item/attendance columns, never PINs, password hashes, owner sessions or database credentials. Values use RAW input to prevent formula injection; integer IDR amounts and Jakarta date serials remain numeric. No Drive API/admin role/domain-wide delegation is needed.
 
 ## Spreadsheet tabs
@@ -34,11 +37,21 @@ GOOGLE_SERVICE_ACCOUNT_FILE=/Users/nicholaschan/Private/bnb-pos-sheets-key.json
 
 Use `npm run sheets:worker -- --once` for one batch; keep `npm run sheets:worker` running for continuous local sync. A stopped laptop/worker cannot sync; pending jobs remain in PostgreSQL. Restart the worker after changing config. Stop it with Ctrl+C. Set `SHEETS_SYNC_MODE=off` and stop/restart the worker to disable exports; existing POS functions and queued records remain available.
 
-Owner-only status is under **Pengaturan → Perangkat kasir → Cadangan spreadsheet**. It shows pending records, last success, stale-worker/error feedback and the live-link reminder. Retry only makes pending work eligible; the independent worker must be running. Background reads do not extend owner login. Secrets and raw Google error bodies are not returned by this API.
+Owner-only status is under **Pengaturan → Perangkat kasir → Cadangan spreadsheet**. It shows pending records, last success, stale-worker/error feedback and a reminder that production activation is still required when not in live mode. Retry only makes pending work eligible; the independent worker must be running. Background reads do not extend owner login. Secrets and raw Google error bodies are not returned by this API.
 
-## Production later — not enabled
+## Production activation — destination selected, not deployed by this task
 
-After the owner provides the live URL and authorizes deployment: apply migration, configure a separate worker using the same production database, set `SHEETS_SYNC_MODE=live`, its separate `SHEETS_SPREADSHEET_ID`, `SHEETS_LIVE_CONFIRMED=true`, and a server-only `GOOGLE_SERVICE_ACCOUNT_JSON` secret. Do not set both credential sources or any `NEXT_PUBLIC_` credential. Do not commit/upload the downloaded key into Git/build context. Keep worker enabled continuously; monitor pending age/errors and PostgreSQL backups. Never run test fixtures against production. Current work does not deploy or modify production.
+The approved non-secret worker settings are in [deploy/sheets.production.env.example](../deploy/sheets.production.env.example). In Railway, create a separate worker service from the tested repository revision, in the same production environment as the existing app/Postgres. Use `npm run sheets:worker` as its start command; do not change the web app start command. Keep `RAILPACK_PRUNE_DEPS=false` because the pinned worker launcher tsx is a development dependency ([Railpack Node configuration](https://railpack.com/languages/node/#config-variables)).
+
+Apply the existing database migrations before starting the matching worker. Configure the worker (and web app, for accurate owner status) with:
+
+```dotenv
+SHEETS_SYNC_MODE=live
+SHEETS_SPREADSHEET_ID=1Pmv5xiEUWUmG1VnI1dRkqDZoP96APAgPsVLYYRvh_GU
+SHEETS_LIVE_CONFIRMED=true
+```
+
+Reference the existing production DATABASE_URL, BETTER_AUTH_URL, BETTER_AUTH_SECRET and PIN_PEPPER; the current shared DB initialization requires these core app variables. Add GOOGLE_SERVICE_ACCOUNT_JSON as a private server-only Railway variable. These secrets are not included in the template. Keep all local .env.local values on their existing local/test settings; adding the live link does not change the local database or destination. Do not set both credential sources or any `NEXT_PUBLIC_` credential. Do not commit/upload the downloaded key into Git/build context. Keep worker enabled continuously; monitor pending age/errors and PostgreSQL backups. Never run test fixtures against production. This task does not deploy code, configure Railway variables/services, upload any sales/attendance to the live sheet, or modify the production database. The live destination is ready to configure; active production syncing still requires the worker and server variables above.
 
 ## Sources and limits
 

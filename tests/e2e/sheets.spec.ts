@@ -38,9 +38,7 @@ test("owner can inspect the isolated sync queue; employee cannot inspect or retr
   await expect(
     panel.getByRole("button", { name: "Coba sinkronisasi lagi", exact: true }),
   ).toBeDisabled();
-  await expect(
-    panel.getByText(/Sebelum produksi: berikan tautan spreadsheet live/),
-  ).toBeVisible();
+  await expect(panel.getByText(/Spreadsheet live sudah dipilih/)).toBeVisible();
   page.on("dialog", (d) => void d.accept());
   await page
     .getByRole("button", { name: "Hubungkan perangkat ini", exact: true })

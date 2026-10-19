@@ -2,6 +2,16 @@
 
 Local verification through 2026-10-19 (Asia/Jakarta); this records an MVP, not certification for public production use.
 
+## Separate approved spreadsheet destinations (2026-10-19)
+
+Final sequential `npm run gate` passed: **39 unit / 73 PostgreSQL integration / 35 Chromium browser tests (147 total)**, typecheck, zero-warning lint, no schema drift, production build, 13-asset browser-secret scan and 21-table backup/restore with matching contents/sequences/financial totals. No domain, schema, account, dependency or private .env.local changes.
+
+The approved TEST and LIVE IDs are pinned separately in server config. Tests reject swapped/unapproved destinations, missing live confirmation, common local/loopback aliases, IPv6 loopback/unspecified hosts, local database names (including encoded names), hostless URLs, non-PostgreSQL schemes, encoded Unix sockets and PostgreSQL host query overrides. A normal explicit remote production URL with the approved live target/confirmation succeeds. Owner UI now says the live destination is selected and activation is still required; its authorization regression passed.
+
+The supplied LIVE spreadsheet (`1Pmv5xiEUWUmG1VnI1dRkqDZoP96APAgPsVLYYRvh_GU`) accepted service-account metadata reads and a write request setting its current title to itself. An initial empty batch was rejected; it was not treated as proof of access. The valid same-title request succeeded. No cells, sheets, sales or attendance data were modified/uploaded. The probe asserted that local configuration still selects the original TEST ID before accessing live metadata; it did not import/connect a production SQL database or run a sync/backfill.
+
+Production settings are prepared in deploy/sheets.production.env.example and documented in SHEETS_SYNC.md. This task did not configure Railway variables/services, start/deploy a hosted worker or verify production record delivery. Link/access registration is complete; operational activation remains a separate step. The live link is no longer missing and should not be requested again.
+
 ## Preparation queue and work sessions (2026-10-19)
 
 Final sequential `npm run gate` passed: **38 unit / 73 real PostgreSQL integration / 35 Chromium browser tests (146 total)**, strict typecheck, zero-warning lint, no schema drift, production build, browser-secret scan (13 JS assets), and backup/restore of **21 public/Drizzle tables** with matching contents, sequences and financial totals.

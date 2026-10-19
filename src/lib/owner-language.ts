@@ -14,8 +14,8 @@ export const ownerEnglish = {
     "The worker has not checked recently. Check the sync process.",
   "Sinkronisasi tertunda. Periksa akses spreadsheet, koneksi, dan worker. Data POS tetap tersimpan.":
     "Sync delayed. Check spreadsheet access, connection and worker. POS records remain saved.",
-  "Sebelum produksi: berikan tautan spreadsheet live dan konfirmasi pengaturan produksi.":
-    "Before production: provide the live spreadsheet link and confirm production setup.",
+  "Spreadsheet live sudah dipilih. Sinkronisasi produksi masih perlu diaktifkan.":
+    "The live spreadsheet is selected. Production sync still needs to be enabled.",
   "Coba sinkronisasi lagi": "Retry sync",
   "Antrean siap dicoba kembali oleh worker.":
     "The queue is ready for the worker to retry.",

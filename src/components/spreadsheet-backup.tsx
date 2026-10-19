@@ -100,7 +100,7 @@ export function SpreadsheetBackup() {
           {data.liveSetupPending && (
             <p className="muted">
               {t(
-                "Sebelum produksi: berikan tautan spreadsheet live dan konfirmasi pengaturan produksi.",
+                "Spreadsheet live sudah dipilih. Sinkronisasi produksi masih perlu diaktifkan.",
               )}
             </p>
           )}
