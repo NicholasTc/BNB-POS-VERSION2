@@ -1,8 +1,12 @@
 # LISI POS progress checkpoint
 
-Updated: 2026-10-18 (Asia/Jakarta).
+Updated: 2026-10-19 (Asia/Jakarta).
 
 ## Current stage
+Cashier-login UI refinement complete and locally verified: prominent shortcut, compact welcome and centered PIN dialog, explicit existing/new-shift choices and guided owner device setup. Existing PIN/attendance/payment/device authorization preserved; passive POS reads also wait for successful owner logout. Full sequential gate passed: 21 unit / 56 integration / 28 Chromium browser tests, build/lint/typecheck, secret scan and backup/restore. No deployment or production data changes performed by this task.
+
+The user deployed the live app at https://bnb-pos.up.railway.app on Railway project zealous-peace, production, app service BNB-POS-VERSION2. At the user's explicit request, created the first live owner using the deployed scripts/owner.ts over SSH with reset=false; no previous owner existed. Verified public HTTPS sign-in, owner-only read and verification-session sign-out (all HTTP 200). Production credentials were passed through encrypted stdin with terminal echo disabled and are not recorded in the repository. No local accounts, menu, attendance or sales changed; no app deployment performed by this account-setup task.
+
 Owner dashboard navigation redesign complete and locally verified against the supplied phone/tablet/laptop inspiration. Compact summary; full transactions, staff and settings in four focused sections. Sidebar on tablet/laptop and fixed phone navigation. Feature map: OWNER_UI.md. Existing workflows/security preserved; no deployment, schema/API/domain/dependency changes.
 
 Owner/cashier authentication hardening complete and locally verified. User-approved password-only sign-in and 15-minute owner inactivity lock; 2FA deferred. Absolute eight-hour expiry, database-confirmed logout before cashier entry, persistent failure budgets and removal of unauthorized owner views implemented. No deployment or schema/dependency changes.
@@ -21,7 +25,10 @@ Cashier reference/header refinements remain complete: logo/Staf row, stable lock
 - Additive migration 0004 applied to local development/test databases. Old products retained with neutral metadata defaults; omitted metadata in legacy edits remains intact. Only menu metadata domain code changed; no financial transaction/schema changes or dependency updates.
 
 ## Latest verification
-- Full sequential `npm run gate`: **21/21 unit**, **56/56 real PostgreSQL integration**, **25/25 Chromium browser**; typecheck, zero-warning lint, no migration drift, default production build and browser-secret scan (13 JS assets) passed.
+- Cashier entry (2026-10-19): unpaired/revoked browsers cannot use valid PINs; owner login/setup URL alone does not pair; explicit pairing returns to cashier and revokes owner access. Wrong PIN denial, unchanged shift IDs after refresh/re-login, second employee clock-in, owner-only API denial and failed-logout polling/login guards passed. Welcome screenshots reviewed at 320/390/820/1440px; centered phone PIN dialog reviewed. Captures: test-results/cashier-entry-*.png.
+- Live employee setup (2026-10-19): created Alicia active through the existing owner-authorized HTTPS employee API, after checking for duplicate names. Create returned HTTP 200; subsequent owner employee-list read confirmed persistence and active status; admin verification session signed out. PIN not recorded in repository. No clock-in, pairing, sale, local-account or other employee changes.
+- Live account setup only (2026-10-19): exactly one owner credential account confirmed; HTTPS sign-in/owner access/sign-out all passed. Registered the user's existing Mac public SSH key with Railway for authorized administration; private key stayed local. No application code changes or automated fixtures run against production.
+- Full sequential `npm run gate`: **21/21 unit**, **56/56 real PostgreSQL integration**, **28/28 Chromium browser**; typecheck, zero-warning lint, no migration drift, default production build and browser-secret scan (13 JS assets) passed.
 - Backup/restore: 15 public/Drizzle tables, content/row digests, sequences and sale totals matched, including a completed sale/shift. Fixtures target only guarded loopback lisi_test; development records untouched except additive migration.
 - New security coverage: every owner-route trust boundary, copied-cookie replay, idle/absolute expiry, failed database revocation, persistent throttling, strict login/origin/media-type checks, browser history/cross-tab revocation and safe handoff retry. Runtime dependency audit re-run: 0 vulnerabilities. Full development-tool audit not re-run; prior findings below remain.
 - New owner-layout coverage: responsive 320/390/820/1024/1440px screenshots reviewed, full aggregate/history/attendance pagination, navigation/draft/disclosure retention, shortcut/calendar boundaries and unchanged live/security regressions. Initial sandbox-cached Turbopack failure resolved by moving generated production cache to /tmp; final unchanged build passed.
@@ -29,7 +36,9 @@ Cashier reference/header refinements remain complete: logo/Staf row, stable lock
 - Local 1,000-sale / 10-sample p95: POS 3 ms, report 29 ms, quote/attest/complete 16 ms. Local measurements only. No blockers.
 
 ## Next action
-Reload /owner. Use Ringkasan for the overview, Transaksi for full sales/unfinished payments, Staf → Kehadiran & penjualan or Kelola staf, and Pengaturan → Menu kafe or Perangkat kasir. Try custom dates and draft inputs while changing sections. Keep simulated-payment trials and separate owner/cashier profiles. User prefers concise testing guidance directly in chat. Railway discussed as a hosting candidate; deployment remains unauthorized.
+User can review Cashier login locally: pair the cashier browser through the guided owner setup, then enter the employee PIN. Already-open shifts use Sudah mulai kerja; arriving employees choose Mulai shift baru. Push/deployment only when explicitly authorized; no further implementation or checks pending for this UI task.
+
+Owner can sign in on the live /owner URL using the requested credentials. Configure live employees/menu through Staf → Kelola staf and Pengaturan → Menu kafe; pair only the actual cashier browser through Pengaturan → Perangkat kasir. Keep production data separate from local/staging trials. Google Sheets sales-history sync was proposed and Google Cloud service-account setup started, but integration is not implemented. User prefers concise instructions directly in chat. Further deployments/production changes require explicit authorization.
 
 ## Resume notes / limits
 - Apply versioned migrations explicitly in other environments. Keep local credentials in the existing manual guide/private .env.local; never print/commit environment secrets or backups. Preserve unrelated user/generated changes.

@@ -101,7 +101,7 @@ test("direct cashier navigation revokes owner cookies and cached owner tabs cann
   await page.bringToFront();
   await page.goto("/");
   await expect(
-    page.getByRole("button", { name: "Masuk", exact: true }),
+    page.getByRole("button", { name: "Cashier login", exact: true }),
   ).toBeVisible();
   expect(
     (
@@ -204,6 +204,13 @@ test("cashier handoff stays blocked until owner logout is confirmed and safely r
     page.getByRole("alert").filter({ hasText: "Layanan belum tersedia" }),
   ).toBeVisible();
   expect(posReads).toBe(0);
+  await page.clock.install();
+  await page.clock.fastForward(6000);
+  await page
+    .getByRole("button", { name: "Cashier login", exact: true })
+    .click();
+  expect(posReads).toBe(0);
+  await expect(page.getByRole("dialog")).toHaveCount(0);
   expect(
     await page
       .getByRole("button", { name: "Tambah Kopi susu", exact: true })
@@ -214,7 +221,7 @@ test("cashier handoff stays blocked until owner logout is confirmed and safely r
     .getByRole("button", { name: "Periksa koneksi", exact: true })
     .click();
   await expect(
-    page.getByRole("button", { name: "Masuk", exact: true }),
+    page.getByRole("button", { name: "Cashier login", exact: true }),
   ).toBeVisible();
   await expectEmployeeDenied(page);
   await pin(page, "Mulai kerja", "0123", "Mulai kerja");

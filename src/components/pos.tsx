@@ -21,6 +21,7 @@ export function Pos() {
   const [state, setState] = useState<PosState | null>(null),
     [loading, setLoading] = useState(true),
     [error, setError] = useState(""),
+    [deviceRequired, setDeviceRequired] = useState(false),
     [busy, setBusy] = useState(false),
     [checking, setChecking] = useState(false),
     [staffOpen, setStaffOpen] = useState(false),
@@ -28,6 +29,7 @@ export function Pos() {
       "clock-in",
     ),
     [dialog, setDialog] = useState(false),
+    [loginEntry, setLoginEntry] = useState(false),
     [notice, setNotice] = useState("");
   const refresh = useCallback(async () => {
     try {
@@ -35,12 +37,19 @@ export function Pos() {
         await api("/api/auth/sign-out", {});
         handoffReady.current = true;
       }
-      setState(await api<PosState>("/api/pos"));
+      const current = await api<PosState>("/api/pos");
+      setState(current);
+      setDeviceRequired(false);
       setError("");
+      return current;
     } catch (e) {
       if (!handoffReady.current || (e instanceof ApiError && e.status === 401))
         setState(null);
+      setDeviceRequired(
+        handoffReady.current && e instanceof ApiError && e.status === 401,
+      );
       setError((e as Error).message);
+      return null;
     } finally {
       setLoading(false);
     }
@@ -55,12 +64,14 @@ export function Pos() {
     return () => window.removeEventListener("pageshow", onRestore);
   }, [refresh]);
   const refreshStatus = useCallback(async (signal: AbortSignal) => {
+    if (!handoffReady.current) return;
     try {
       const current = await api<PosState>("/api/pos", undefined, { signal });
       if (!signal.aborted) setState(current);
     } catch (e) {
       if (!signal.aborted && e instanceof ApiError && e.status === 401) {
         setState(null);
+        setDeviceRequired(true);
         setError(e.message);
       }
       // Temporary connectivity does not clear a cart or a financial error.
@@ -108,7 +119,7 @@ export function Pos() {
       setBusy(false);
     }
   }
-  function open(value: typeof action) {
+  function open(value: typeof action, quickLogin = false) {
     if (salesRef.current?.pending && value !== "switch") {
       setError("Periksa dan selesaikan transaksi sebelumnya terlebih dahulu.");
       return;
@@ -125,7 +136,28 @@ export function Pos() {
     setStaffOpen(false);
     setError("");
     setAction(value);
+    setLoginEntry(quickLogin);
     setDialog(true);
+  }
+  async function cashierLogin() {
+    if (state && handoffReady.current) {
+      open(state.shifts.length ? "switch" : "clock-in", true);
+      return;
+    }
+    setChecking(true);
+    try {
+      const current = await refresh();
+      // A failed owner logout must never expose employee entry.
+      if (!handoffReady.current) return;
+      if (current) open(current.shifts.length ? "switch" : "clock-in", true);
+      else {
+        setStaffOpen(false);
+        setLoginEntry(true);
+        setDialog(true);
+      }
+    } finally {
+      setChecking(false);
+    }
   }
   return (
     <div className="cashier-app">
@@ -242,7 +274,7 @@ export function Pos() {
           </section>
         )}
       </header>
-      <main className={state ? "content stack" : "center-stage stack"}>
+      <main className={state ? "content stack" : "cashier-welcome stack"}>
         {state && (
           <section
             className={`cashier-status ${state.cashier ? "is-active" : "is-locked"}`}
@@ -269,16 +301,14 @@ export function Pos() {
               <button
                 className="cashier-sign-in"
                 disabled={busy}
-                onClick={() =>
-                  open(state.shifts.length ? "switch" : "clock-in")
-                }
+                onClick={() => void cashierLogin()}
               >
-                Masuk
+                Cashier login
               </button>
             )}
           </section>
         )}
-        {error && (
+        {error && !deviceRequired && (
           <p className="error" role="alert">
             {error}
           </p>
@@ -291,13 +321,26 @@ export function Pos() {
         {loading ? (
           <p role="status">Memuat kasir…</p>
         ) : !state ? (
-          <div className="card stack">
+          <section className="card cashier-welcome-card stack">
+            <span className="cashier-welcome-icon">
+              <PosIcon name="person" />
+            </span>
             <h1>Siap menyambut hari?</h1>
             <p className="muted">
-              Kasir terkunci. Pemilik perlu menghubungkan perangkat ini sebelum
-              karyawan mulai bekerja.
+              Masuk dengan PIN empat angka untuk mulai melayani.
             </p>
-            <Link className="button" href="/owner">
+            <button disabled={checking} onClick={() => void cashierLogin()}>
+              {checking ? "Memeriksa…" : "Cashier login"}
+            </button>
+            <div className="cashier-setup-note">
+              <PosIcon name="lock" />
+              <p>
+                Browser ini perlu dihubungkan oleh pemilik sekali sebelum PIN
+                dapat digunakan. Masuk ke akun pemilik saja belum menghubungkan
+                perangkat.
+              </p>
+            </div>
+            <Link className="button secondary" href="/owner?setup=cashier">
               Hubungkan perangkat
             </Link>
             <button
@@ -314,19 +357,22 @@ export function Pos() {
             >
               {checking ? "Memeriksa…" : "Periksa koneksi"}
             </button>
-          </div>
+          </section>
         ) : (
           <Sales ref={salesRef} state={state} />
         )}
       </main>
       {dialog && (
         <Modal
+          className="cashier-pin-dialog"
           title={
-            action === "clock-in"
-              ? "Mulai kerja"
-              : action === "switch"
-                ? "Ganti kasir"
-                : "Selesai kerja"
+            loginEntry
+              ? "Cashier login"
+              : action === "clock-in"
+                ? "Mulai kerja"
+                : action === "switch"
+                  ? "Ganti kasir"
+                  : "Selesai kerja"
           }
           busy={busy}
           onClose={() => {
@@ -334,29 +380,80 @@ export function Pos() {
             setError("");
           }}
         >
-          <p className="muted">
-            {action === "switch"
-              ? "PIN karyawan yang akan menjadi kasir. Shift tidak berubah."
-              : action === "clock-out"
-                ? "Masukkan PIN Anda untuk mengakhiri shift sendiri."
-                : "Masukkan PIN Anda untuk mencatat awal shift."}
-          </p>
-          {error && (
-            <p className="error" role="alert">
-              {error}
-            </p>
+          {loginEntry && !state ? (
+            <>
+              <div className="cashier-setup-note">
+                <PosIcon name="lock" />
+                <p>
+                  Perangkat belum terhubung. Minta pemilik menghubungkan browser
+                  ini terlebih dahulu. PIN karyawan hanya membuka kasir.
+                </p>
+              </div>
+              <Link className="button" href="/owner?setup=cashier">
+                Hubungkan perangkat
+              </Link>
+              <button
+                className="secondary"
+                disabled={checking}
+                onClick={() => void cashierLogin()}
+              >
+                {checking ? "Memeriksa…" : "Periksa koneksi"}
+              </button>
+            </>
+          ) : (
+            <>
+              {loginEntry && state && state.shifts.length > 0 && (
+                <div
+                  className="cashier-login-options"
+                  role="group"
+                  aria-label="Shift Anda"
+                >
+                  <button
+                    className="secondary"
+                    aria-pressed={action === "switch"}
+                    disabled={busy}
+                    onClick={() => open("switch", true)}
+                  >
+                    Sudah mulai kerja
+                  </button>
+                  <button
+                    className="secondary"
+                    aria-pressed={action === "clock-in"}
+                    disabled={busy}
+                    onClick={() => open("clock-in", true)}
+                  >
+                    Mulai shift baru
+                  </button>
+                </div>
+              )}
+              <p className="muted">
+                {action === "switch"
+                  ? "PIN karyawan yang akan menjadi kasir. Shift tidak berubah."
+                  : action === "clock-out"
+                    ? "Masukkan PIN Anda untuk mengakhiri shift sendiri."
+                    : "Masukkan PIN Anda untuk mencatat awal shift."}
+              </p>
+              {error && (
+                <p className="error" role="alert">
+                  {error}
+                </p>
+              )}
+              <PinPad
+                key={action}
+                busy={busy}
+                onSubmit={(pin) => void submit(pin)}
+                label={
+                  loginEntry
+                    ? "Masuk kasir"
+                    : action === "clock-in"
+                      ? "Mulai kerja"
+                      : action === "switch"
+                        ? "Jadi kasir"
+                        : "Selesai kerja"
+                }
+              />
+            </>
           )}
-          <PinPad
-            busy={busy}
-            onSubmit={(pin) => void submit(pin)}
-            label={
-              action === "clock-in"
-                ? "Mulai kerja"
-                : action === "switch"
-                  ? "Jadi kasir"
-                  : "Selesai kerja"
-            }
-          />
         </Modal>
       )}
     </div>

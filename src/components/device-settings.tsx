@@ -1,11 +1,13 @@
 "use client";
 import { useState } from "react";
+import Link from "next/link";
 import { api } from "@/lib/client";
 import { useOwnerLanguage } from "@/components/owner-language";
 import { ownerMessage } from "@/lib/owner-language";
 export function DeviceSettings() {
   const { language, t } = useOwnerLanguage();
   const [message, setMessage] = useState(""),
+    [paired, setPaired] = useState(false),
     [busy, setBusy] = useState(false),
     [pendingAction, setPendingAction] = useState<"pair" | "revoke" | null>(
       null,
@@ -24,8 +26,10 @@ export function DeviceSettings() {
     setBusy(true);
     setPendingAction(action);
     setMessage("");
+    setPaired(false);
     try {
       await api("/api/owner/device", { action });
+      setPaired(action === "pair");
       setMessage(
         action === "pair"
           ? "Perangkat terhubung selama 30 hari. Buka Kasir untuk mulai."
@@ -66,6 +70,11 @@ export function DeviceSettings() {
         </button>
       </div>
       {message && <p role="status">{ownerMessage(message, language)}</p>}
+      {paired && (
+        <Link className="button" href="/">
+          {t("Lanjut ke Cashier login")}
+        </Link>
+      )}
     </section>
   );
 }

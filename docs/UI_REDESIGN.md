@@ -2,6 +2,12 @@
 
 Historical cashier redesign record. The newer owner phone/iPad/laptop reference supersedes the owner-layout freeze below; see OWNER_UI.md for the current owner layout and complete function mapping. Cashier behavior remains as recorded here.
 
+## Cashier login refinement (2026-10-19)
+
+Keep the existing cream (#faf8f3), paper (#ffffff), green (#195638), coffee (#30201a) and muted (#7b6f66) palette and Arial controls. Retain the logo/Staf header and catalog geometry. A left-aligned compact welcome card replaces the large disconnected warning: welcome → primary Cashier login → concise device guidance → secondary owner setup/recheck. No new artwork or decorative motion.
+
+The paired locked status now labels its shortcut **Cashier login**. It opens the existing PIN actions in a focused dialog. Existing-shift reauthentication remains the default when shifts are open, with an explicit new-shift choice for an arriving employee. Staff-menu actions remain available. Unpaired browsers get owner setup guidance, never a PIN authorization bypass. The setup link selects Pengaturan → Perangkat kasir after owner sign-in; pairing still requires explicit confirmation. A successful pair exposes a return link and entering cashier still revokes that browser's owner session. Financial/attendance API and domain rules are unchanged.
+
 Requested 2026-10-18. Targets are the user's final two attached images: compact cashier catalog/order summary, and Tunai/QRIS payment sheets. The first three images show the current UI. Preserve the target composition, colors, spacing, typography, labels and visual hierarchy; do not introduce an alternative design.
 
 Status: user clarified all four questions. Keep owner dashboard styling/layout unchanged; add owner-editable photos/categories while preserving products; use one Save action for acknowledgment and completion; create matching temporary artwork. Implementation complete. Full sequential gate passed: 20 unit / 43 PostgreSQL integration / 17 Chromium browser tests, lint/typecheck/build, no migration drift, client-secret scan and backup/restore. Local migration 0004 applied; development products/history preserved.

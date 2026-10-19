@@ -270,7 +270,7 @@ test("owner photo/category edits filter live, broken photos fall back, cart edit
   }
 });
 
-test("reference header keeps locked/active proportions and Masuk reauthenticates without duplicating shifts", async ({
+test("reference header keeps locked/active proportions and Cashier login reauthenticates without duplicating shifts", async ({
   page,
 }) => {
   await page.setViewportSize({ width: 784, height: 930 });
@@ -310,11 +310,13 @@ test("reference header keeps locked/active proportions and Masuk reauthenticates
   expect(locked.height).toBeGreaterThanOrEqual(110);
   expect(locked.height).toBeLessThanOrEqual(118);
   await page.screenshot({ path: "test-results/header-before.png" });
-  await page.getByRole("button", { name: "Masuk", exact: true }).click();
+  await page
+    .getByRole("button", { name: "Cashier login", exact: true })
+    .click();
   await page.getByLabel("PIN karyawan", { exact: true }).fill("0123");
   await page
     .getByRole("dialog")
-    .getByRole("button", { name: "Mulai kerja", exact: true })
+    .getByRole("button", { name: "Masuk kasir", exact: true })
     .click();
   await expect(page.getByRole("dialog")).not.toBeVisible();
   await expect(status.getByLabel("Kasir: Ayu", { exact: true })).toBeVisible();
@@ -331,11 +333,13 @@ test("reference header keeps locked/active proportions and Masuk reauthenticates
   await expect(
     status.getByText("Belum ada kasir", { exact: true }),
   ).toBeVisible();
-  await page.getByRole("button", { name: "Masuk", exact: true }).click();
+  await page
+    .getByRole("button", { name: "Cashier login", exact: true })
+    .click();
   await page.getByLabel("PIN karyawan", { exact: true }).fill("0123");
   await page
     .getByRole("dialog")
-    .getByRole("button", { name: "Jadi kasir", exact: true })
+    .getByRole("button", { name: "Masuk kasir", exact: true })
     .click();
   await expect(status.getByLabel("Kasir: Ayu", { exact: true })).toBeVisible();
   await page.setViewportSize({ width: 390, height: 844 });
