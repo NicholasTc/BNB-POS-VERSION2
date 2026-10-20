@@ -1,0 +1,190 @@
+.stock-module .stock-tabs {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.6rem;
+}
+.stock-module .stock-tabs button {
+  min-height: 44px;
+}
+.stock-module .stock-tabs button[aria-pressed="true"] {
+  background: #edf3ec;
+  color: #195638;
+  border-color: #195638;
+}
+.stock-summary {
+  display: flex;
+  gap: 1rem 2rem;
+  flex-wrap: wrap;
+  color: #786f65;
+}
+.stock-summary strong {
+  color: #a6312d;
+}
+.stock-warning,
+.stock-recovery {
+  padding: 1rem;
+  background: #fff6e4;
+  border: 1px solid #ead9b4;
+  border-radius: 16px;
+  line-height: 1.6;
+  color: #684d28;
+}
+.stock-recovery p {
+  margin: 0.5rem 0;
+}
+.stock-filter {
+  display: flex;
+  align-items: end;
+  flex-wrap: wrap;
+  gap: 1rem;
+}
+.stock-filter > div {
+  flex: 1;
+  min-width: 200px;
+}
+.stock-check {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  min-height: 48px;
+}
+.stock-check input {
+  width: 22px;
+  height: 22px;
+  accent-color: #195638;
+}
+.stock-item-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 320px), 1fr));
+  gap: 1rem;
+}
+.stock-item h3 {
+  margin: 0;
+  overflow-wrap: anywhere;
+}
+.stock-item .row {
+  gap: 0.6rem;
+}
+.stock-balance {
+  display: flex;
+  align-items: baseline;
+  gap: 0.5rem;
+  padding: 1rem 0 0.4rem;
+}
+.stock-balance strong {
+  font-size: 2rem;
+  line-height: 1.2;
+  letter-spacing: -0.025em;
+  overflow-wrap: anywhere;
+}
+.stock-balance span,
+.stock-item small {
+  color: #786f65;
+}
+.stock-badge {
+  background: #fff2d7;
+  color: #805b20;
+  border-radius: 999px;
+  padding: 0.35rem 0.65rem;
+  font-size: 0.8rem;
+  font-weight: 700;
+}
+.stock-badge.negative {
+  background: #fff0ed;
+  color: #a6312d;
+}
+.stock-item-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.6rem;
+  margin-top: 1rem;
+}
+.stock-item-actions button {
+  min-height: 44px;
+  padding: 10px 14px;
+  font-size: 0.9rem;
+}
+.stock-fields {
+  border: 0;
+  margin: 0;
+  padding: 0;
+  min-width: 0;
+}
+.stock-dialog {
+  width: min(560px, calc(100vw - 24px));
+  max-height: calc(100dvh - 24px);
+  padding: 24px;
+  margin: auto;
+  overflow-y: auto;
+}
+.stock-dialog h2 {
+  font-size: 1.5rem;
+}
+.stock-dialog .stock-current {
+  display: grid;
+  gap: 0.4rem;
+  padding: 1rem;
+  background: #edf3ec;
+  border-radius: 16px;
+}
+.stock-dialog small {
+  display: block;
+  margin-top: 0.4rem;
+  line-height: 1.5;
+  color: #786f65;
+}
+.stock-recipe-line {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 110px auto;
+  gap: 0.75rem;
+  align-items: end;
+  border-bottom: 1px solid #e5e1da;
+  padding-bottom: 1rem;
+}
+.stock-recipe-line button {
+  min-height: 48px;
+}
+.stock-history-list {
+  padding: 0;
+  margin: 0;
+  list-style: none;
+}
+.stock-history-list li {
+  border-top: 1px solid #e5e1da;
+  padding: 1rem 0;
+  overflow-wrap: anywhere;
+}
+.stock-history-list p {
+  margin: 0.5rem 0;
+}
+.stock-history-list small {
+  color: #786f65;
+  line-height: 1.6;
+}
+.stock-history-list summary {
+  cursor: pointer;
+  min-height: 44px;
+  display: flex;
+  align-items: center;
+}
+.stock-in {
+  color: #195638;
+}
+.stock-out {
+  color: #805b20;
+}
+@media (max-width: 540px) {
+  .stock-recipe-line {
+    grid-template-columns: minmax(0, 1fr) 90px;
+  }
+  .stock-recipe-line > button {
+    grid-column: 1 / -1;
+    justify-self: start;
+  }
+  .stock-dialog {
+    padding: 20px;
+  }
+}

@@ -48,7 +48,11 @@ import {
   GET as sheets,
   POST as retrySheets,
 } from "../../src/app/api/owner/sheets/route";
-const reads = [owner, reports, employees, menu, sheets, promos];
+import {
+  GET as stock,
+  POST as editStock,
+} from "../../src/app/api/owner/stock/route";
+const reads = [owner, reports, employees, menu, sheets, promos, stock];
 const writes = [
   editEmployee,
   editMenu,
@@ -56,6 +60,7 @@ const writes = [
   preferences,
   retrySheets,
   editPromos,
+  editStock,
 ];
 async function denied(cookie = "", extra: Record<string, string> = {}) {
   for (const route of reads)
@@ -97,6 +102,42 @@ afterAll(async () => {
   await pool.end();
 });
 describe("owner/cashier trust boundary", () => {
+  it("validates stock query/body shapes and exposes no stock to cashier endpoints", async () => {
+    const cookie = await login();
+    for (const query of [
+      "?view=items&view=history",
+      "?view=recipe",
+      "?view=command&id=bad",
+      "?actor=owner",
+      "?view=history&cursor=bad",
+    ])
+      expect(
+        (await stock(req("/api/owner/stock" + query, cookie))).status,
+      ).toBe(400);
+    expect((await stock(req("/api/owner/stock", cookie))).status).toBe(200);
+    expect(
+      (
+        await editStock(
+          req("/api/owner/stock", cookie, {
+            id: crypto.randomUUID(),
+            action: "create",
+            name: "Cup",
+            unit: "pcs",
+            openingQuantity: 10,
+            lowThreshold: 2,
+            balance: 999,
+          }),
+        )
+      ).status,
+    ).toBe(400);
+    expect(
+      (
+        await editStock(
+          req("/api/owner/stock", cookie, {}, { "content-type": "text/plain" }),
+        )
+      ).status,
+    ).toBe(415);
+  });
   it.each([
     "anonymous",
     "paired browser",

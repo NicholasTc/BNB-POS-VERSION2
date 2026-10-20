@@ -1,5 +1,14 @@
 # Decisions
 
+## Owner stock (2026-10-20)
+
+- User approved a modular owner-dashboard inventory addition to the original MVP inventory exclusion: supplies (cups, fruit/dimsum packs, packaging, eggs), restocking, physical-count adjustments with required reasons, per-product usage, low-stock warnings and movement history. Use Pengaturan → Stok within existing navigation and bilingual theme; employee authorization and cashier UI remain unchanged.
+- Whole units only (`pcs` / `pack`), no conversions or cost accounting. Units remain fixed after creation. Recipes define supply quantity for one product serving. Sales of unconfigured products do not deduct stock. No retroactive deduction from historical or pre-module pending sales.
+- Snapshot recipes with each new immutable payment quote; deduct once, atomically when that sale becomes completed. Cart changes, attestation, preparation completion and request retries do not deduct again. Recipe edits apply to future quotes only.
+- Warning policy: allow negative balances rather than block an already-paid sale for insufficient stock; owner checks quantities and usage, then corrects through a recorded adjustment. Technical database failures still roll back completion and preserve the paid sale for existing recovery; never silently drop stock capture.
+- Owner writes require authenticated owner access, exact-origin JSON and durable operation UUID receipts. Browser stores UUID markers only. Lost-response recovery reads receipts; explicit abandon fences an unapplied delayed request and never undoes an applied change. Physical counts/edits and recipes reject stale revisions; additive deliveries safely serialize with sales. Immutable movement/snapshot history and guarded balances are enforced in SQL.
+- No stock spreadsheet export, production deployment, new service/dependency or historical financial/attendance rewrite in this addition.
+
 ## Owner promos (in progress, 2026-10-19)
 
 - User approved owner-created percentage promos and cashier selection during payment verification as a modular extension to the original no-discount MVP boundary. Owners can configure selected/all products, quantity and distinct-product minimums, whole-order minimum spend, a discount cap and application order. This is a bounded percentage-rule builder, not arbitrary executable formulas or a buy-one-get-one engine.

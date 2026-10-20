@@ -64,6 +64,13 @@
       "when": 1792423170532,
       "tag": "0008_burly_the_hand",
       "breakpoints": true
+    },
+    {
+      "idx": 9,
+      "version": "7",
+      "when": 1792477712034,
+      "tag": "0009_dear_swarm",
+      "breakpoints": true
     }
   ]
 }

@@ -6,12 +6,14 @@ export function Modal({
   busy = false,
   children,
   className,
+  closeLabel = "Tutup",
 }: {
   title: string;
   onClose: () => void;
   busy?: boolean;
   children: React.ReactNode;
   className?: string;
+  closeLabel?: string;
 }) {
   const ref = useRef<HTMLDialogElement>(null);
   useEffect(() => {
@@ -69,7 +71,7 @@ export function Modal({
         <div className="row between">
           <h2>{title}</h2>
           <button className="secondary" onClick={onClose} disabled={busy}>
-            Tutup
+            {closeLabel}
           </button>
         </div>
         {children}
