@@ -4,9 +4,12 @@ import { Modal } from "./modal";
 import { PosIcon } from "./pos-icons";
 import { cashAmount, cashKey, cashSuggestions } from "@/lib/cash";
 import { compactRupiah as rupiah } from "@/lib/money";
+import { PromoBreakdown } from "./promo-breakdown";
+import type { DiscountSnapshot } from "@/modules/promos/rules";
 export type PaymentQuote = {
   id: string;
   total: number;
+  discountSnapshot?: DiscountSnapshot | null;
   paymentMethod: "cash" | "qris";
   status: "pending" | "paid" | "completed" | "cancelled";
   reference: string;
@@ -69,6 +72,7 @@ export function PaymentSheet({
           </button>
         </div>
       )}
+      <PromoBreakdown snapshot={quote.discountSnapshot} total={quote.total} />
       {cash ? (
         <>
           <div className="sheet-total">

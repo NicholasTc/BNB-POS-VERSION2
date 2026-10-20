@@ -6,6 +6,7 @@ import { api } from "@/lib/client";
 import { Employees } from "@/components/employees";
 import { DeviceSettings } from "@/components/device-settings";
 import { MenuManagement } from "@/components/menu-management";
+import { PromoManagement } from "@/components/promo-management";
 import { Reports } from "@/components/reports";
 import {
   OwnerLanguageProvider,
@@ -233,6 +234,7 @@ function OwnerContent() {
                   </>
                 }
                 device={<DeviceSettings />}
+                promos={<PromoManagement products={products} />}
                 initialSettingsTab={cashierSetup ? "device" : "menu"}
               />
             </div>

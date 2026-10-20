@@ -2,12 +2,14 @@ import { z } from "zod";
 import { endpoint, json, assertOrigin, body } from "@/lib/http";
 import { deviceToken } from "@/modules/attendance";
 import { prepareSale, getSale, changeSale } from "@/modules/sales";
+import { promoSelection } from "@/modules/promos/rules";
 const prepare = z
   .object({
     action: z.literal("prepare"),
     id: z.uuid(),
     generation: z.number().int().nonnegative(),
     paymentMethod: z.enum(["cash", "qris"]),
+    promos: promoSelection.optional(),
     items: z
       .array(
         z

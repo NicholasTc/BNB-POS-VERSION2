@@ -1,6 +1,12 @@
 import { and, desc, eq, gte, lt, inArray, sql, or, isNull } from "drizzle-orm";
 import { db } from "@/db";
-import { sale, saleLine, attendance, employee } from "@/db/schema";
+import {
+  sale,
+  saleLine,
+  saleDiscount,
+  attendance,
+  employee,
+} from "@/db/schema";
 import { businessRange } from "@/lib/dates";
 import { AppError } from "@/lib/http";
 const amount = (value: string | number) => {
@@ -51,7 +57,11 @@ export async function report(input: {
         quantity: string;
         total: string;
       }>(
-        sql`SELECT m.id,m.name,sum(l.quantity) AS quantity,sum(l.subtotal) AS total FROM sale_line l JOIN sale s ON s.id=l.sale_id JOIN menu_item m ON m.id=l.menu_item_id WHERE s.status='completed' AND s.completed_at>=${start} AND s.completed_at<${end} GROUP BY m.id,m.name ORDER BY sum(l.quantity) DESC,m.name`,
+        sql`SELECT m.id,m.name,sum(l.quantity) AS quantity,
+          sum(l.subtotal-COALESCE((SELECT (a->>'discount')::int FROM jsonb_array_elements(d.snapshot->'allocations') a WHERE a->>'id'=l.menu_item_id::text),0)) AS total
+          FROM sale_line l JOIN sale s ON s.id=l.sale_id LEFT JOIN sale_discount d ON d.sale_id=s.id
+          JOIN menu_item m ON m.id=l.menu_item_id WHERE s.status='completed' AND s.completed_at>=${start} AND s.completed_at<${end}
+          GROUP BY m.id,m.name ORDER BY sum(l.quantity) DESC,m.name`,
       );
       const cashiers = await tx
         .select({
@@ -92,6 +102,17 @@ export async function report(input: {
             .where(
               inArray(
                 saleLine.saleId,
+                history.map((s) => s.id),
+              ),
+            )
+        : [];
+      const discounts = history.length
+        ? await tx
+            .select()
+            .from(saleDiscount)
+            .where(
+              inArray(
+                saleDiscount.saleId,
                 history.map((s) => s.id),
               ),
             )
@@ -153,6 +174,8 @@ export async function report(input: {
         history: history.map((s) => ({
           ...s,
           lines: lines.filter((l) => l.saleId === s.id),
+          discountSnapshot:
+            discounts.find((d) => d.saleId === s.id)?.snapshot ?? null,
         })),
         attendance: shifts,
         attendanceCount: amount(shiftCount[0].count),

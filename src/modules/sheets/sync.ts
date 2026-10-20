@@ -44,7 +44,18 @@ async function sourceRows(client: PoolClient, jobs: Job[]) {
           "SELECT id,menu_item_id,name,quantity,unit_price,subtotal FROM sale_line WHERE sale_id=$1 ORDER BY id",
           [job.source_id],
         );
-        rows.push(...saleRows(result.rows[0], lines.rows, Number(job.id)));
+        const discount = await client.query(
+          "SELECT snapshot FROM sale_discount WHERE sale_id=$1",
+          [job.source_id],
+        );
+        rows.push(
+          ...saleRows(
+            result.rows[0],
+            lines.rows,
+            Number(job.id),
+            discount.rows[0]?.snapshot,
+          ),
+        );
       } else {
         const result = await client.query(
           "SELECT a.id,a.employee_id,e.name,a.clock_in,a.clock_out FROM attendance a JOIN employee e ON e.id=a.employee_id WHERE a.id=$1",

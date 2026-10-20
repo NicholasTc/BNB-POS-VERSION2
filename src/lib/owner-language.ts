@@ -1,5 +1,28 @@
 export type OwnerLanguage = "id" | "en";
 export const ownerEnglish = {
+  "Penyimpanan browser tidak tersedia. Aktifkan penyimpanan sebelum mengubah stok.":
+    "Browser storage is unavailable. Enable it before changing stock.",
+  "Barang stok tidak ditemukan.": "Stock item not found.",
+  "Maksimal 500 barang stok.": "A maximum of 500 stock items is supported.",
+  "Stok berubah. Periksa jumlah terbaru sebelum menyimpan.":
+    "Stock changed. Review the latest quantity before saving.",
+  "Pemakaian menu berubah. Muat ulang sebelum menyimpan.":
+    "The recipe changed. Reload it before saving.",
+  "Nama barang sudah digunakan. Pilih nama lain.":
+    "This item name is already used. Choose another name.",
+  "Percobaan stok ini sudah dipakai. Periksa status sebelum mencoba lagi.":
+    "This stock attempt was already used. Check its status before trying again.",
+  "Filter stok tidak valid.": "Invalid stock filters.",
+  "Halaman riwayat berubah. Buka halaman pertama.":
+    "History changed. Open the first page.",
+  "Tunggu sampai penyimpanan selesai.": "Wait for saving to finish.",
+  "Periksa perubahan stok yang belum pasti terlebih dahulu.":
+    "Resolve the uncertain stock change first.",
+  "Menu promo tidak ditemukan.": "A promo product was not found.",
+  "Promo berubah. Muat ulang daftar sebelum menyimpan.":
+    "This promo changed. Reload the list before saving.",
+  "Maksimal 100 promo. Ubah promo yang sudah ada.":
+    "A maximum of 100 promos is supported. Edit an existing promo.",
   "Cadangan spreadsheet": "Spreadsheet backup",
   "Salinan penjualan selesai dan kehadiran. Kasir tetap berjalan saat Google tidak tersedia.":
     "A copy of completed sales and attendance. Checkout keeps working when Google is unavailable.",

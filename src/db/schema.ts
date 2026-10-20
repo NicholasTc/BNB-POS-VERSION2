@@ -15,6 +15,7 @@ import {
   primaryKey,
 } from "drizzle-orm/pg-core";
 import { sql } from "drizzle-orm";
+import type { PromoRules, DiscountSnapshot } from "@/modules/promos/rules";
 export const user = pgTable(
   "owner_user",
   {
@@ -188,6 +189,19 @@ export const menuItem = pgTable(
   ],
 );
 export const paymentMethod = pgEnum("payment_method", ["cash", "qris"]);
+// Owner rules are mutable; each issued quote has a separate immutable snapshot.
+export const promotion = pgTable(
+  "promotion",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    rules: jsonb("rules").$type<PromoRules>().notNull(),
+    revision: integer("revision").notNull().default(1),
+    createdAt: timestamp("created_at", { withTimezone: true })
+      .notNull()
+      .defaultNow(),
+  },
+  (t) => [check("promotion_revision", sql`${t.revision}>0`)],
+);
 export const saleStatus = pgEnum("sale_status", [
   "pending",
   "paid",
@@ -254,6 +268,12 @@ export const saleLine = pgTable(
     ),
   ],
 );
+export const saleDiscount = pgTable("sale_discount", {
+  saleId: uuid("sale_id")
+    .primaryKey()
+    .references(() => sale.id, { onDelete: "cascade" }),
+  snapshot: jsonb("snapshot").$type<DiscountSnapshot>().notNull(),
+});
 
 // Optional export module. No credentials or financial snapshots live here.
 export const sheetsJob = pgTable(
@@ -399,6 +419,117 @@ export const orderTicket = pgTable(
     check(
       "valid_order_finish",
       sql`(${t.finishedAt} IS NULL AND ${t.finishedBy} IS NULL AND ${t.finishedByName} IS NULL AND ${t.finishedSessionId} IS NULL) OR (${t.finishedAt} IS NOT NULL AND ${t.finishedAt}>=${t.receivedAt} AND ${t.finishedBy} IS NOT NULL AND ${t.finishedByName} IS NOT NULL AND ${t.finishedSessionId} IS NOT NULL)`,
+    ),
+  ],
+);
+
+// Optional stock module: immutable quote usage and append-only movements.
+export const stockItem = pgTable(
+  "stock_item",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    name: text("name").notNull(),
+    unit: text("unit").notNull(),
+    balance: bigint("balance", { mode: "number" }).notNull().default(0),
+    lowThreshold: integer("low_threshold").notNull().default(0),
+    revision: integer("revision").notNull().default(1),
+  },
+  (t) => [
+    uniqueIndex("stock_item_name_unique").on(sql`lower(btrim(${t.name}))`),
+    check(
+      "stock_item_valid",
+      sql`length(btrim(${t.name})) BETWEEN 1 AND 80 AND ${t.unit} IN ('pcs','pack') AND ${t.lowThreshold} BETWEEN 0 AND 1000000000 AND ${t.revision}>0 AND ${t.balance} BETWEEN -9000000000000 AND 9000000000000`,
+    ),
+  ],
+);
+export const stockRecipe = pgTable(
+  "stock_recipe",
+  {
+    menuItemId: uuid("menu_item_id")
+      .primaryKey()
+      .references(() => menuItem.id, { onDelete: "cascade" }),
+    revision: integer("revision").notNull(),
+  },
+  (t) => [check("stock_recipe_revision", sql`${t.revision}>0`)],
+);
+export const stockRecipeLine = pgTable(
+  "stock_recipe_line",
+  {
+    menuItemId: uuid("menu_item_id")
+      .notNull()
+      .references(() => stockRecipe.menuItemId, { onDelete: "cascade" }),
+    stockItemId: uuid("stock_item_id")
+      .notNull()
+      .references(() => stockItem.id),
+    quantity: integer("quantity").notNull(),
+  },
+  (t) => [
+    primaryKey({ columns: [t.menuItemId, t.stockItemId] }),
+    check("stock_recipe_quantity", sql`${t.quantity} BETWEEN 1 AND 1000000`),
+  ],
+);
+export const stockUsage = pgTable(
+  "stock_usage",
+  {
+    saleLineId: uuid("sale_line_id")
+      .notNull()
+      .references(() => saleLine.id, { onDelete: "cascade" }),
+    stockItemId: uuid("stock_item_id")
+      .notNull()
+      .references(() => stockItem.id),
+    name: text("name").notNull(),
+    unit: text("unit").notNull(),
+    perUnit: integer("per_unit").notNull(),
+    quantity: integer("quantity").notNull(),
+    recipeRevision: integer("recipe_revision").notNull(),
+  },
+  (t) => [
+    primaryKey({ columns: [t.saleLineId, t.stockItemId] }),
+    check(
+      "stock_usage_valid",
+      sql`${t.perUnit} BETWEEN 1 AND 1000000 AND ${t.quantity} BETWEEN 1 AND 99000000 AND ${t.recipeRevision}>0`,
+    ),
+  ],
+);
+export const stockOperation = pgTable("stock_operation", {
+  id: uuid("id").primaryKey(),
+  requestHash: text("request_hash").notNull(),
+  result: jsonb("result")
+    .$type<import("@/modules/stock/types").StockResult>()
+    .notNull(),
+  createdAt: timestamp("created_at", { withTimezone: true })
+    .notNull()
+    .defaultNow(),
+});
+export const stockMovement = pgTable(
+  "stock_movement",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    stockItemId: uuid("stock_item_id")
+      .notNull()
+      .references(() => stockItem.id),
+    name: text("name").notNull(),
+    unit: text("unit").notNull(),
+    kind: text("kind").notNull(),
+    delta: bigint("delta", { mode: "number" }).notNull(),
+    balanceAfter: bigint("balance_after", { mode: "number" }).notNull(),
+    reason: text("reason").notNull(),
+    actor: text("actor").notNull(),
+    saleId: uuid("sale_id").references(() => sale.id, { onDelete: "cascade" }),
+    saleReference: text("sale_reference"),
+    operationId: uuid("operation_id").references(() => stockOperation.id),
+    createdAt: timestamp("created_at", { withTimezone: true })
+      .notNull()
+      .defaultNow(),
+  },
+  (t) => [
+    unique("stock_sale_once").on(t.saleId, t.stockItemId),
+    unique("stock_operation_once").on(t.operationId),
+    index("stock_history_idx").on(t.createdAt, t.id),
+    index("stock_item_history_idx").on(t.stockItemId, t.createdAt, t.id),
+    check(
+      "stock_movement_valid",
+      sql`${t.kind} IN ('opening','restock','adjust','sale') AND ${t.delta} BETWEEN -9000000000000 AND 9000000000000 AND ${t.balanceAfter} BETWEEN -9000000000000 AND 9000000000000 AND length(${t.reason})<=200 AND ((${t.kind}='sale' AND ${t.saleId} IS NOT NULL AND ${t.operationId} IS NULL AND ${t.delta}<0 AND ${t.saleReference} IS NOT NULL) OR (${t.kind}<>'sale' AND ${t.saleId} IS NULL AND ${t.operationId} IS NOT NULL AND ${t.saleReference} IS NULL))`,
     ),
   ],
 );

@@ -1,5 +1,23 @@
 # Decisions
 
+## Owner stock (2026-10-20)
+
+- User approved a modular owner-dashboard inventory addition to the original MVP inventory exclusion: supplies (cups, fruit/dimsum packs, packaging, eggs), restocking, physical-count adjustments with required reasons, per-product usage, low-stock warnings and movement history. Use Pengaturan → Stok within existing navigation and bilingual theme; employee authorization and cashier UI remain unchanged.
+- Whole units only (`pcs` / `pack`), no conversions or cost accounting. Units remain fixed after creation. Recipes define supply quantity for one product serving. Sales of unconfigured products do not deduct stock. No retroactive deduction from historical or pre-module pending sales.
+- Snapshot recipes with each new immutable payment quote; deduct once, atomically when that sale becomes completed. Cart changes, attestation, preparation completion and request retries do not deduct again. Recipe edits apply to future quotes only.
+- Warning policy: allow negative balances rather than block an already-paid sale for insufficient stock; owner checks quantities and usage, then corrects through a recorded adjustment. Technical database failures still roll back completion and preserve the paid sale for existing recovery; never silently drop stock capture.
+- Owner writes require authenticated owner access, exact-origin JSON and durable operation UUID receipts. Browser stores UUID markers only. Lost-response recovery reads receipts; explicit abandon fences an unapplied delayed request and never undoes an applied change. Physical counts/edits and recipes reject stale revisions; additive deliveries safely serialize with sales. Immutable movement/snapshot history and guarded balances are enforced in SQL.
+- No stock spreadsheet export, production deployment, new service/dependency or historical financial/attendance rewrite in this addition.
+
+## Owner promos (in progress, 2026-10-19)
+
+- User approved owner-created percentage promos and cashier selection during payment verification as a modular extension to the original no-discount MVP boundary. Owners can configure selected/all products, quantity and distinct-product minimums, whole-order minimum spend, a discount cap and application order. This is a bounded percentage-rule builder, not arbitrary executable formulas or a buy-one-get-one engine.
+- Multiple promos may be selected together. Percentages are whole integers 1–99%; round each discount down to whole rupiah. Qualification uses the original basket. Product quantities and historical unit prices remain unchanged; final recorded revenue reflects discounts, with immutable rule/name/amount and per-product allocation snapshots.
+- **Approved stacking:** sequential on remaining eligible amounts, in owner-set priority order (lower first; equal priorities retain stable ID order shown in the picker). Rp100.000 with 10% then 20% charges Rp72.000. Each promo's amount is floored and capped independently. Proportional largest-remainder allocation with stable product-ID ties ensures product revenue sums exactly to final sales revenue; BigInt protects intermediate allocation arithmetic.
+- Cashier selection happens immediately before the durable quote, within payment verification. No promos configured preserves direct cash/QRIS entry. The picker shows eligibility reasons, optional multiple selection and a final-total preview. Only the server can issue the authoritative quote; changing/removing promos afterward requires the existing explicit unpaid cancellation and a new quote. No silent quote rewriting, no automatic attestation and no new payment provider claims.
+- Owner management uses existing server owner authorization and exact-origin writes, optimistic revision checks and audit. No employee PIN/session grants owner permissions. No existing quote is repriced when rules change; a fresh quote validates selected rule revisions under locks.
+- Sheets retains the existing one-row Sales layout: numeric Total is final revenue; the item-detail cell also records original subtotal, named promo deductions and final total. Attendance/order preparation semantics remain unchanged. No production deployment or financial/Google access authorized by this task.
+
 ## Preparation queue and work sessions (2026-10-19)
 
 - User explicitly approved this extension to the original MVP exclusion of kitchen preparation queues. After the existing payment/completion flow, a paid sale appears once in Sedang disiapkan. Selesai moves it to Pesanan selesai for the current work session. Preparation state is separate from financial sale status; no payment/receipt/revenue rewrite.

@@ -14,4 +14,8 @@ Approved reference redesign (2026-10-18): match the user’s final two cashier/p
 
 Approved follow-up: paid-order preparation queue, durable work-session history, and final clock-out product summary; see docs/DECISIONS.md.
 
-Excluded: public deployment, live financial integrations, customer ordering/accounts, delivery, inventory, payroll, accounting, loyalty, AI, multi-branch/native apps, complex pricing, and sale edits/voids/refunds.
+Approved follow-up: owner-configurable percentage promos with optional product/quantity/spend/cap conditions and multiple sequential cashier-selected discounts. Immutable quote recovery, net reports and export snapshots are preserved. See docs/PROMOS.md; arbitrary pricing formulas/free-item/bundle-only/calendar rules remain outside this bounded builder.
+
+Approved follow-up (2026-10-20): owner-only supplies, whole-unit per-product usage, atomic completed-sale deductions, low/negative warnings, restocking, physical adjustments and immutable movement history. Preserve existing cashier/payment/auth/report/Sheets behavior. See docs/STOCK.md.
+
+Excluded: public deployment, live financial integrations, customer ordering/accounts, delivery, advanced inventory/cost accounting, payroll, accounting, loyalty, AI, multi-branch/native apps, complex pricing, and sale edits/voids/refunds.

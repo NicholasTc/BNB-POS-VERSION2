@@ -1,0 +1,200 @@
+/* Desktop-only layout. Keep the reference phone/tablet stylesheet untouched.
+   Wide touch tablets retain their existing layout, even in landscape. */
+@media (min-width: 1280px) and (hover: hover) and (pointer: fine) {
+  .cashier-app .cashier-header,
+  .cashier-app .content {
+    max-width: 1440px;
+    padding-inline: 32px;
+  }
+  .cashier-app .cashier-header {
+    padding-block: 18px 14px;
+  }
+  .cashier-app .lisi-logo {
+    width: 64px;
+  }
+  .cashier-app .staff-toggle {
+    min-width: 116px;
+    min-height: 48px;
+    padding: 10px 18px;
+    border-radius: 16px;
+    font-size: 18px;
+    gap: 14px;
+  }
+  .cashier-app .staff-toggle svg {
+    width: 22px;
+  }
+  .cashier-app .staff-panel {
+    right: 32px;
+  }
+  .cashier-app .content.stack {
+    gap: 20px;
+    padding-bottom: 32px;
+  }
+  .cashier-app .cashier-status {
+    min-height: 68px;
+    padding: 10px 20px;
+    border-radius: 20px;
+  }
+  .cashier-app .cashier-status-identity {
+    gap: 16px;
+  }
+  .cashier-app .cashier-status-identity strong,
+  .cashier-app .cashier-active {
+    font-size: 20px;
+  }
+  .cashier-app .cashier-status-identity svg {
+    width: 30px;
+    height: 30px;
+  }
+  .cashier-app .cashier-active > span {
+    width: 14px;
+    height: 14px;
+  }
+  .cashier-app .cashier-sign-in {
+    min-width: 160px;
+    min-height: 46px;
+    border-radius: 14px;
+    font-size: 17px;
+  }
+  .cashier-app .sales-layout {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) clamp(340px, 29vw, 400px);
+    align-items: start;
+    gap: 24px;
+  }
+  .cashier-app .catalog {
+    min-width: 0;
+  }
+  .cashier-app .catalog-tabs {
+    gap: 12px;
+    margin-bottom: 16px;
+  }
+  .cashier-app .catalog-tabs button {
+    min-height: 48px;
+    padding: 10px 16px;
+    border-radius: 14px;
+    font-size: 18px;
+  }
+  .cashier-app .product-grid {
+    grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+    gap: 14px;
+  }
+  .cashier-app .product {
+    min-height: 136px;
+    justify-content: flex-start;
+    padding: 14px;
+    gap: 14px;
+    border-radius: 14px;
+  }
+  .cashier-app .product.in-cart {
+    padding: 13px;
+  }
+  .cashier-app .product-photo {
+    width: 80px;
+    height: 106px;
+  }
+  .cashier-app .product-copy {
+    gap: 8px;
+  }
+  .cashier-app .product-name {
+    font-size: 18px;
+    line-height: 1.3;
+  }
+  .cashier-app .product-price {
+    font-size: 17px;
+    overflow-wrap: anywhere;
+  }
+  .cashier-app .product-quantity {
+    width: 26px;
+    height: 26px;
+    font-size: 14px;
+    top: 7px;
+    right: 7px;
+  }
+  .cashier-app .catalog-hint {
+    font-size: 15px;
+    margin: 18px 0 0;
+  }
+  .cashier-app .cart {
+    display: flex;
+    flex-direction: column;
+    position: sticky;
+    top: 20px;
+    align-self: start;
+    width: 100%;
+    margin: 0;
+    padding: 20px;
+    border: 1px solid var(--line);
+    border-radius: 24px;
+    max-height: max(320px, calc(100dvh - 210px));
+    overflow-y: auto;
+  }
+  .cashier-app .cart > :not(.cart-lines) {
+    flex-shrink: 0;
+  }
+  .cashier-app .order-heading {
+    padding-bottom: 12px;
+  }
+  .cashier-app .order-heading h2 {
+    font-size: 21px;
+  }
+  .cashier-app .cart .text-button {
+    font-size: 16px;
+  }
+  .cashier-app .cart-lines {
+    min-height: 0;
+    flex-shrink: 1;
+    max-height: clamp(100px, calc(100dvh - 380px), 420px);
+    overflow-y: auto;
+    overscroll-behavior-y: contain;
+    scrollbar-width: thin;
+    scrollbar-color: #c9c0b5 transparent;
+  }
+  .cashier-app .cart-line {
+    padding: 16px 0;
+  }
+  .cashier-app .compact-line {
+    gap: 12px;
+    font-size: 17px;
+  }
+  .cashier-app .cart-edit-controls {
+    padding-top: 10px;
+  }
+  .cashier-app .cart-total-row {
+    padding: 18px 0;
+    font-size: 20px;
+  }
+  .cashier-app .cart-total {
+    font-size: 28px;
+  }
+  .cashier-app .checkout-buttons {
+    gap: 12px;
+  }
+  .cashier-app .checkout-buttons button {
+    min-height: 56px;
+    font-size: 18px;
+    gap: 12px;
+    padding: 10px 12px;
+  }
+  .cashier-app .checkout-buttons svg {
+    width: 28px;
+    height: 28px;
+  }
+  .cashier-app .checkout-caption {
+    font-size: 13px;
+    margin-top: 12px;
+  }
+  .cashier-app .order-board {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    align-items: start;
+    gap: 24px;
+    padding-bottom: 0;
+  }
+  .cashier-app .preparation-section {
+    padding: 22px;
+  }
+  .cashier-app .preparation-heading h2 {
+    font-size: 23px;
+  }
+}

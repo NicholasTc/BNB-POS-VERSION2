@@ -1,5 +1,7 @@
 # Google Sheets sales and attendance copy
 
+Promo-aware code requires migration 0008 and a restarted worker matching the web revision. The Sales layout stays unchanged: Total is the amount after discounts; Rincian item also contains original total, named promo deductions and final total from the immutable sale snapshot. Attendance and row mappings are unchanged. See PROMOS.md.
+
 ## Current authorization
 
 Two distinct destinations are approved and pinned in the server configuration:

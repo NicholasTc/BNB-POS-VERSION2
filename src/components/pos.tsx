@@ -12,6 +12,7 @@ import { OrderBoard } from "./order-board";
 import { SessionFarewell } from "./session-farewell";
 import type { SessionFarewell as Farewell } from "@/modules/orders/types";
 import "./cashier.css";
+import "./cashier-desktop.css";
 export type PosState = {
   paired: true;
   shifts: { id: string; employeeId: string; name: string; clockIn: string }[];

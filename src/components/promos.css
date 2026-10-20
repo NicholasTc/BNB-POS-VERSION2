@@ -1,0 +1,96 @@
+.promo-fields {
+  border: 0;
+  margin: 0;
+  padding: 0;
+  min-width: 0;
+}
+.promo-pair {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1rem;
+}
+.promo-products {
+  max-height: 18rem;
+  overflow-y: auto;
+  border: 1px solid var(--line, #e5dfd4);
+  border-radius: 1rem;
+  padding: 0.5rem;
+}
+.promo-choice {
+  display: flex;
+  align-items: center;
+  gap: 0.8rem;
+  min-height: 48px;
+  padding: 0.5rem;
+  cursor: pointer;
+}
+.promo-choice input {
+  width: 24px;
+  height: 24px;
+  flex: 0 0 24px;
+  accent-color: #19583d;
+}
+.promo-choice small {
+  display: block;
+  color: #786f65;
+}
+.promo-conditions {
+  border-block: 1px solid #e5dfd4;
+  padding-block: 0.8rem;
+}
+.promo-conditions summary {
+  cursor: pointer;
+  font-weight: 600;
+  min-height: 36px;
+}
+.promo-preview {
+  background: #edf4ec;
+  color: #1c523c;
+  padding: 1rem;
+  border-radius: 1rem;
+}
+.promo-preview p {
+  margin: 0.4rem 0;
+}
+.promo-list-item {
+  border: 1px solid #e5dfd4;
+  border-radius: 1rem;
+  padding: 1rem;
+}
+.promo-picker-list {
+  display: grid;
+  gap: 0.75rem;
+  max-height: 42vh;
+  overflow-y: auto;
+}
+.promo-picker-list .promo-choice {
+  align-items: flex-start;
+  border: 1px solid #e5dfd4;
+  border-radius: 1rem;
+  padding: 1rem;
+}
+.promo-picker-list .promo-choice:has(:checked) {
+  border-color: #19583d;
+  background: #edf4ec;
+}
+.promo-picker-list .promo-choice:has(:disabled) {
+  opacity: 0.65;
+}
+.promo-breakdown {
+  display: grid;
+  gap: 0.5rem;
+  padding-block: 0.7rem;
+}
+.promo-breakdown > div {
+  display: flex;
+  justify-content: space-between;
+  gap: 1rem;
+}
+.promo-breakdown .promo-saving {
+  color: #19583d;
+}
+@media (max-width: 440px) {
+  .promo-pair {
+    grid-template-columns: 1fr;
+  }
+}

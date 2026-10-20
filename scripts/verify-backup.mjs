@@ -86,10 +86,27 @@ try {
   if (JSON.stringify(before) !== JSON.stringify(after))
     throw new Error("Restored table/sequence fingerprints differ.");
   const integrity = await restored.query(
-    "SELECT count(*)::int AS failures FROM sale s LEFT JOIN (SELECT sale_id,sum(subtotal) AS total,count(*) AS n FROM sale_line GROUP BY sale_id) l ON l.sale_id=s.id WHERE l.total IS DISTINCT FROM s.total OR l.n NOT BETWEEN 1 AND 50",
+    "SELECT count(*)::int AS failures FROM sale s LEFT JOIN (SELECT sale_id,sum(subtotal) AS total,count(*) AS n FROM sale_line GROUP BY sale_id) l ON l.sale_id=s.id LEFT JOIN sale_discount d ON d.sale_id=s.id WHERE (l.total-COALESCE((d.snapshot->>'discount')::bigint,0)) IS DISTINCT FROM s.total OR l.n NOT BETWEEN 1 AND 50",
   );
   if (integrity.rows[0].failures)
     throw new Error("Restored sale integrity check failed.");
+  const stockIntegrity = await restored.query(`
+    SELECT
+      (SELECT count(*) FROM stock_item i LEFT JOIN
+        (SELECT stock_item_id,sum(delta) balance FROM stock_movement GROUP BY stock_item_id) m
+        ON m.stock_item_id=i.id WHERE i.balance IS DISTINCT FROM COALESCE(m.balance,0))
+      +
+      (SELECT count(*) FROM
+        (SELECT l.sale_id,u.stock_item_id,-sum(u.quantity) delta FROM stock_usage u
+          JOIN sale_line l ON l.id=u.sale_line_id JOIN sale s ON s.id=l.sale_id
+          WHERE s.status='completed' GROUP BY l.sale_id,u.stock_item_id) expected
+        FULL JOIN (SELECT sale_id,stock_item_id,delta FROM stock_movement WHERE kind='sale') actual
+          ON actual.sale_id=expected.sale_id AND actual.stock_item_id=expected.stock_item_id
+        WHERE expected.delta IS DISTINCT FROM actual.delta) AS failures`);
+  if (Number(stockIntegrity.rows[0].failures))
+    throw new Error(
+      "Restored stock balance or completed-sale usage differs from its ledger.",
+    );
   const counts = await restored.query(
     "SELECT (SELECT count(*)::int FROM sale WHERE status='completed') AS completed,(SELECT count(*)::int FROM attendance) AS shifts",
   );
@@ -100,7 +117,7 @@ try {
       dumpBytes: dump.length,
       ...counts.rows[0],
       comparison:
-        "all public/drizzle table row counts, content digests, sequences and sale totals",
+        "all public/drizzle table row counts, content digests, sequences, sale totals and stock ledger/usage",
     }),
   );
 } finally {

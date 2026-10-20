@@ -18,6 +18,8 @@ import { ProductPhoto } from "./product-photo";
 import type { MenuProduct } from "@/lib/menu";
 import { datePreset } from "@/lib/owner-dates";
 import type { Report } from "@/modules/reporting";
+import { PromoBreakdown } from "./promo-breakdown";
+import { StockManagement } from "./stock-management";
 // JSON dates arrive as ISO strings; the server's Date types are not client data.
 type Data = Omit<Report, "history" | "attendance" | "open"> & {
   history: (Omit<Report["history"][number], "completedAt"> & {
@@ -44,6 +46,7 @@ export function Reports({
   staff,
   settings,
   device,
+  promos,
   initialSettingsTab = "menu",
 }: {
   view: OwnerView;
@@ -52,6 +55,7 @@ export function Reports({
   staff: ReactNode;
   settings: ReactNode;
   device: ReactNode;
+  promos?: ReactNode;
   initialSettingsTab?: "menu" | "device";
 }) {
   const { language, t } = useOwnerLanguage();
@@ -72,9 +76,9 @@ export function Reports({
   const [staffTab, setStaffTab] = useState<"attendance" | "employees">(
     "attendance",
   );
-  const [settingsTab, setSettingsTab] = useState<"menu" | "device">(
-    initialSettingsTab,
-  );
+  const [settingsTab, setSettingsTab] = useState<
+    "menu" | "device" | "promos" | "stock"
+  >(initialSettingsTab);
   const version = useRef(0);
   const manualError = useRef(false);
   useEffect(() => {
@@ -490,6 +494,11 @@ export function Reports({
                       <span className="details-label">{t("Lihat item")}</span>
                     </summary>
                     <p className="reference">{s.reference}</p>
+                    <PromoBreakdown
+                      snapshot={s.discountSnapshot}
+                      total={s.total}
+                      english={language === "en"}
+                    />
                     <div className="table-wrap">
                       <table>
                         <caption className="sr-only">
@@ -672,6 +681,18 @@ export function Reports({
             {t("Menu kafe")}
           </button>
           <button
+            aria-pressed={settingsTab === "promos"}
+            onClick={() => setSettingsTab("promos")}
+          >
+            Promo
+          </button>
+          <button
+            aria-pressed={settingsTab === "stock"}
+            onClick={() => setSettingsTab("stock")}
+          >
+            {language === "en" ? "Stock" : "Stok"}
+          </button>
+          <button
             aria-pressed={settingsTab === "device"}
             onClick={() => setSettingsTab("device")}
           >
@@ -680,6 +701,13 @@ export function Reports({
         </div>
         <div hidden={settingsTab !== "menu"}>{settings}</div>
         <div hidden={settingsTab !== "device"}>{device}</div>
+        <div hidden={settingsTab !== "promos"}>{promos}</div>
+        <div hidden={settingsTab !== "stock"}>
+          <StockManagement
+            products={products}
+            active={view === "settings" && settingsTab === "stock"}
+          />
+        </div>
       </section>
     </div>
   );
