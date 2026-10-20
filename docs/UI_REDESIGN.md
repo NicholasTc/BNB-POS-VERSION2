@@ -2,6 +2,14 @@
 
 Historical cashier redesign record. The newer owner phone/iPad/laptop reference supersedes the owner-layout freeze below; see OWNER_UI.md for the current owner layout and complete function mapping. Cashier behavior remains as recorded here.
 
+## Desktop cashier restructuring (2026-10-20)
+
+User authorized desktop layout only; preserve phone/tablet composition, the existing theme and all functions. New cashier-desktop.css is scoped to cashier-app and `(min-width: 1280px) and (hover: hover) and (pointer: fine)`. It is imported after cashier.css; existing phone/tablet rules and all application/API/financial logic are unchanged. Wide touch tablets keep the reference layout.
+
+Keep cream #faf8f3, white, green #195638, coffee #30201a, muted #7b6f66, the existing logo, Arial and rounded controls. The 1440px maximum workspace uses a compact header/status, three product columns where space permits and a 340–400px order panel at the right. Item rows scroll inside the sticky cart so payment controls remain reachable; the desktop acceptance test checks a full cart at 1280×720. Preparation and completed-session history sit side by side below checkout. Phone/tablet and payment/PIN/promo dialog styles are preserved.
+
+Before/after Sales captures at widths 390, 630, 820 and 1180 matched byte-for-byte. A 1366px coarse-pointer touch viewport matched with the desktop rules disabled/enabled. For that comparison use viewport captures: Chromium's oversized element screenshot temporarily changes pointer emulation and produces a misleading desktop capture. Desktop screenshots at 1280/1440/1920 were reviewed. The permanent desktop acceptance case checks geometry, payment button visibility, no horizontal overflow, checkout and preparation completion. Current final regression results: PROGRESS.md and VERIFICATION.md.
+
 ## Cashier login refinement (2026-10-19)
 
 Keep the existing cream (#faf8f3), paper (#ffffff), green (#195638), coffee (#30201a) and muted (#7b6f66) palette and Arial controls. Retain the logo/Staf header and catalog geometry. A left-aligned compact welcome card replaces the large disconnected warning: welcome → primary Cashier login → concise device guidance → secondary owner setup/recheck. No new artwork or decorative motion.

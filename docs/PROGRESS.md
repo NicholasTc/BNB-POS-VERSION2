@@ -3,6 +3,8 @@
 Updated: 2026-10-20 (Asia/Jakarta).
 
 ## Current stage
+Desktop-only cashier restructuring complete locally. Separate cashier-desktop.css applies at >=1280px with a hover/fine pointer. Compact three-column menu, right-hand sticky cart with scrollable items/visible payment buttons, smaller header/status controls, and preparation/history side by side. Existing phone/tablet CSS, domain logic and owner UI unchanged. Before/after Sales captures at 390/630/820/1180 pixels matched byte-for-byte; wide touch-tablet viewport matched with desktop rules enabled/disabled. Desktop 1280/1440/1920 screenshots reviewed; full-cart payment visibility, checkout and preparation actions passed. Final sequential gate: **46 unit / 81 integration / 41 browser = 168 tests passed**, static/build/schema/secrets checks and 23-table backup/restore. Temporary capture harness removed; permanent desktop acceptance case retained. Next: refresh localhost in a desktop window >=1280px for manual review; phone/tablet stays as before. No database, dependency, secret, deployment, commit or push changes by this desktop task; preserve the user's promo commit and remaining work.
+
 Owner percentage promos complete and verified **locally**. Final sequential gate passed **46 unit / 81 PostgreSQL integration / 40 Chromium tests (167 total)**, static/build/schema/secrets checks and 23-table backup/restore. Includes the cashier-auth loading guard. No production deployment, commits or pushes.
 
 ## Completed

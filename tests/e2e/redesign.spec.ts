@@ -1,7 +1,13 @@
 import { test, expect, type Page } from "@playwright/test";
 import { Pool } from "pg";
 import { hashPin, pinLookup } from "../../src/lib/credentials";
-import { ownerSection, login, pin, openPayment } from "./helpers";
+import {
+  ownerSection,
+  login,
+  pin,
+  openPayment,
+  confirmPayment,
+} from "./helpers";
 const origin = "http://127.0.0.1:3100";
 function testPool() {
   const url = process.env.TEST_DATABASE_URL;
@@ -65,6 +71,76 @@ async function referenceCart(page: Page) {
     page.getByRole("heading", { name: "Pesanan · 3 item", exact: true }),
   ).toBeVisible();
 }
+test("desktop cashier keeps a full cart beside compact products and retains payment/preparation actions", async ({
+  page,
+}) => {
+  await page.setViewportSize({ width: 1280, height: 720 });
+  await start(page);
+  await referenceCart(page);
+  for (const name of ["Jus Stroberi", "Jus Alpukat", "Es Teh", "Air Mineral"])
+    await page
+      .getByRole("button", { name: `Tambah ${name}`, exact: true })
+      .click();
+  const cart = page.getByRole("complementary", {
+    name: "Pesanan",
+    exact: true,
+  });
+  await expect(
+    cart.getByRole("heading", { name: "Pesanan · 7 item", exact: true }),
+  ).toBeVisible();
+  for (const [width, height] of [
+    [1280, 720],
+    [1440, 900],
+    [1920, 1080],
+  ]) {
+    await page.setViewportSize({ width, height });
+    await page.evaluate(() => scrollTo(0, 0));
+    const catalog = await page.locator(".catalog").boundingBox(),
+      order = await cart.boundingBox();
+    expect(catalog).not.toBeNull();
+    expect(order).not.toBeNull();
+    expect(order!.x).toBeGreaterThanOrEqual(catalog!.x + catalog!.width + 20);
+    expect(Math.abs(order!.y - catalog!.y)).toBeLessThan(2);
+    await expect(
+      cart.getByRole("button", { name: "Tunai", exact: true }),
+    ).toBeInViewport({ ratio: 1 });
+    await expect(
+      cart.getByRole("button", { name: "QRIS", exact: true }),
+    ).toBeInViewport({ ratio: 1 });
+    const pending = await page
+        .locator(".preparation-section")
+        .first()
+        .boundingBox(),
+      finished = await page
+        .locator(".preparation-section")
+        .nth(1)
+        .boundingBox();
+    expect(finished!.x).toBeGreaterThanOrEqual(
+      pending!.x + pending!.width + 20,
+    );
+    expect(Math.abs(pending!.y - finished!.y)).toBeLessThan(2);
+    expect(
+      await page.evaluate(
+        () => document.documentElement.scrollWidth <= innerWidth,
+      ),
+    ).toBe(true);
+    await page.screenshot({
+      path: `test-results/cashier-desktop-${width}.png`,
+    });
+  }
+  await openPayment(page, "Tunai");
+  await confirmPayment(page);
+  await expect(
+    page.getByRole("heading", { name: "Penjualan tersimpan!", exact: true }),
+  ).toBeVisible();
+  const pending = page.locator(".preparation-section").first(),
+    finished = page.locator(".preparation-section").nth(1);
+  await expect(
+    pending.getByRole("button", { name: /^Selesai pesanan / }),
+  ).toBeVisible({ timeout: 10000 });
+  await pending.getByRole("button", { name: /^Selesai pesanan / }).click();
+  await expect(finished.getByText("Jus Mangga", { exact: true })).toBeVisible();
+});
 test("reference catalog and cash sheet calculate change and one Save completes exactly once", async ({
   page,
 }) => {

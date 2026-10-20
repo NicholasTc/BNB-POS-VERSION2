@@ -2,6 +2,12 @@
 
 Local verification through 2026-10-20 (Asia/Jakarta); this records an MVP, not certification for public production use.
 
+## Desktop-only cashier layout (2026-10-20)
+
+Final sequential `npm run gate` passed: **46 unit / 81 PostgreSQL integration / 41 Chromium browser tests (168 total)**, strict typecheck, zero-warning lint, no schema drift, build, 13-asset secret scan and **23-table backup/restore**. Existing promo/payment/attendance/preparation/security/auto-update/owner-language/owner-layout/outage workflows all passed. One new desktop acceptance test verifies cart/catalog separation, payment controls visible with six product lines, no horizontal overflow, side-by-side preparation/history and successful payment/preparation completion at 1280×720, 1440×900 and 1920×1080. Screenshots reviewed: test-results/cashier-desktop-1280.png, -1440.png and -1920.png.
+
+An isolated temporary capture harness verified byte-identical before/after Sales renders at widths 390, 630, 820 and 1180. Wide 1366px touch-tablet viewport captures matched with the desktop rule disabled/enabled. Its first tall-element screenshot mismatched because Chromium's screenshot viewport resize temporarily changed pointer media; actual touch media/computed layout remained unchanged. The corrected viewport comparison passed, and the temporary harness was removed. Captures remain ignored under .verification. Only a scoped desktop CSS file and its import affect the app; base phone/tablet CSS, owner CSS, DOM/action logic, databases, dependencies and secrets were not changed. No production deployment.
+
 ## Owner percentage promos (2026-10-20)
 
 Final sequential `npm run gate` passed: **46 unit / 81 PostgreSQL integration / 40 Chromium browser tests (167 total)**, strict typecheck, zero-warning lint, no schema drift, production build, browser-secret scan (13 JS assets) and **23-table backup/restore**, including content digests, sequences and discounted sale-total reconciliation. An additional backup/restore after the focused promo suite also verified populated discount snapshots. No dependencies changed.
