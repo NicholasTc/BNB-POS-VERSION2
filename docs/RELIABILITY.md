@@ -2,6 +2,12 @@
 
 Implementation is staged; PROGRESS.md identifies actual verification. Policy: DECISIONS.md.
 
+## Promo module
+
+See PROMOS.md. Migration 0008 adds owner rules and immutable per-quote discount snapshots without rewriting historical sales. Strict schemas/origin checks, database owner authentication, active-cashier checks and optimistic rule revisions prevent employee rule management or client-controlled amounts. Device/product/promo locks serialize quote creation against rule changes. Existing no-promo idempotency hashes and explicit payment recovery remain compatible; attested/completed/uncertain quotes cannot be repriced.
+
+Each percentage is floored on remaining eligible amounts in owner order. BigInt largest-remainder allocations reconcile item revenue exactly to sale totals. Deferred SQL checks reconcile original immutable lines, discounts, per-product allocations and final payable total. Snapshot insertion requires the creating sale transaction; update/delete are forbidden, including while pending. Failed capture rolls back the entire quote. Reports show net recorded revenue, with original prices and promo deductions available in history; Sheets includes the same immutable breakdown. PostgreSQL remains authoritative. No new dependency or external call in checkout.
+
 ## Foundation
 
 Better Auth owns owner password hashing/session cookies. Public signup and unused auth endpoints are blocked. One-owner database constraint, eight-hour database-verified sessions, explicit reset/logout revocation. State-changing endpoints require the exact configured Origin and JSON; no permissive CORS. Login throttling is atomic in PostgreSQL, independent of spoofable proxy headers. Credentials are provisioned through hidden local input, never bundled or logged. Configuration errors expose key names only; operational errors expose sanitized messages and structured event/path/kind logs.

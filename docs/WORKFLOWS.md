@@ -7,9 +7,10 @@ Approved target behavior; consult PROGRESS.md for implemented/verified stage sta
 - Start shift: employee enters own PIN using “Mulai kerja”. First employee unlocks the POS. Additional employees begin their own shifts without ending anyone else's.
 - Change cashier: discard an unpaid cart only after explicit confirmation; incoming clocked-in employee enters own PIN. Attendance does not change.
 - End shift: employee enters own PIN using “Selesai kerja”. Active cashier is cleared if leaving; another active employee must authenticate. Last employee leaving locks the POS. Idle locking does not end shifts.
-- Sale: select items, adjust quantities, select cash/QRIS to open a saved-quote sheet. For cash, enter the received amount and check change; for QRIS, verify the merchant receipt and check the confirmation. One Save action acknowledges receipt and completes the same transaction. Closing/reopening the sheet keeps its quote; explicit unpaid cancellation is under Rincian transaksi. QRIS is recorded manually, never independently verified.
+- Sale: select items, adjust quantities, select cash/QRIS. If promos are configured, optionally select eligible promos and review the preview before continuing to the saved-quote sheet. For cash, enter the received amount and check change against the discounted total; for QRIS, verify the merchant receipt and check the confirmation. One Save action acknowledges receipt and completes the same transaction. Closing/reopening the sheet keeps its fixed quote; explicit unpaid cancellation is under Rincian transaksi. QRIS is recorded manually, never independently verified.
 - If a paid sale is uncertain: do not charge again, start a replacement, clear the cart, or change cashier. Keep the transaction visible and use its status/retry recovery. If service remains unavailable, retain the customer payment details and displayed recovery reference for owner follow-up. Owner checks persisted history before entering any replacement.
-- Corrections to immutable completed sales happen outside this MVP and are not subtracted from recorded gross sales reports.
+- Owner promos: Pengaturan → Promo; name/percentage/all or selected products are the basic form. Optional conditions and priority are under Syarat & batas. Ubah and Nonaktifkan affect future quotes only. Multiple promos apply sequentially in owner order, rounded down; see PROMOS.md.
+- Corrections to immutable completed sales happen outside this MVP and are not subtracted from recorded revenue after promos.
 
 ## Paid orders and end of session
 

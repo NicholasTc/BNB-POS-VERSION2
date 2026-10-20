@@ -17,6 +17,14 @@ import { ProductPhoto } from "./product-photo";
 import { PaymentSheet } from "./payment-sheet";
 import { PosIcon } from "./pos-icons";
 import { loadCashier } from "@/lib/cashier-load";
+import { PromoPicker } from "./promo-picker";
+import { PromoBreakdown } from "./promo-breakdown";
+import {
+  promoSelection,
+  type Promo,
+  type PromoSelection,
+  type DiscountSnapshot,
+} from "@/modules/promos/rules";
 type Item = Pick<MenuProduct, "id" | "name" | "price"> &
   Partial<Pick<MenuProduct, "category" | "imageUrl">>;
 type Cart = { cashierId: string; items: (Item & { quantity: number })[] };
@@ -27,6 +35,7 @@ type Quote = {
   cashierId: string;
   cashierName: string;
   total: number;
+  discountSnapshot?: DiscountSnapshot | null;
   paymentMethod: "cash" | "qris";
   completedAt: string | null;
   lines: {
@@ -45,6 +54,7 @@ const recoverySchema = z.object({
       id: z.uuid(),
       generation: z.number().int(),
       paymentMethod: z.enum(["cash", "qris"]),
+      promos: promoSelection.optional(),
       items: z.array(
         z.object({
           id: z.uuid(),
@@ -99,6 +109,15 @@ export function Sales({
     [menuStale, setMenuStale] = useState(false),
     [missing, setMissing] = useState(false);
   const restoredCart = useRef(false);
+  const [promoChoice, setPromoChoice] = useState<{
+    payment: "cash" | "qris";
+    promos: Promo[];
+    generation: number;
+  } | null>(null);
+  const startingCheckout = useRef(false),
+    preparing = useRef(false);
+  const checkoutController = useRef<AbortController | null>(null);
+  useEffect(() => () => checkoutController.current?.abort(), []);
   const startupReady = useRef(false);
   const startupLoad = useRef<{
     controller: AbortController;
@@ -292,10 +311,83 @@ export function Sales({
         : null,
     );
   }
-  async function prepare(payment: "cash" | "qris") {
-    if (!state.cashier || !cart?.items.length || pending) return;
+  async function rejectedPromoPreparation(
+    e: unknown,
+    input: Recovery["prepare"],
+  ) {
+    if (
+      !input?.promos?.length ||
+      !(e instanceof ApiError) ||
+      ![400, 409].includes(e.status)
+    )
+      return;
+    // A definitive rejection plus a serialized missing-ID read means no quote
+    // exists. Keep the cart; never release uncertain or already-issued quotes.
+    try {
+      acceptQuote(await api<Quote>(`/api/sales?id=${input.id}`));
+    } catch (checkError) {
+      if (checkError instanceof ApiError && checkError.status === 404)
+        writeRecovery(null);
+    }
+  }
+  async function openCheckout(payment: "cash" | "qris") {
+    if (
+      startingCheckout.current ||
+      busy ||
+      pending ||
+      !belongs ||
+      !state.cashier ||
+      !cart?.items.length
+    )
+      return;
+    startingCheckout.current = true;
     setBusy(true);
     setError("");
+    const controller = new AbortController();
+    checkoutController.current = controller;
+    try {
+      priceLines(
+        cart.items.map((i) => ({ unitPrice: i.price, quantity: i.quantity })),
+      );
+      const promos = await loadCashier<Promo[]>(
+        "/api/promos",
+        controller.signal,
+      );
+      if (controller.signal.aborted) return;
+      if (promos.length)
+        setPromoChoice({ payment, promos, generation: state.generation });
+      else await prepare(payment);
+    } catch (e) {
+      if (!controller.signal.aborted) {
+        setError((e as Error).message);
+        if (e instanceof ApiError && [401, 403].includes(e.status))
+          setPromoChoice(null);
+        else if (
+          cart.items.reduce((n, i) => n + i.price * i.quantity, 0) <= 1000000000
+        )
+          setPromoChoice({ payment, promos: [], generation: state.generation });
+      }
+    } finally {
+      startingCheckout.current = false;
+      setBusy(false);
+    }
+  }
+  async function prepare(
+    payment: "cash" | "qris",
+    promos: PromoSelection = [],
+  ) {
+    if (
+      preparing.current ||
+      !state.cashier ||
+      !belongs ||
+      !cart?.items.length ||
+      pending
+    )
+      return;
+    preparing.current = true;
+    setBusy(true);
+    setError("");
+    let preparedInput: Recovery["prepare"];
     try {
       priceLines(
         cart.items.map((i) => ({ unitPrice: i.price, quantity: i.quantity })),
@@ -310,15 +402,19 @@ export function Sales({
           unitPrice: i.price,
           quantity: i.quantity,
         })),
+        ...(promos.length ? { promos } : {}),
       };
+      preparedInput = input;
       const r: Recovery = { id, stage: "prepare", prepare: input };
       writeRecovery(r);
       const q = await api<Quote>("/api/sales", { action: "prepare", ...input });
       writeRecovery({ ...r, stage: "prepared" });
       acceptQuote(q);
     } catch (e) {
+      await rejectedPromoPreparation(e, preparedInput);
       setError((e as Error).message);
     } finally {
+      preparing.current = false;
       setBusy(false);
     }
   }
@@ -415,7 +511,8 @@ export function Sales({
     [cart, pending, clearCart, check],
   );
   async function retryPreparation() {
-    if (!recovery?.prepare) return;
+    if (preparing.current || !recovery?.prepare) return;
+    preparing.current = true;
     setBusy(true);
     setError("");
     try {
@@ -426,8 +523,10 @@ export function Sales({
       writeRecovery({ ...recovery, stage: "prepared" });
       acceptQuote(q);
     } catch (e) {
+      await rejectedPromoPreparation(e, recovery.prepare);
       setError((e as Error).message);
     } finally {
+      preparing.current = false;
       setBusy(false);
     }
   }
@@ -540,6 +639,10 @@ export function Sales({
             </div>
             <p>Terima kasih. Pesanan berikutnya?</p>
             <strong className="cart-total">{rupiah(quote.total)}</strong>
+            <PromoBreakdown
+              snapshot={quote.discountSnapshot}
+              total={quote.total}
+            />
             <p>
               {quote.paymentMethod === "qris" ? "QRIS" : "Tunai"} · Kasir{" "}
               {quote.cashierName}
@@ -574,6 +677,10 @@ export function Sales({
               <strong>Total</strong>
               <strong className="cart-total">{rupiah(quote.total)}</strong>
             </div>
+            <PromoBreakdown
+              snapshot={quote.discountSnapshot}
+              total={quote.total}
+            />
             <button onClick={() => setSheetOpen(true)}>
               Lanjutkan pembayaran
             </button>
@@ -734,7 +841,7 @@ export function Sales({
             <div className="checkout-buttons">
               <button
                 disabled={!cart?.items.length || !belongs || busy || blocked}
-                onClick={() => void prepare("cash")}
+                onClick={() => void openCheckout("cash")}
               >
                 <PosIcon name="cash" />
                 {busy ? "Memeriksa…" : "Tunai"}
@@ -742,7 +849,7 @@ export function Sales({
               <button
                 className="secondary"
                 disabled={!cart?.items.length || !belongs || busy || blocked}
-                onClick={() => void prepare("qris")}
+                onClick={() => void openCheckout("qris")}
               >
                 <PosIcon name="qris" />
                 QRIS
@@ -754,6 +861,32 @@ export function Sales({
           </>
         )}
       </aside>
+      {promoChoice && cart?.items.length && !pending && (
+        <PromoPicker
+          key={promoChoice.promos.map((p) => `${p.id}:${p.revision}`).join(",")}
+          promos={promoChoice.promos}
+          lines={cart.items.map((i) => ({
+            id: i.id,
+            quantity: i.quantity,
+            unitPrice: i.price,
+          }))}
+          busy={busy}
+          error={error}
+          canContinue={
+            !!state.cashier &&
+            belongs &&
+            state.generation === promoChoice.generation
+          }
+          onClose={() => setPromoChoice(null)}
+          onReload={() => void openCheckout(promoChoice.payment)}
+          onContinue={(selected) => {
+            if (state.generation !== promoChoice.generation) return;
+            const payment = promoChoice.payment;
+            setPromoChoice(null);
+            void prepare(payment, selected);
+          }}
+        />
+      )}
       {sheetOpen && quote && ["pending", "paid"].includes(quote.status) && (
         <PaymentSheet
           key={quote.id}

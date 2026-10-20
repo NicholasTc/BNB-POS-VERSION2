@@ -86,7 +86,7 @@ try {
   if (JSON.stringify(before) !== JSON.stringify(after))
     throw new Error("Restored table/sequence fingerprints differ.");
   const integrity = await restored.query(
-    "SELECT count(*)::int AS failures FROM sale s LEFT JOIN (SELECT sale_id,sum(subtotal) AS total,count(*) AS n FROM sale_line GROUP BY sale_id) l ON l.sale_id=s.id WHERE l.total IS DISTINCT FROM s.total OR l.n NOT BETWEEN 1 AND 50",
+    "SELECT count(*)::int AS failures FROM sale s LEFT JOIN (SELECT sale_id,sum(subtotal) AS total,count(*) AS n FROM sale_line GROUP BY sale_id) l ON l.sale_id=s.id LEFT JOIN sale_discount d ON d.sale_id=s.id WHERE (l.total-COALESCE((d.snapshot->>'discount')::bigint,0)) IS DISTINCT FROM s.total OR l.n NOT BETWEEN 1 AND 50",
   );
   if (integrity.rows[0].failures)
     throw new Error("Restored sale integrity check failed.");

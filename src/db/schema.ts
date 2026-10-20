@@ -15,6 +15,7 @@ import {
   primaryKey,
 } from "drizzle-orm/pg-core";
 import { sql } from "drizzle-orm";
+import type { PromoRules, DiscountSnapshot } from "@/modules/promos/rules";
 export const user = pgTable(
   "owner_user",
   {
@@ -188,6 +189,19 @@ export const menuItem = pgTable(
   ],
 );
 export const paymentMethod = pgEnum("payment_method", ["cash", "qris"]);
+// Owner rules are mutable; each issued quote has a separate immutable snapshot.
+export const promotion = pgTable(
+  "promotion",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    rules: jsonb("rules").$type<PromoRules>().notNull(),
+    revision: integer("revision").notNull().default(1),
+    createdAt: timestamp("created_at", { withTimezone: true })
+      .notNull()
+      .defaultNow(),
+  },
+  (t) => [check("promotion_revision", sql`${t.revision}>0`)],
+);
 export const saleStatus = pgEnum("sale_status", [
   "pending",
   "paid",
@@ -254,6 +268,12 @@ export const saleLine = pgTable(
     ),
   ],
 );
+export const saleDiscount = pgTable("sale_discount", {
+  saleId: uuid("sale_id")
+    .primaryKey()
+    .references(() => sale.id, { onDelete: "cascade" }),
+  snapshot: jsonb("snapshot").$type<DiscountSnapshot>().notNull(),
+});
 
 // Optional export module. No credentials or financial snapshots live here.
 export const sheetsJob = pgTable(

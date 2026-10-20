@@ -4,6 +4,7 @@ type LoadPath =
   | "/api/auth/sign-out"
   | "/api/pos"
   | "/api/menu"
+  | "/api/promos"
   | "/api/sales"
   | `/api/sales?id=${string}`;
 export const CASHIER_LOAD_TIMEOUT_MS = 10000;

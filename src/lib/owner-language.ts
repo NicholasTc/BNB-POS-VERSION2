@@ -1,5 +1,10 @@
 export type OwnerLanguage = "id" | "en";
 export const ownerEnglish = {
+  "Menu promo tidak ditemukan.": "A promo product was not found.",
+  "Promo berubah. Muat ulang daftar sebelum menyimpan.":
+    "This promo changed. Reload the list before saving.",
+  "Maksimal 100 promo. Ubah promo yang sudah ada.":
+    "A maximum of 100 promos is supported. Edit an existing promo.",
   "Cadangan spreadsheet": "Spreadsheet backup",
   "Salinan penjualan selesai dan kehadiran. Kasir tetap berjalan saat Google tidak tersedia.":
     "A copy of completed sales and attendance. Checkout keeps working when Google is unavailable.",

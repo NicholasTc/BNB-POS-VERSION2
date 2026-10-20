@@ -20,6 +20,10 @@ import {
 } from "../../src/app/api/owner/menu/route";
 import { POST as device } from "../../src/app/api/owner/device/route";
 import { POST as preferences } from "../../src/app/api/owner/preferences/route";
+import {
+  GET as promos,
+  POST as editPromos,
+} from "../../src/app/api/owner/promos/route";
 import { GET as cashier } from "../../src/app/api/pos/route";
 import {
   pairDevice,
@@ -44,8 +48,15 @@ import {
   GET as sheets,
   POST as retrySheets,
 } from "../../src/app/api/owner/sheets/route";
-const reads = [owner, reports, employees, menu, sheets];
-const writes = [editEmployee, editMenu, device, preferences, retrySheets];
+const reads = [owner, reports, employees, menu, sheets, promos];
+const writes = [
+  editEmployee,
+  editMenu,
+  device,
+  preferences,
+  retrySheets,
+  editPromos,
+];
 async function denied(cookie = "", extra: Record<string, string> = {}) {
   for (const route of reads)
     expect(

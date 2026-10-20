@@ -1,3 +1,4 @@
+import type { DiscountSnapshot } from "@/modules/promos/rules";
 export const tabs = ["Sales", "Attendance"] as const;
 export type Tab = (typeof tabs)[number];
 // Retained only to recognize and preserve the retired detail tab and row map.
@@ -68,6 +69,7 @@ export function saleRows(
     subtotal: number;
   }[],
   jobId: number,
+  discountSnapshot?: DiscountSnapshot | null,
 ): ExportRow[] {
   return [
     {
@@ -84,12 +86,25 @@ export function saleRows(
         sale.total,
         lines.reduce((n, l) => n + l.quantity, 0),
         "completed",
-        lines
-          .map(
-            (l) =>
-              `${l.name} ×${l.quantity} @ Rp${l.unit_price.toLocaleString("id-ID")} = Rp${l.subtotal.toLocaleString("id-ID")}`,
-          )
-          .join("\n"),
+        [
+          lines
+            .map(
+              (l) =>
+                `${l.name} ×${l.quantity} @ Rp${l.unit_price.toLocaleString("id-ID")} = Rp${l.subtotal.toLocaleString("id-ID")}`,
+            )
+            .join("\n"),
+          ...(discountSnapshot
+            ? [
+                `Sebelum diskon: Rp${discountSnapshot.grossTotal.toLocaleString("id-ID")}`,
+                ...discountSnapshot.applied.map(
+                  (p) =>
+                    `${p.name} (${p.percent}%): -Rp${p.discount.toLocaleString("id-ID")}`,
+                ),
+                `Total diskon: Rp${discountSnapshot.discount.toLocaleString("id-ID")}`,
+                `Total dibayar: Rp${sale.total.toLocaleString("id-ID")}`,
+              ]
+            : []),
+        ].join("\n"),
       ],
     },
   ];

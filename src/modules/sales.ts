@@ -1,6 +1,20 @@
 import { eq, inArray, sql } from "drizzle-orm";
 import { db } from "@/db";
-import { attendance, employee, menuItem, sale, saleLine } from "@/db/schema";
+import {
+  attendance,
+  employee,
+  menuItem,
+  sale,
+  saleLine,
+  promotion,
+  saleDiscount,
+} from "@/db/schema";
+import {
+  promoSelection,
+  promoRules,
+  type PromoSelection,
+} from "./promos/rules";
+import { calculatePromos } from "./promos/calculate";
 import { AppError } from "@/lib/http";
 import { digest } from "@/lib/credentials";
 import { priceLines } from "@/lib/money";
@@ -10,6 +24,7 @@ export type PrepareSale = {
   generation: number;
   paymentMethod: "cash" | "qris";
   items: { id: string; quantity: number; unitPrice: number }[];
+  promos?: PromoSelection;
 };
 export async function openSale(tx: Transaction) {
   const [s] = await tx
@@ -18,7 +33,7 @@ export async function openSale(tx: Transaction) {
     .where(inArray(sale.status, ["pending", "paid"]));
   return s ?? null;
 }
-async function cashier(
+export async function cashier(
   tx: Transaction,
   d: Awaited<ReturnType<typeof lockedDevice>>,
 ) {
@@ -51,17 +66,29 @@ export async function saleDetails(tx: Transaction, id: string) {
     })
     .from(saleLine)
     .where(eq(saleLine.saleId, id));
-  return { ...s, lines };
+  const [discount] = await tx
+    .select()
+    .from(saleDiscount)
+    .where(eq(saleDiscount.saleId, id));
+  return { ...s, lines, discountSnapshot: discount?.snapshot ?? null };
 }
 export async function prepareSale(token: string, input: PrepareSale) {
   const sorted = [...input.items].sort((a, b) => a.id.localeCompare(b.id));
   if (new Set(sorted.map((i) => i.id)).size !== sorted.length)
     throw new AppError(400, "Menu yang sama tidak boleh diulang.");
+  const parsedPromos = promoSelection.safeParse(input.promos ?? []);
+  if (!parsedPromos.success)
+    throw new AppError(400, "Pilihan promo tidak valid.");
+  const selected = [...parsedPromos.data].sort((a, b) =>
+    a.id.localeCompare(b.id),
+  );
   const requestHash = digest(
     JSON.stringify({
       generation: input.generation,
       paymentMethod: input.paymentMethod,
       items: sorted,
+      // Keep the historical no-promo hash/recovery payload exactly compatible.
+      ...(selected.length ? { promos: selected } : {}),
     }),
   );
   return db.transaction(async (tx) => {
@@ -122,19 +149,66 @@ export async function prepareSale(token: string, input: PrepareSale) {
     } catch (e) {
       throw new AppError(400, (e as Error).message);
     }
-    await tx
-      .insert(sale)
-      .values({
-        id: input.id,
-        reference: "LS-" + input.id.toUpperCase(),
-        deviceId: "shared",
-        cashierId: e.id,
-        cashierName: e.name,
-        requestHash,
-        paymentMethod: input.paymentMethod,
-        total,
-      });
+    const rules = selected.length
+      ? await tx
+          .select()
+          .from(promotion)
+          .where(
+            inArray(
+              promotion.id,
+              selected.map((p) => p.id),
+            ),
+          )
+          .orderBy(promotion.id)
+          .for("share")
+      : [];
+    if (
+      selected.some(
+        (p) =>
+          !rules.some(
+            (r) => r.id === p.id && r.revision === p.revision && r.rules.active,
+          ),
+      )
+    )
+      throw new AppError(
+        409,
+        "Promo berubah atau tidak aktif. Pilih promo kembali sebelum menerima pembayaran.",
+      );
+    let discountSnapshot;
+    try {
+      discountSnapshot = selected.length
+        ? calculatePromos(
+            lines.map((l) => ({
+              id: l.menuItemId,
+              quantity: l.quantity,
+              unitPrice: l.unitPrice,
+            })),
+            rules.map((r) => ({
+              ...promoRules.parse(r.rules),
+              id: r.id,
+              revision: r.revision,
+            })),
+          )
+        : null;
+    } catch (e) {
+      throw new AppError(409, (e as Error).message);
+    }
+    if (discountSnapshot) total -= discountSnapshot.discount;
+    await tx.insert(sale).values({
+      id: input.id,
+      reference: "LS-" + input.id.toUpperCase(),
+      deviceId: "shared",
+      cashierId: e.id,
+      cashierName: e.name,
+      requestHash,
+      paymentMethod: input.paymentMethod,
+      total,
+    });
     await tx.insert(saleLine).values(lines);
+    if (discountSnapshot)
+      await tx
+        .insert(saleDiscount)
+        .values({ saleId: input.id, snapshot: discountSnapshot });
     return saleDetails(tx, input.id);
   });
 }

@@ -57,6 +57,13 @@
       "when": 1792420933546,
       "tag": "0007_order_preparation",
       "breakpoints": true
+    },
+    {
+      "idx": 8,
+      "version": "7",
+      "when": 1792423170532,
+      "tag": "0008_burly_the_hand",
+      "breakpoints": true
     }
   ]
 }

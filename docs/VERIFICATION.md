@@ -1,6 +1,16 @@
 # Verification record
 
-Local verification through 2026-10-19 (Asia/Jakarta); this records an MVP, not certification for public production use.
+Local verification through 2026-10-20 (Asia/Jakarta); this records an MVP, not certification for public production use.
+
+## Owner percentage promos (2026-10-20)
+
+Final sequential `npm run gate` passed: **46 unit / 81 PostgreSQL integration / 40 Chromium browser tests (167 total)**, strict typecheck, zero-warning lint, no schema drift, production build, browser-secret scan (13 JS assets) and **23-table backup/restore**, including content digests, sequences and discounted sale-total reconciliation. An additional backup/restore after the focused promo suite also verified populated discount snapshots. No dependencies changed.
+
+Calculator tests cover approved sequential stacking (100,000 → 72,000 for 10% then 20%), selection-order independence, overlapping scopes, original-basket qualification, per-promo floor/caps, BigInt allocation and reconciliation at large values, positive payable totals, duplicates and configurable unit/distinct-product minimums. Eight module integration cases cover revision conflicts/audit, owner-rule validation, active-cashier-only listing, quote-time snapshot immutability, rollback on capture failure, concurrent edits/prepare, idempotency after owner edits, stale/inactive/unknown/ineligible selections, forged browser amounts/rules, historical no-promo hash compatibility, net reports and actual source-query-to-fake-worker Sales export. Existing owner security tests now include promo management reads/writes.
+
+Five browser cases cover configurable owner creation/edit/deactivation and retained drafts; mobile layout; multi-selection and disabled reasons; cash change after discounts; frozen quotes across owner edits/reload; unchecked QRIS receipt on recovery; lost committed replies without duplicate sales/tickets; stale-promo rejection retaining the cart; cashier denial from owner APIs; and a cashier-auth failure during promo loading that creates no quote. Existing payment, attendance, order/session, auto-update, owner language, handoff/idle/revocation, responsive navigation and real database-outage regressions passed. Screenshots reviewed: test-results/promos-owner-mobile.png and promos-cashier-mobile.png. One initial browser assertion matched Next's route announcer as well as the application alert; scoping it to the sales UI fixed the test without weakening the behavior check.
+
+Migration 0008 was applied to guarded local dev/test after a protected local backup. Fingerprints of employee, attendance, menu_item, sale, sale_line, work_session, work_session_shift and order_ticket all matched before/after; no fixtures or historical financial rewrites in café data. Local TEST worker restarted (managed session 12432) and repeated healthy synced/processed-0 heartbeats were observed. Automated discount exports use a fake transport; no real discounted sale was invented/uploaded to Google. Local/test and live destinations remain separated. Production SQL, Railway and live Sheets delivery were not changed or verified by this feature task. Match migration, web and worker versions before any separately authorized deployment; restore every table/function/snapshot together.
 
 ## Separate approved spreadsheet destinations (2026-10-19)
 
