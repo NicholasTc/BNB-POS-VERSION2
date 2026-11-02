@@ -1,19 +1,23 @@
 # LISI POS progress checkpoint
 
-Updated: 2026-10-20 (Asia/Jakarta).
+Updated: 2026-11-02 (Asia/Jakarta), read-only state review.
 
 ## Current stage
+State review on Nov 2: app HTTP 200 at localhost:3000; both Docker PostgreSQL containers healthy; local dev has ten migrations (0000–0009) and all six stock tables. TEST Sheets worker heartbeat recent, pending/failed exports both zero. Git was clean before this checkpoint update; stock commit `21d97c2` is included in merge `0c290e9` (PR #3). No code, records or production changed in this review; no fresh full test run.
+
 Owner stock module **complete locally**. Pengaturan → Stok: whole-unit supplies, per-product usage, deliveries, physical adjustments with reasons, low/negative warnings and paginated immutable history. New quotes snapshot recipes; completed sales deduct once atomically. Negative stock is allowed. Owner-only UUID receipts protect duplicate deliveries/lost responses; revisions prevent stale counts/recipe overwrites. Cashier UI/payment actions, prices/promos, reports, preparation, attendance and Sheets unchanged. No new dependency/service. See STOCK.md.
 
 ## Verification / next action
-Final sequential gate passed **48 unit / 90 integration / 45 browser = 183 tests**, typecheck/lint, schema drift/build/13-asset secret scan and **29-table backup/restore**. Additional populated-stock restore/ledger reconciliation passed; disposable fixtures cleaned. Reviewed phone/desktop stock, usage, history and adjustment captures. Migration 0009 freshly verified on guarded lisi_test and applied to local lisi_dev after backup `backups/lisi-2026-10-20T06-48-14-130Z.dump`; **all ten existing business source tables unchanged**. Build-generated next-env.d.ts changes restored; final whitespace check clean. No production deployment/commit/push.
+Category diagnosis (Nov 2, planning only): local Juice A/B/C/D and Makanan A are all `uncategorized`. API returns category and cashier exact-match filters correctly; migration 0004 and owner form intentionally default to uncategorized. Existing category-edit/live-filter browser coverage exists. Proposed next fix: owner-visible category badges/setup counts, required explicit category for new menu entries, deliberate review of legacy uncategorized items, and owner-only category-only batch assignments with atomic validation/audit/concurrency protection. Preserve Semua access, cart/quote snapshots and existing product metadata; no name-based guessing or data changes until implementation is approved.
+
+Last recorded full gate (Oct 20) passed **48 unit / 90 integration / 45 browser = 183 tests**, typecheck/lint, schema drift/build/13-asset secret scan and **29-table backup/restore**. Additional populated-stock restore/ledger reconciliation passed; disposable fixtures cleaned. Reviewed phone/desktop stock, usage, history and adjustment captures. Migration 0009 freshly verified on guarded lisi_test and applied to local lisi_dev after backup `backups/lisi-2026-10-20T06-48-14-130Z.dump`; **all ten existing business source tables unchanged**. Build-generated next-env.d.ts changes restored; final whitespace check clean. No production deployment was performed by the stock implementation task; stock has since been committed/merged as noted above. Current Railway revision/migrations/worker remain unverified.
 
 Next: manual local acceptance: owner → Pengaturan → Stok → add cups/fruit packs → Pemakaian per menu (1 cup + 1 pack per serving) → cashier completes one normal payment → check balances/history. Use Tambah stok for deliveries and Sesuaikan stok for a reasoned physical count. Production later needs migration 0009 with matching application deployment; stock defaults empty/unconfigured and never backfills old sales. Physical Safari/hosted trials remain separate checks.
 
 ## Preserved completed work
 - Owner promos (migration 0008), immutable sequential discounts, frozen recovery amounts, reconciled reports and existing Sheets export. Details: PROMOS.md.
 - Desktop cashier restructuring applies only >=1280px + hover/fine pointer; phone/tablet unchanged. Existing owner navigation, language, drafts and cashier preparation/session features preserved.
-- Migration 0008 previously applied to local dev/test after backup; eight source tables unchanged. Local TEST Sheets worker was session 12432; heartbeat must be checked before claiming it is running.
+- Migration 0008 previously applied to local dev/test after backup; eight source tables unchanged. Nov 2 local TEST Sheets metadata confirms a recent worker attempt and zero pending/failed exports; do not rely on an old terminal session ID.
 
 ## Persistent context
 - Completed baseline: secure owner-only password access (15-minute idle, eight-hour absolute), separate owner personal devices/shared cashier pairing, four-digit PINs, attendance/switching, safe menu/report auto-updates, durable UUID payment recovery, responsive bilingual owner UI, preparation queue and work sessions (migration 0007). Details: DECISIONS.md, WORKFLOWS.md, RELIABILITY.md, VERIFICATION.md.
