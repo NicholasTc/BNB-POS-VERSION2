@@ -71,6 +71,13 @@
       "when": 1792477712034,
       "tag": "0009_dear_swarm",
       "breakpoints": true
+    },
+    {
+      "idx": 10,
+      "version": "7",
+      "when": 1793612369942,
+      "tag": "0010_useful_bug",
+      "breakpoints": true
     }
   ]
 }

@@ -1,5 +1,13 @@
 # Decisions
 
+## Owner alerts (2026-11-02)
+
+- User approved an additive owner-only Needs attention panel and bell with grouped category, low/negative stock, spreadsheet sync and unfinished-payment alerts. No employee alerts, business-record changes, new background service, pop-ups or sounds. Retain existing Lisi theme, owner language/security and workflows. Long-shift alerts remain out of scope until a threshold is agreed.
+- Informational category reminders can be cleared/dismissed; other nonurgent reminders can be snoozed for one hour. Negative stock, sync failures/configuration problems and overdue paid records are urgent: acknowledgment keeps them visible until resolved. Clear all targets only the informational reminders in the owner’s current view; it cannot suppress urgent issues or erase records. Hidden active reminders can be restored.
+- Unpaid quotes older than 15 minutes and paid-but-unfinished records older than 2 minutes prompt review, never cancellation, new payment or automatic completion. These are alert grace periods only. Spreadsheet alerts reuse existing metadata: bad configuration/errors, no check-in for 2 minutes or pending export data older than 2 minutes. Intentionally disabled sync does not generate alerts.
+- One bounded metadata row per owner/issue group persists episode versions, dismiss/snooze/acknowledgment. Dashboard observation reconciles current conditions, resolves absent issues and resets suppression for changed or observed recurring issues. Alerts are a current-state monitor, not an event log of transitions while the dashboard is closed. Ordinary consumption within the same low-stock episode does not generate repeated reminders.
+- Alert reads may update only alert-episode metadata; unchanged observations are write-free. A single source snapshot, module-only lock, version checks, atomic batch actions and audit protect multi-device management. Background reads do not renew owner activity. No alert data is persisted in browser storage. Migration 0010 adds the metadata table and one partial stock movement index; all business tables are read-only to this module.
+
 ## Owner stock (2026-10-20)
 
 - User approved a modular owner-dashboard inventory addition to the original MVP inventory exclusion: supplies (cups, fruit/dimsum packs, packaging, eggs), restocking, physical-count adjustments with required reasons, per-product usage, low-stock warnings and movement history. Use Pengaturan → Stok within existing navigation and bilingual theme; employee authorization and cashier UI remain unchanged.

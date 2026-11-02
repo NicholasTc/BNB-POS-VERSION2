@@ -526,10 +526,40 @@ export const stockMovement = pgTable(
     unique("stock_sale_once").on(t.saleId, t.stockItemId),
     unique("stock_operation_once").on(t.operationId),
     index("stock_history_idx").on(t.createdAt, t.id),
+    // Alerts inspect the last delivery/count without scanning sale deductions.
+    index("alerts_stock_restock_idx")
+      .on(t.stockItemId, t.createdAt, t.id)
+      .where(sql`${t.kind}<>'sale'`),
     index("stock_item_history_idx").on(t.stockItemId, t.createdAt, t.id),
     check(
       "stock_movement_valid",
       sql`${t.kind} IN ('opening','restock','adjust','sale') AND ${t.delta} BETWEEN -9000000000000 AND 9000000000000 AND ${t.balanceAfter} BETWEEN -9000000000000 AND 9000000000000 AND length(${t.reason})<=200 AND ((${t.kind}='sale' AND ${t.saleId} IS NOT NULL AND ${t.operationId} IS NULL AND ${t.delta}<0 AND ${t.saleReference} IS NOT NULL) OR (${t.kind}<>'sale' AND ${t.saleId} IS NULL AND ${t.operationId} IS NOT NULL AND ${t.saleReference} IS NULL))`,
+    ),
+  ],
+);
+
+// Owner alert episodes/preferences only; no hooks or writes to business records.
+export const ownerAlertState = pgTable(
+  "owner_alert_state",
+  {
+    ownerId: text("owner_id")
+      .notNull()
+      .references(() => user.id, { onDelete: "cascade" }),
+    key: text("key").notNull(),
+    fingerprint: text("fingerprint").notNull(),
+    version: integer("version").notNull().default(1),
+    active: boolean("active").notNull().default(true),
+    disposition: text("disposition").notNull().default("none"),
+    snoozedUntil: timestamp("snoozed_until", { withTimezone: true }),
+    firstSeenAt: timestamp("first_seen_at", { withTimezone: true })
+      .notNull()
+      .defaultNow(),
+  },
+  (t) => [
+    primaryKey({ columns: [t.ownerId, t.key] }),
+    check(
+      "owner_alert_valid",
+      sql`${t.key} IN ('categories','stock-low','stock-negative','sheets','payment-pending','payment-paid') AND ${t.version}>0 AND ${t.disposition} IN ('none','dismissed','snoozed','acknowledged') AND ((${t.disposition}='snoozed' AND ${t.snoozedUntil} IS NOT NULL) OR (${t.disposition}<>'snoozed' AND ${t.snoozedUntil} IS NULL))`,
     ),
   ],
 );

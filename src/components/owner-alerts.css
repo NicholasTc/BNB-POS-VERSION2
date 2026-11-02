@@ -1,0 +1,133 @@
+/* Additive owner-only alert controls; cashier styles are untouched. */
+.owner-app .owner-alert-bell {
+  position: relative;
+  display: flex;
+  gap: 6px;
+  min-height: 44px;
+  white-space: nowrap;
+}
+.owner-alert-count {
+  min-width: 22px;
+  height: 22px;
+  border-radius: 20px;
+  display: inline-grid;
+  place-items: center;
+  background: #f7e8c8;
+  color: #684d28;
+  font-size: 12px;
+  font-weight: 700;
+  padding: 0 5px;
+}
+.owner-alert-bell.urgent .owner-alert-count {
+  background: #a6312d;
+  color: white;
+}
+.owner-alert-dialog {
+  width: min(690px, calc(100vw - 24px));
+  max-height: calc(100dvh - 24px);
+  padding: 24px;
+  margin: auto;
+  overflow-y: auto;
+}
+.owner-alert-dialog h2 {
+  font-size: 24px;
+}
+.owner-alert-dialog h3 {
+  font-size: 18px;
+  margin: 8px 0;
+}
+.owner-alert-dialog p {
+  margin: 0;
+  line-height: 1.55;
+}
+.owner-alert-tabs,
+.owner-alert-actions {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+.owner-alert-tabs button,
+.owner-alert-actions button {
+  min-height: 44px;
+  font-size: 13px;
+  padding: 9px 13px;
+}
+.owner-alert-tabs button[aria-pressed="true"] {
+  background: #edf3ec;
+  color: #195638;
+  border-color: #195638;
+}
+.owner-alert-list {
+  display: grid;
+  gap: 14px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.owner-alert-card {
+  border: 1px solid #e9e3d9;
+  border-left: 4px solid #28624b;
+  padding: 18px;
+  border-radius: 14px;
+  background: white;
+  overflow-wrap: anywhere;
+}
+.owner-alert-card.warning {
+  border-left-color: #b27b18;
+}
+.owner-alert-card.urgent {
+  border-left-color: #a6312d;
+}
+.owner-alert-priority {
+  font-size: 12px;
+  font-weight: 700;
+  color: #28624b;
+}
+.owner-alert-card.warning .owner-alert-priority {
+  color: #805b20;
+}
+.owner-alert-card.urgent .owner-alert-priority {
+  color: #a6312d;
+}
+.owner-alert-card small {
+  display: block;
+  margin-top: 10px;
+  color: #786f65;
+  line-height: 1.5;
+}
+.owner-alert-actions {
+  margin-top: 14px;
+}
+.owner-alert-empty {
+  padding: 24px 0;
+}
+@media (max-width: 640px) {
+  .owner-alert-bell-label {
+    display: none;
+  }
+  .owner-app .owner-alert-bell {
+    min-width: 44px;
+    width: 44px;
+    padding: 7px;
+  }
+  .owner-alert-bell .owner-alert-count {
+    position: absolute;
+    top: -6px;
+    right: -5px;
+    min-width: 18px;
+    height: 18px;
+    font-size: 10px;
+  }
+  .owner-alert-dialog {
+    padding: 18px;
+  }
+}
+@media (max-width: 360px) {
+  .owner-app:has(.owner-alerts) .owner-tools select {
+    width: 78px;
+  }
+  .owner-app:has(.owner-alerts) .owner-tools {
+    flex-wrap: nowrap;
+    justify-content: flex-end;
+  }
+}
