@@ -82,6 +82,41 @@ export const ownerEnglish = {
   Minuman: "Drinks",
   Makanan: "Food",
   "Foto menu (opsional)": "Product photo (optional)",
+  "Unggah foto": "Upload photo",
+  "Ganti foto": "Replace photo",
+  "Mengunggah foto…": "Uploading photo…",
+  "Batalkan unggahan": "Cancel upload",
+  "Gunakan foto bawaan": "Use default photo",
+  "Pratinjau foto menu": "Product photo preview",
+  "Pilih foto dari perangkat": "Choose photo from device",
+  "JPG, PNG, atau WebP. Maksimal 8 MB.": "JPG, PNG or WebP. Maximum 8 MB.",
+  "Coba unggah lagi": "Retry upload",
+  "Klik Simpan menu untuk menerapkan foto.":
+    "Click Save menu to apply the photo.",
+  "Atau gunakan URL HTTPS atau foto contoh. Kosongkan untuk foto bawaan.":
+    "Or use an HTTPS URL or placeholder. Leave empty for the default photo.",
+  "Gunakan foto JPG, PNG, atau WebP.": "Use a JPG, PNG or WebP photo.",
+  "Ukuran foto maksimal 8 MB.": "Maximum photo size is 8 MB.",
+  "Foto tidak dapat dibaca. Pilih foto kembali.":
+    "The photo could not be read. Choose it again.",
+  "Unggahan belum dikonfirmasi. Coba unggah kembali.":
+    "Upload not confirmed. Retry the upload.",
+  "Foto sedang diproses. Tunggu sebentar lalu coba lagi.":
+    "A photo is being processed. Wait a moment and try again.",
+  "Permintaan foto tidak valid.": "Invalid photo request.",
+  "Permintaan foto berubah. Pilih foto kembali.":
+    "The photo request changed. Choose the photo again.",
+  "Foto tidak valid. Gunakan JPG, PNG, atau WebP tanpa animasi.":
+    "Invalid photo. Use a JPG, PNG or WebP without animation.",
+  "Foto terlalu besar. Pilih foto yang lebih kecil.":
+    "The photo is too large. Choose a smaller photo.",
+  "Penyimpanan foto belum tersedia. Foto lama tetap digunakan.":
+    "Photo storage is unavailable. The previous photo is unchanged.",
+  "Foto belum tersedia. Unggah kembali sebelum menyimpan menu.":
+    "Photo unavailable. Upload it again before saving the menu.",
+  "Foto menu telah berubah. Muat ulang menu lalu coba lagi.":
+    "The menu photo changed. Reload the menu and try again.",
+  "Pilih foto terlebih dahulu.": "Choose a photo first.",
   "Contoh mangga": "Mango placeholder",
   "Contoh stroberi": "Strawberry placeholder",
   "Contoh kopi": "Coffee placeholder",

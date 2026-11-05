@@ -628,3 +628,30 @@ export const dailyReportRow = pgTable(
     index("daily_row_day_idx").on(t.date),
   ],
 );
+
+// Upload lifecycle only. Menu references remain in the existing image_url field.
+export const menuPhotoAsset = pgTable(
+  "menu_photo_asset",
+  {
+    id: uuid("id").primaryKey(),
+    inputHash: text("input_hash").notNull(),
+    contentHash: text("content_hash").notNull(),
+    bytes: integer("bytes").notNull(),
+    mode: text("mode").notNull(),
+    target: text("target").notNull(),
+    state: text("state").notNull().default("pending"),
+    createdAt: timestamp("created_at", { withTimezone: true })
+      .notNull()
+      .defaultNow(),
+    touchedAt: timestamp("touched_at", { withTimezone: true })
+      .notNull()
+      .defaultNow(),
+  },
+  (t) => [
+    check(
+      "menu_photo_valid",
+      sql`${t.mode} IN ('local','s3') AND ${t.state} IN ('pending','ready','deleting','deleted') AND ${t.bytes} BETWEEN 1 AND 500000 AND ${t.inputHash} ~ '^[a-f0-9]{64}$' AND ${t.contentHash} ~ '^[a-f0-9]{64}$' AND ${t.target} ~ '^[a-f0-9]{64}$'`,
+    ),
+    index("menu_photo_cleanup_idx").on(t.state, t.touchedAt),
+  ],
+);

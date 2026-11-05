@@ -85,6 +85,13 @@
       "when": 1793874822692,
       "tag": "0011_old_supernaut",
       "breakpoints": true
+    },
+    {
+      "idx": 12,
+      "version": "7",
+      "when": 1793878940305,
+      "tag": "0012_striped_bloodaxe",
+      "breakpoints": true
     }
   ]
 }

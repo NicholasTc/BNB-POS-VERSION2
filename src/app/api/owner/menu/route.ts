@@ -21,6 +21,7 @@ export const POST = endpoint(async (request) => {
         active: z.boolean(),
         category: menuCategory.optional(),
         imageUrl: menuImage.optional(),
+        expectedImageUrl: menuImage.optional(),
       })
       .strict(),
   );

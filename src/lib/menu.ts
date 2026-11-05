@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { photoId } from "./menu-photo";
 
 export const menuCategory = z.enum(["uncategorized", "drink", "food"]);
 export const menuImage = z
@@ -6,7 +7,8 @@ export const menuImage = z
   .trim()
   .max(2000)
   .refine((value) => {
-    if (value === "" || /^\/menu\/[a-z-]+\.webp$/.test(value)) return true;
+    if (value === "" || /^\/menu\/[a-z-]+\.webp$/.test(value) || photoId(value))
+      return true;
     try {
       return new URL(value).protocol === "https:";
     } catch {
