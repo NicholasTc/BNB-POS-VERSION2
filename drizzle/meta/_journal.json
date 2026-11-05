@@ -78,6 +78,13 @@
       "when": 1793612369942,
       "tag": "0010_useful_bug",
       "breakpoints": true
+    },
+    {
+      "idx": 11,
+      "version": "7",
+      "when": 1793874822692,
+      "tag": "0011_old_supernaut",
+      "breakpoints": true
     }
   ]
 }

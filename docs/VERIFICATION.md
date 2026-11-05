@@ -1,6 +1,14 @@
 # Verification record
 
-Local verification through 2026-10-20 (Asia/Jakarta); this records an MVP, not certification for public production use.
+Local verification through 2026-11-05 (Asia/Jakarta); this records an MVP, not certification for public production use.
+
+## Additive TEST Laporan Harian (2026-11-05)
+
+Final sequential `npm run gate` passed **61 unit / 109 PostgreSQL integration / 49 Chromium browser tests = 219**, strict typecheck, zero-warning lint, no schema drift, production build, 13-asset client secret scan and **33-table backup/restore**. New tests exercise exact net allocation with overlapping sequential/capped promos, mixed promo/full-price units, historical names/prices, unknown unsold prices, source inconsistencies, Jakarta/leap-day bounds, TEST-only guard, literal untrusted strings, ownership/header/formula conflicts, retained date selection, stable retry reservations, report backoff, new sales during export, catalogue changes/tombstones and independent existing-export receipts. Real stored quote snapshots remain accurate after owner promo edits.
+
+Migration 0011 applied locally after `backups/lisi-2026-11-05T10-49-51-953Z.dump`; twenty existing source/export/alert tables matched before/after fingerprints. Actual Google API smoke used only approved TEST and existing lisi_dev records. All **19 dates, Oct 18–Nov 5**, were selected and their visible net totals/quantities reconciled to SQL; TOTAL stayed blank. Re-publishing today did not change a historical date selection. All four original tabs matched complete pre-change sheet JSON (cells/formulas/formats/properties); nineteen source/export-row tables remained unchanged during report sync. Automatic-today control restored afterward. Native calendar selection and historical promo report appearance verified in Chrome; reviewed screenshot is ignored at `.verification/daily-report.png`.
+
+Local TEST worker restarted with the opt-in report enabled; first pass reported both exports synced/0. Existing Sales/Attendance APIs, formats, triggers and POS/auth/payment/stock/attendance functionality are unchanged. Production report export is deliberately refused; no live sheet/deployment changes. Unknown historical unsold catalogue prices remain blank, not reconstructed. No claim of hosted/physical Safari verification, exactly-once network writes, unlimited sheet capacity or complete pre-activation catalogue history. See DAILY_REPORT.md.
 
 ## Desktop-only cashier layout (2026-10-20)
 

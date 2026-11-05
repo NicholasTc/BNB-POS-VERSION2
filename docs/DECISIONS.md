@@ -76,6 +76,8 @@
 
 ## Technical conventions
 
+- Approved daily Sheets report (2026-11-05): add **Laporan Harian** to the existing TEST spreadsheet, with one reusable date selector and the exact six requested columns; TOTAL remains blank. Preserve Sales/Attendance and all existing POS behavior. Report completed sales by Jakarta day with immutable historical prices, exact saved discount allocations and promo notes; include zero-sale catalogue items without inventing unavailable historical prices. Existing combo products remain as sold; no inferred bundles. Independently guarded/retriable module; production rollout requires separate TEST review/authorization. See DAILY_REPORT.md.
+
 - Owner security follow-up (2026-10-18): password-only sign-in retained by explicit user choice; authenticator 2FA deferred. Owner access locks after **15 minutes of inactivity** and expires absolutely eight hours after sign-in. Genuine visible-page interaction counts as activity; automatic updates/focus checks do not. Require the owner password again after expiry. Entering the cashier screen in the same browser revokes that browser's owner session, including direct navigation/history restoration; independent personal-device sessions remain available.
 
 - Modular monolith; Next.js App Router, strict TypeScript, React, Tailwind, PostgreSQL, Drizzle, npm lockfile, Vitest, Playwright. Five stage gates follow the preserved project brief.

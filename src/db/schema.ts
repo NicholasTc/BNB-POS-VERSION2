@@ -563,3 +563,68 @@ export const ownerAlertState = pgTable(
     ),
   ],
 );
+
+// Independent test-only daily-report projection; no triggers on business tables.
+export const dailyReportTarget = pgTable(
+  "sheets_daily_target",
+  {
+    id: text("id").primaryKey().default("primary"),
+    spreadsheetId: text("spreadsheet_id").notNull(),
+    mode: text("mode").notNull(),
+    sheetId: integer("sheet_id"),
+    reconciledAt: timestamp("reconciled_at", { withTimezone: true })
+      .notNull()
+      .defaultNow(),
+    lastSuccessAt: timestamp("last_success_at", { withTimezone: true }),
+    lastError: text("last_error"),
+    attempts: integer("attempts").notNull().default(0),
+    nextAttemptAt: timestamp("next_attempt_at", { withTimezone: true })
+      .notNull()
+      .defaultNow(),
+  },
+  (t) => [
+    check(
+      "daily_target_valid",
+      sql`${t.id}='primary' AND ${t.mode}='test' AND ${t.attempts}>=0`,
+    ),
+  ],
+);
+export const dailyReportDay = pgTable(
+  "sheets_daily_day",
+  {
+    date: text("date").primaryKey(),
+    saleCount: integer("sale_count").notNull(),
+    catalog: jsonb("catalog")
+      .$type<import("@/modules/daily-report/types").CatalogItem[]>()
+      .notNull(),
+    catalogHash: text("catalog_hash").notNull(),
+    statusRow: integer("status_row").notNull().unique(),
+    dirty: boolean("dirty").notNull().default(true),
+    publishedAt: timestamp("published_at", { withTimezone: true }),
+    catalogHistorical: boolean("catalog_historical").notNull().default(false),
+  },
+  (t) => [
+    check(
+      "daily_day_valid",
+      sql`${t.date} ~ '^[0-9]{4}-[0-9]{2}-[0-9]{2}$' AND ${t.saleCount}>=0 AND ${t.statusRow}>=6`,
+    ),
+  ],
+);
+export const dailyReportRow = pgTable(
+  "sheets_daily_row",
+  {
+    key: text("key").primaryKey(),
+    date: text("date")
+      .notNull()
+      .references(() => dailyReportDay.date, { onDelete: "cascade" }),
+    rowNumber: integer("row_number").notNull().unique(),
+    active: boolean("active").notNull().default(true),
+  },
+  (t) => [
+    check(
+      "daily_row_valid",
+      sql`${t.key} ~ '^[a-f0-9]{64}$' AND ${t.rowNumber} BETWEEN 6 AND 100005`,
+    ),
+    index("daily_row_day_idx").on(t.date),
+  ],
+);
