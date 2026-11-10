@@ -250,6 +250,17 @@ export const ownerEnglish = {
 } as const;
 export type OwnerText = keyof typeof ownerEnglish;
 const errorEnglish: Record<string, string> = {
+  "Silakan masuk sebagai administrator.": "Please sign in as administrator.",
+  "Email atau kata sandi tidak sesuai.": "Email or password is incorrect.",
+  "Kata sandi administrator tidak sesuai.":
+    "Administrator password is incorrect.",
+  "Email sudah terdaftar. Periksa daftar akun.":
+    "Email already registered. Check the account list.",
+  "Halaman tidak valid.": "Invalid page.",
+  "Permintaan akun telah berubah. Periksa daftar pemilik sebelum mencoba lagi.":
+    "The account request changed. Check the owner list before retrying.",
+  "New passwords do not match.": "New passwords do not match.",
+
   "Silakan masuk sebagai pemilik.": "Please sign in as the owner.",
   "Periksa kembali data yang dimasukkan.": "Check the information you entered.",
   "Permintaan tidak diizinkan. Muat ulang halaman.":

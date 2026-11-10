@@ -23,6 +23,7 @@ export const user = pgTable(
     name: text("name").notNull(),
     email: text("email").notNull().unique(),
     emailVerified: boolean("email_verified").notNull().default(true),
+    role: text("role").notNull().default("owner"),
     image: text("image"),
     createdAt: timestamp("created_at", { withTimezone: true })
       .notNull()
@@ -31,7 +32,33 @@ export const user = pgTable(
       .notNull()
       .defaultNow(),
   },
-  (t) => [check("one_owner", sql`${t.id} = 'owner'`)],
+  (t) => [
+    check(
+      "account_role",
+      sql`${t.role} IN ('owner','admin') AND (${t.role}='admin')=(${t.id}='admin')`,
+    ),
+    uniqueIndex("account_email_ci").on(sql`lower(${t.email})`),
+  ],
+);
+export const ownerCreation = pgTable(
+  "owner_creation",
+  {
+    id: uuid("id").primaryKey(),
+    actorId: text("actor_id")
+      .notNull()
+      .references(() => user.id),
+    ownerId: text("owner_id")
+      .notNull()
+      .unique()
+      .references(() => user.id),
+    requestHash: text("request_hash").notNull(),
+    createdAt: timestamp("created_at", { withTimezone: true })
+      .notNull()
+      .defaultNow(),
+  },
+  (t) => [
+    check("owner_creation_hash", sql`${t.requestHash} ~ '^[a-f0-9]{64}$'`),
+  ],
 );
 export const ownerPreferences = pgTable(
   "owner_preferences",

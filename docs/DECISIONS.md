@@ -1,5 +1,13 @@
 # Decisions
 
+## Developer account manager (2026-11-05)
+
+- User approved URL-only `/admin`, with no buttons/links from the owner dashboard or cashier. Use a separate developer email/password administrator account, provisioned/reset through a protected terminal command. Google login and administrator 2FA are not part of this approved version. URL concealment is navigation only; server role checks provide security.
+- Initial scope: list/create owner logins and list/create/manage staff PIN accounts using the existing staff module in both admin and owner pages. All owners share the same single café's revenue, sales, menu, inventory, attendance and staff. Per-owner language/alert preferences remain personal. Independent businesses/tenants, backup downloads/restoration, web password reset, account deletion/deactivation and administrator creation in the web UI remain out of scope.
+- Replace the original fixed single-owner restriction with database-backed `owner` and `admin` roles. Reserve the administrator identity for CLI provisioning. Owners/employees cannot access admin operations; administrator credentials cannot sign into the owner dashboard or act as a cashier. Keep public signup and extra auth endpoints blocked. Reuse Better Auth with role-specific sign-in gates, 15-minute idle/eight-hour absolute sessions and server validation on every request.
+- Creating an owner requires the administrator password again. Stable operation receipts prevent duplicate accounts on lost responses; case-insensitive email uniqueness, strict payloads, throttling, SQL transactions and audit protect account creation. Staff PINs remain four digits, hashed and never readable; duplicate/open-shift/PIN-reset protections remain unchanged. CLI reset revokes only the selected identity's sessions, preserving partner/admin sessions.
+- Implement, verify and provision the supplied developer credentials locally. Do not store plaintext credentials in source, browser storage, logs or docs. No production database/infrastructure/deployment changes in this task.
+
 ## Owner alerts (2026-11-02)
 
 - User approved an additive owner-only Needs attention panel and bell with grouped category, low/negative stock, spreadsheet sync and unfinished-payment alerts. No employee alerts, business-record changes, new background service, pop-ups or sounds. Retain existing Lisi theme, owner language/security and workflows. Long-shift alerts remain out of scope until a threshold is agreed.

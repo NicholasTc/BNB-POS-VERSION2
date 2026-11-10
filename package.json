@@ -23,7 +23,8 @@
     "backup:verify": "node scripts/verify-backup.mjs",
     "check:secrets": "node scripts/check-client-secrets.mjs",
     "sheets:worker": "tsx scripts/sheets-worker.ts",
-    "photos:cleanup": "tsx scripts/photos-cleanup.ts"
+    "photos:cleanup": "tsx scripts/photos-cleanup.ts",
+    "admin:bootstrap": "tsx scripts/admin.ts"
   },
   "dependencies": {
     "next": "16.4.2",

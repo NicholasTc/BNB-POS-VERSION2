@@ -1,0 +1,171 @@
+/* Scoped admin workspace; existing owner/cashier layouts are unchanged. */
+.admin-app {
+  min-height: 100dvh;
+  background: #faf8f3;
+  font-family: Arial, sans-serif;
+  font-size: 14px;
+}
+.admin-app [hidden] {
+  display: none !important;
+}
+.admin-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 24px;
+  max-width: 1180px;
+  margin: auto;
+  padding: 28px 32px;
+  border-bottom: 1px solid #e9e3d9;
+}
+.admin-wordmark {
+  font-size: 40px;
+  font-weight: 900;
+  letter-spacing: -3px;
+  line-height: 0.9;
+  color: #36251e;
+}
+.admin-wordmark small {
+  display: block;
+  font-size: 11px;
+  letter-spacing: 0;
+  line-height: 1.4;
+  padding-top: 5px;
+}
+.admin-header-tools {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+}
+.admin-header-tools label {
+  margin: 0;
+}
+.admin-header-tools select {
+  width: auto;
+}
+.admin-workspace {
+  max-width: 1180px;
+  padding: 32px;
+  margin: auto;
+}
+.admin-login {
+  max-width: 480px;
+  margin: 48px auto;
+  padding: 0 20px;
+}
+.admin-app h1 {
+  font-size: 30px;
+  font-weight: 700;
+  letter-spacing: -0.7px;
+}
+.admin-app h2 {
+  font-size: 22px;
+  font-weight: 700;
+}
+.admin-app h3 {
+  font-size: 17px;
+  font-weight: 700;
+}
+.admin-title {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 20px;
+  flex-wrap: wrap;
+}
+.admin-identity {
+  color: #776b60;
+  overflow-wrap: anywhere;
+  margin: 0;
+}
+.admin-tabs {
+  display: flex;
+  gap: 10px;
+  margin: 8px 0;
+}
+.admin-tabs button {
+  min-width: 120px;
+}
+.admin-owner-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 40px;
+  align-items: start;
+}
+.admin-accounts {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+.admin-accounts li {
+  padding: 16px 0;
+  display: grid;
+  gap: 4px;
+  border-bottom: 1px solid #e9e3d9;
+  overflow-wrap: anywhere;
+}
+.admin-accounts li small {
+  color: #28624b;
+}
+.admin-accounts li span {
+  color: #776b60;
+}
+.admin-shared-note {
+  background: #eaf2e9;
+  border-left: 3px solid #28624b;
+  border-radius: 0 8px 8px 0;
+  padding: 12px 16px;
+  margin: 12px 0 0;
+}
+.admin-confirm {
+  padding-top: 16px;
+  border-top: 1px solid #e9e3d9;
+}
+.admin-app .management-grid {
+  grid-template-columns: 1fr 1fr;
+}
+.admin-app .card {
+  border: 1px solid #e9e3d9;
+  border-radius: 16px;
+  box-shadow: none;
+}
+.admin-app fieldset {
+  border: 0;
+  margin: 0;
+  padding: 0;
+  min-width: 0;
+}
+@media (max-width: 760px) {
+  .admin-header {
+    padding: 20px;
+    gap: 14px;
+  }
+  .admin-header-tools {
+    gap: 8px;
+  }
+  .admin-header-tools label {
+    font-size: 12px;
+  }
+  .admin-workspace {
+    padding: 24px 16px;
+  }
+  .admin-owner-grid,
+  .admin-app .management-grid {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 28px;
+  }
+  .admin-title {
+    gap: 6px;
+  }
+  .admin-identity {
+    font-size: 12px;
+  }
+  .admin-app .card {
+    padding: 20px;
+  }
+  .admin-login {
+    margin-top: 32px;
+  }
+}
