@@ -22,7 +22,9 @@
     "backup:dev": "node scripts/backup.mjs",
     "backup:verify": "node scripts/verify-backup.mjs",
     "check:secrets": "node scripts/check-client-secrets.mjs",
-    "sheets:worker": "tsx scripts/sheets-worker.ts"
+    "sheets:worker": "tsx scripts/sheets-worker.ts",
+    "photos:cleanup": "tsx scripts/photos-cleanup.ts",
+    "admin:bootstrap": "tsx scripts/admin.ts"
   },
   "dependencies": {
     "next": "16.4.2",
@@ -33,7 +35,9 @@
     "pg": "8.23.1",
     "zod": "4.6.7",
     "@next/env": "16.4.2",
-    "google-auth-library": "11.3.1"
+    "google-auth-library": "11.3.1",
+    "@aws-sdk/client-s3": "3.1162.0",
+    "sharp": "0.35.5"
   },
   "devDependencies": {
     "typescript": "5.9.3",

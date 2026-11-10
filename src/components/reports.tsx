@@ -48,6 +48,7 @@ export function Reports({
   device,
   promos,
   initialSettingsTab = "menu",
+  settingsRequest,
 }: {
   view: OwnerView;
   onNavigate: (view: OwnerView) => void;
@@ -57,6 +58,7 @@ export function Reports({
   device: ReactNode;
   promos?: ReactNode;
   initialSettingsTab?: "menu" | "device";
+  settingsRequest?: { tab: "menu" | "stock" | "device"; token: number };
 }) {
   const { language, t } = useOwnerLanguage();
   const [initial] = useState<Query>(() => ({
@@ -79,6 +81,16 @@ export function Reports({
   const [settingsTab, setSettingsTab] = useState<
     "menu" | "device" | "promos" | "stock"
   >(initialSettingsTab);
+  useEffect(() => {
+    if (!settingsRequest) return;
+    let live = true;
+    void Promise.resolve().then(() => {
+      if (live) setSettingsTab(settingsRequest.tab);
+    });
+    return () => {
+      live = false;
+    };
+  }, [settingsRequest]);
   const version = useRef(0);
   const manualError = useRef(false);
   useEffect(() => {

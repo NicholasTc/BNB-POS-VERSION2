@@ -7,6 +7,8 @@ const secrets = [
   "BETTER_AUTH_SECRET",
   "PIN_PEPPER",
   "GOOGLE_SERVICE_ACCOUNT_JSON",
+  "MENU_PHOTO_S3_ACCESS_KEY_ID",
+  "MENU_PHOTO_S3_SECRET_ACCESS_KEY",
 ]
   .map((k) => process.env[k])
   .filter(Boolean);

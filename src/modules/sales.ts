@@ -19,6 +19,7 @@ import { AppError } from "@/lib/http";
 import { digest } from "@/lib/credentials";
 import { priceLines } from "@/lib/money";
 import { cashierValid, lockedDevice, type Transaction } from "./attendance";
+import { lockPhotoReference } from "./menu-photos/references";
 export type PrepareSale = {
   id: string;
   generation: number;
@@ -284,9 +285,24 @@ export async function saveMenu(input: {
   active: boolean;
   category?: "uncategorized" | "drink" | "food";
   imageUrl?: string;
+  expectedImageUrl?: string;
 }) {
   await db.transaction(async (tx) => {
+    const imageUrl = await lockPhotoReference(tx, input.imageUrl);
     if (input.id) {
+      if (input.expectedImageUrl !== undefined) {
+        const [current] = await tx
+          .select({ imageUrl: menuItem.imageUrl })
+          .from(menuItem)
+          .where(eq(menuItem.id, input.id))
+          .for("update");
+        if (!current) throw new AppError(404, "Menu tidak ditemukan.");
+        if (current.imageUrl !== input.expectedImageUrl)
+          throw new AppError(
+            409,
+            "Foto menu telah berubah. Muat ulang menu lalu coba lagi.",
+          );
+      }
       const result = await tx
         .update(menuItem)
         .set({
@@ -294,12 +310,16 @@ export async function saveMenu(input: {
           price: input.price,
           active: input.active,
           category: input.category,
-          imageUrl: input.imageUrl,
+          imageUrl,
         })
         .where(eq(menuItem.id, input.id))
         .returning({ id: menuItem.id });
       if (!result.length) throw new AppError(404, "Menu tidak ditemukan.");
-    } else await tx.insert(menuItem).values(input);
+    } else {
+      const { expectedImageUrl: _expected, ...values } = input;
+      void _expected;
+      await tx.insert(menuItem).values({ ...values, imageUrl });
+    }
     await tx.execute(
       sql`INSERT INTO audit (actor,action,details) VALUES ('owner',${input.id ? "menu.update" : "menu.create"},${JSON.stringify({ menuItemId: input.id ?? null })}::jsonb)`,
     );

@@ -68,14 +68,12 @@ export async function pairDevice() {
 }
 export async function revokeDevice() {
   await db.transaction(async (tx) => {
-    await tx
-      .update(device)
-      .set({
-        tokenHash: null,
-        cashierId: null,
-        touchedAt: null,
-        generation: sql`${device.generation}+1`,
-      });
+    await tx.update(device).set({
+      tokenHash: null,
+      cashierId: null,
+      touchedAt: null,
+      generation: sql`${device.generation}+1`,
+    });
     await tx.insert(audit).values({ actor: "owner", action: "device.revoke" });
   });
 }
@@ -234,12 +232,15 @@ export async function posState(token: string) {
     };
   });
 }
-export async function saveEmployee(input: {
-  id?: string;
-  name: string;
-  pin?: string;
-  active: boolean;
-}) {
+export async function saveEmployee(
+  input: {
+    id?: string;
+    name: string;
+    pin?: string;
+    active: boolean;
+  },
+  actor = "owner",
+) {
   const pinHash = input.pin ? await hashPin(input.pin) : undefined;
   try {
     await db.transaction(async (tx) => {
@@ -284,22 +285,18 @@ export async function saveEmployee(input: {
             .where(eq(device.cashierId, e.id));
       } else {
         if (!pinHash) throw new AppError(400, "Masukkan PIN empat angka.");
-        await tx
-          .insert(employee)
-          .values({
-            name: input.name,
-            pinHash,
-            pinLookup: pinLookup(input.pin!),
-            active: input.active,
-          });
-      }
-      await tx
-        .insert(audit)
-        .values({
-          actor: "owner",
-          action: input.id ? "employee.update" : "employee.create",
-          details: { employeeId: input.id ?? null, pinReset: !!pinHash },
+        await tx.insert(employee).values({
+          name: input.name,
+          pinHash,
+          pinLookup: pinLookup(input.pin!),
+          active: input.active,
         });
+      }
+      await tx.insert(audit).values({
+        actor,
+        action: input.id ? "employee.update" : "employee.create",
+        details: { employeeId: input.id ?? null, pinReset: !!pinHash },
+      });
     });
   } catch (error) {
     if (error instanceof AppError) throw error;

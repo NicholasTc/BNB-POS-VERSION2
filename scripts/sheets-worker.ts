@@ -7,6 +7,9 @@ const { sheetsConfig, sheetsErrorCode } =
   await import("../src/modules/sheets/config");
 const { syncSheets } = await import("../src/modules/sheets/sync");
 const { googleSheets } = await import("../src/modules/sheets/google");
+const { syncDailyReport } = await import("../src/modules/daily-report/sync");
+const { GoogleDailyReport } =
+  await import("../src/modules/daily-report/google");
 const { pool } = await import("../src/db");
 const once = process.argv.includes("--once");
 let stopping = false;
@@ -23,9 +26,20 @@ try {
       googleSheets(config!, signal),
     );
     console.log(JSON.stringify({ event: "sheets_sync", ...result }));
+    // Independent, opt-in TEST report. Core export has already committed;
+    // report failures never mark Sales/Attendance deliveries as failed.
+    const daily = await syncDailyReport(
+      pool,
+      config,
+      async (signal) =>
+        new GoogleDailyReport(await googleSheets(config!, signal)),
+    ).catch(() => ({ state: "retry", processed: 0, error: "unavailable" }));
+    if (daily.state !== "off")
+      console.log(JSON.stringify({ event: "sheets_daily_report", ...daily }));
     if (result.state === "off") break;
     if (once) {
-      if (result.state === "retry") process.exitCode = 1;
+      if (result.state === "retry" || daily.state === "retry")
+        process.exitCode = 1;
       break;
     }
     // A bounded independent worker. No owner page needs to stay open.
