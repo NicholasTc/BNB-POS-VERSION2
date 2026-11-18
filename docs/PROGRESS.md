@@ -1,11 +1,18 @@
 # LISI POS progress checkpoint
 
-Updated: 2026-11-18 (Asia/Jakarta), local branch consolidation in progress.
+Updated: 2026-11-18 (Asia/Jakarta), complete local main consolidated and verified.
 
 ## Current stage
-User approved consolidating all approved features into local main. Clean working tree before merge; original main retained at safety/main-before-consolidation-20261118 (4938fca). Latest fetched origin/feat-final-push brings alerts, TEST daily report, photo uploads and admin/multiple-owner management. The separate Next 16.4.6 upgrade will also be reconciled, preserving feature dependencies and compatible ESLint/test tooling. No push, deployment or production changes. Full gate pending on the combined version. Main-only audit retained in RELEASE_AUDIT.md; its results do not cover this merge.
+All fetched feature branches and the existing security-upgrade branch are included in local main: alerts, TEST Laporan Harian, menu-photo upload and developer admin/multiple-owner accounts, plus earlier stock/promos/preparation/Sheets work. Source/scripts/migrations match origin/feat-final-push exactly. Original main retained at safety/main-before-consolidation-20261118 (4938fca). Merge commits: 321464f (features), 7914cb8 (security). No push or deployment.
 
-Daily report remains TEST-only by approved policy; photo bucket configuration and production admin provisioning remain separate operational steps. Local branch consolidation does not migrate either development or production data. Earlier request to completely stop authorization polling was superseded by the user's automatic reconnect requirement; no startup behavior changes are part of this consolidation.
+Next, @next/env and eslint-config-next are aligned at 16.4.6; Vitest stays at tested 5.0.5. AWS/Sharp dependencies and all feature commands retained. Resolved conflicting package manifests and rebuilt the lock from the complete feature lock plus the security branch's precise package changes, retaining cross-platform native bindings. Fresh npm ci succeeded. An initial regenerated lock omitted native bindings; the final clean install and full gate passed after repair.
+
+Final sequential npm run gate passed: **69 unit / 131 integration / 58 Chromium = 258 tests**, typecheck, zero-warning lint, no schema drift, production build, 16-asset browser-secret scan and **35-table backup/restore**, including stock reconciliation. Fixtures used only guarded loopback lisi_test, Sheets off and local test photo storage. Evidence: /tmp/lisi-consolidated-gate.log. Generated next-env.d.ts restored; no production records, local business records or credentials changed. Local dev read-only check confirmed 14 applied migrations, TEST Sheets and enabled daily report; default local photo storage is supported.
+
+## Remaining limits / next action
+Runtime dependency audit still reports five high affected entries through the related Vitest/Vite/picomatch chain; no moderate Next finding remains in that audit. Full install audit reports 17 total (11 high, 6 moderate). Functional gate success is not security clearance. No automatic force-fix/downgrade. See RELEASE_AUDIT.md for the earlier main-only audit and consolidation update.
+
+Railway read-only status confirms the live app is still commit 747a2d6 from main and runs npm run db:migrate in pre-deploy (300-second timeout); healthcheckPath is unset. A push could trigger a deployment/migrations, so remote main remains unchanged pending a deliberate rollout. Before deploying, verify backups, production schema/storage/worker settings and migration effects; provision admin separately if needed. Production backup restoration and client-device trials remain unverified. Daily report remains TEST-only by approved policy; this merge does not authorize LIVE report export. Next: test the combined local app and TEST sheet, then review rollout explicitly before pushing. User's automatic reconnect requirement remains preserved; no startup redesign in this merge.
 
 ## Preserved feature verification history (not a fresh merged-version result)
 

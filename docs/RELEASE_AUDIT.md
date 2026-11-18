@@ -1,5 +1,16 @@
 # Release readiness audit — 18 November 2026
 
+## Consolidation update — 18 November 2026
+
+The historical main-only audit below is superseded for local functional verification. Local main now includes origin/feat-final-push and next-security-upgrade-16.4.6. Complete gate passed on combined features: 69 unit + 131 integration + 58 browser = 258 tests; typecheck/lint, no drift, production build, 16-asset secret scan and 35-table restore passed. Next/@next/env/eslint-config-next now match 16.4.6, resolving the prior Next build blocker. Optional native bindings were retained and clean npm ci succeeded.
+
+Remaining runtime audit: five high affected entries (related Vitest/Vite/picomatch chain); full dependency install audit: 17 (11 high, 6 moderate). These are affected dependency entries, not demonstrated application exploits. Broader security/operational sign-off remains open.
+
+Read-only Railway status confirms deployed commit 747a2d6 on main, a pre-deploy migration command and no configured deployment healthcheck path. No push/deployment was performed. Local dev has 14 migrations and TEST daily report enabled; no migrations or business writes were applied there during consolidation. Daily-report export remains TEST-only. Production setup/backup/client-device verification and an approved rollout remain necessary.
+
+## Historical audit of main / 747a2d6
+
+
 Verdict: **Hold client launch sign-off.** This is a source review and local regression audit with limited unauthenticated live HTTP checks, not a penetration test or deployed-system certification.
 
 ## Exact scope

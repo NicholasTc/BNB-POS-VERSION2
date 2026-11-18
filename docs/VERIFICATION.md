@@ -1,5 +1,10 @@
 # Verification record
 
+## Consolidated main with Next.js 16.4.6 (2026-11-18)
+
+Full sequential gate passed: **69 unit / 131 PostgreSQL integration / 58 Chromium = 258 tests**, typecheck, zero-warning lint, no schema drift, production build, 16-asset browser-secret scan and 35-table backup/restore including stock reconciliation. All approved feature branches are included; Next/@next/env/eslint-config-next are aligned at 16.4.6 and clean npm ci succeeded with native platform bindings retained. Business source code/scripts/migrations are unchanged from the latest fetched feature branch. Fixtures used guarded lisi_test only; Sheets off and photo storage local. No push, production migration/deployment, live Google writes or real business-record changes. Runtime audit retains five high related dependency entries; security and hosted operational limits in PROGRESS.md remain. Earlier audit build failure is historical, not the final combined result.
+
+
 Local verification through 2026-11-05 (Asia/Jakarta); this records an MVP, not certification for public production use.
 
 ## Developer account manager (2026-11-05)
