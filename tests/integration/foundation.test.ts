@@ -15,25 +15,28 @@ beforeAll(async () => {
   await db
     .insert(user)
     .values({ id: "owner", email: "owner@test.local", name: "Pemilik" });
-  await db
-    .insert(account)
-    .values({
-      id: "credential",
-      accountId: "owner",
-      userId: "owner",
-      providerId: "credential",
-      password: await hashPassword("test-owner-password-2026"),
-    });
+  await db.insert(account).values({
+    id: "credential",
+    accountId: "owner",
+    userId: "owner",
+    providerId: "credential",
+    password: await hashPassword("test-owner-password-2026"),
+  });
 });
 afterAll(async () => {
   await pool.end();
 });
 describe("foundation PostgreSQL/auth", () => {
-  it("applies migrations idempotently and enforces one owner", async () => {
+  it("applies migrations idempotently and reserves the administrator identity", async () => {
     await expect(
       db
         .insert(user)
-        .values({ id: "another", name: "Bad", email: "other@test.local" }),
+        .values({
+          id: "another",
+          name: "Bad",
+          email: "other@test.local",
+          role: "admin",
+        }),
     ).rejects.toThrow();
   });
   it("denies anonymous owner access", async () =>

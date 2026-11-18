@@ -17,3 +17,7 @@ if (
 process.env.DATABASE_URL = url;
 process.env.BETTER_AUTH_URL = "http://127.0.0.1:3100";
 process.env.SHEETS_SYNC_MODE = "off";
+// Uploaded fixtures must never enter a real bucket or café image directory.
+process.env.MENU_PHOTO_STORAGE = "local";
+process.env.MENU_PHOTO_LOCAL_DIR =
+  process.cwd() + "/.local/menu-photos/lisi_test";

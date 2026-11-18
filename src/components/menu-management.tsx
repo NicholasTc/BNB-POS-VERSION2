@@ -5,6 +5,8 @@ import { useOwnerLanguage } from "@/components/owner-language";
 import { ownerMessage } from "@/lib/owner-language";
 import { rupiah } from "@/lib/money";
 import type { MenuProduct } from "@/lib/menu";
+import { MenuPhotoField } from "./menu-photo-field";
+import { ProductPhoto } from "./product-photo";
 type Item = MenuProduct & { active: boolean };
 export function MenuManagement({
   onLoad,
@@ -17,6 +19,8 @@ export function MenuManagement({
     [error, setError] = useState(""),
     [notice, setNotice] = useState(""),
     [busy, setBusy] = useState(false);
+  const [photoBusy, setPhotoBusy] = useState(false),
+    [formVersion, setFormVersion] = useState(0);
   const load = useCallback(
     () =>
       api<Item[]>("/api/owner/menu")
@@ -32,6 +36,7 @@ export function MenuManagement({
   }, [load]);
   async function save(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
+    if (photoBusy || busy) return;
     const form = e.currentTarget;
     const f = new FormData(form);
     setBusy(true);
@@ -45,9 +50,11 @@ export function MenuManagement({
         active: f.get("active") === "on",
         category: f.get("category"),
         imageUrl: f.get("imageUrl"),
+        expectedImageUrl: editing?.imageUrl,
       });
       setEditing(null);
       form.reset();
+      setFormVersion((version) => version + 1);
       setNotice("Menu disimpan.");
       await load();
     } catch (e) {
@@ -70,7 +77,11 @@ export function MenuManagement({
         </p>
       )}
       <div className="management-grid">
-        <form className="stack" onSubmit={save} key={editing?.id ?? "new"}>
+        <form
+          className="stack"
+          onSubmit={save}
+          key={`${editing?.id ?? "new"}:${formVersion}`}
+        >
           <h3>{editing ? t("Ubah menu") : t("Tambah menu")}</h3>
           <div>
             <label htmlFor="menu-name">{t("Nama menu")}</label>
@@ -108,37 +119,11 @@ export function MenuManagement({
               <option value="food">{t("Makanan")}</option>
             </select>
           </div>
-          <div>
-            <label htmlFor="menu-image">{t("Foto menu (opsional)")}</label>
-            <input
-              id="menu-image"
-              name="imageUrl"
-              type="text"
-              list="menu-photos"
-              maxLength={2000}
-              defaultValue={editing?.imageUrl ?? ""}
-              placeholder="https://…"
-              aria-describedby="menu-image-help"
-            />
-            <datalist id="menu-photos">
-              <option value="/menu/mango.webp">{t("Contoh mangga")}</option>
-              <option value="/menu/strawberry.webp">
-                {t("Contoh stroberi")}
-              </option>
-              <option value="/menu/coffee.webp">{t("Contoh kopi")}</option>
-              <option value="/menu/pastry.webp">{t("Contoh makanan")}</option>
-              <option value="/menu/avocado.webp">{t("Contoh alpukat")}</option>
-              <option value="/menu/tea.webp">{t("Contoh teh")}</option>
-              <option value="/menu/water.webp">
-                {t("Contoh air mineral")}
-              </option>
-            </datalist>
-            <small id="menu-image-help">
-              {t(
-                "Gunakan URL HTTPS atau pilih foto contoh. Kosongkan untuk foto bawaan.",
-              )}
-            </small>
-          </div>
+          <MenuPhotoField
+            initialValue={editing?.imageUrl ?? ""}
+            disabled={busy}
+            onBusy={setPhotoBusy}
+          />
           <label className="row">
             <input
               type="checkbox"
@@ -149,7 +134,7 @@ export function MenuManagement({
             {t("Tersedia")}
           </label>
           <div className="row">
-            <button disabled={busy}>
+            <button disabled={busy || photoBusy}>
               {busy ? t("Menyimpan…") : t("Simpan menu")}
             </button>
             {editing && (
@@ -167,7 +152,14 @@ export function MenuManagement({
           {items.length ? (
             items.map((e) => (
               <div className="row between" key={e.id}>
-                <div>
+                <div className="menu-photo-thumbnail">
+                  <ProductPhoto
+                    key={e.imageUrl}
+                    imageUrl={e.imageUrl}
+                    category={e.category}
+                  />
+                </div>
+                <div className="menu-management-info">
                   <strong>{e.name}</strong>
                   <p className="muted">
                     {rupiah(e.price)}

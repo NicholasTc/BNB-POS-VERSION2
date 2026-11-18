@@ -4,7 +4,10 @@ import { api } from "@/lib/client";
 import { useOwnerLanguage } from "@/components/owner-language";
 import { ownerMessage } from "@/lib/owner-language";
 type Employee = { id: string; name: string; active: boolean };
-export function Employees() {
+export function Employees({
+  endpoint = "/api/owner/employees",
+  request = api,
+}: { endpoint?: string; request?: typeof api } = {}) {
   const { language, t } = useOwnerLanguage();
   const [items, setItems] = useState<Employee[]>([]),
     [editing, setEditing] = useState<Employee | null>(null),
@@ -13,10 +16,10 @@ export function Employees() {
     [busy, setBusy] = useState(false);
   const load = useCallback(
     () =>
-      api<Employee[]>("/api/owner/employees")
+      request<Employee[]>(endpoint)
         .then(setItems)
         .catch((e) => setError((e as Error).message)),
-    [],
+    [endpoint, request],
   );
   useEffect(() => {
     void load();
@@ -29,7 +32,7 @@ export function Employees() {
     setError("");
     setNotice("");
     try {
-      await api("/api/owner/employees", {
+      await request(endpoint, {
         id: editing?.id,
         name: f.get("name"),
         pin: f.get("pin") || undefined,

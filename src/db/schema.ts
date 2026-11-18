@@ -23,6 +23,7 @@ export const user = pgTable(
     name: text("name").notNull(),
     email: text("email").notNull().unique(),
     emailVerified: boolean("email_verified").notNull().default(true),
+    role: text("role").notNull().default("owner"),
     image: text("image"),
     createdAt: timestamp("created_at", { withTimezone: true })
       .notNull()
@@ -31,7 +32,33 @@ export const user = pgTable(
       .notNull()
       .defaultNow(),
   },
-  (t) => [check("one_owner", sql`${t.id} = 'owner'`)],
+  (t) => [
+    check(
+      "account_role",
+      sql`${t.role} IN ('owner','admin') AND (${t.role}='admin')=(${t.id}='admin')`,
+    ),
+    uniqueIndex("account_email_ci").on(sql`lower(${t.email})`),
+  ],
+);
+export const ownerCreation = pgTable(
+  "owner_creation",
+  {
+    id: uuid("id").primaryKey(),
+    actorId: text("actor_id")
+      .notNull()
+      .references(() => user.id),
+    ownerId: text("owner_id")
+      .notNull()
+      .unique()
+      .references(() => user.id),
+    requestHash: text("request_hash").notNull(),
+    createdAt: timestamp("created_at", { withTimezone: true })
+      .notNull()
+      .defaultNow(),
+  },
+  (t) => [
+    check("owner_creation_hash", sql`${t.requestHash} ~ '^[a-f0-9]{64}$'`),
+  ],
 );
 export const ownerPreferences = pgTable(
   "owner_preferences",
@@ -526,10 +553,132 @@ export const stockMovement = pgTable(
     unique("stock_sale_once").on(t.saleId, t.stockItemId),
     unique("stock_operation_once").on(t.operationId),
     index("stock_history_idx").on(t.createdAt, t.id),
+    // Alerts inspect the last delivery/count without scanning sale deductions.
+    index("alerts_stock_restock_idx")
+      .on(t.stockItemId, t.createdAt, t.id)
+      .where(sql`${t.kind}<>'sale'`),
     index("stock_item_history_idx").on(t.stockItemId, t.createdAt, t.id),
     check(
       "stock_movement_valid",
       sql`${t.kind} IN ('opening','restock','adjust','sale') AND ${t.delta} BETWEEN -9000000000000 AND 9000000000000 AND ${t.balanceAfter} BETWEEN -9000000000000 AND 9000000000000 AND length(${t.reason})<=200 AND ((${t.kind}='sale' AND ${t.saleId} IS NOT NULL AND ${t.operationId} IS NULL AND ${t.delta}<0 AND ${t.saleReference} IS NOT NULL) OR (${t.kind}<>'sale' AND ${t.saleId} IS NULL AND ${t.operationId} IS NOT NULL AND ${t.saleReference} IS NULL))`,
     ),
+  ],
+);
+
+// Owner alert episodes/preferences only; no hooks or writes to business records.
+export const ownerAlertState = pgTable(
+  "owner_alert_state",
+  {
+    ownerId: text("owner_id")
+      .notNull()
+      .references(() => user.id, { onDelete: "cascade" }),
+    key: text("key").notNull(),
+    fingerprint: text("fingerprint").notNull(),
+    version: integer("version").notNull().default(1),
+    active: boolean("active").notNull().default(true),
+    disposition: text("disposition").notNull().default("none"),
+    snoozedUntil: timestamp("snoozed_until", { withTimezone: true }),
+    firstSeenAt: timestamp("first_seen_at", { withTimezone: true })
+      .notNull()
+      .defaultNow(),
+  },
+  (t) => [
+    primaryKey({ columns: [t.ownerId, t.key] }),
+    check(
+      "owner_alert_valid",
+      sql`${t.key} IN ('categories','stock-low','stock-negative','sheets','payment-pending','payment-paid') AND ${t.version}>0 AND ${t.disposition} IN ('none','dismissed','snoozed','acknowledged') AND ((${t.disposition}='snoozed' AND ${t.snoozedUntil} IS NOT NULL) OR (${t.disposition}<>'snoozed' AND ${t.snoozedUntil} IS NULL))`,
+    ),
+  ],
+);
+
+// Independent test-only daily-report projection; no triggers on business tables.
+export const dailyReportTarget = pgTable(
+  "sheets_daily_target",
+  {
+    id: text("id").primaryKey().default("primary"),
+    spreadsheetId: text("spreadsheet_id").notNull(),
+    mode: text("mode").notNull(),
+    sheetId: integer("sheet_id"),
+    reconciledAt: timestamp("reconciled_at", { withTimezone: true })
+      .notNull()
+      .defaultNow(),
+    lastSuccessAt: timestamp("last_success_at", { withTimezone: true }),
+    lastError: text("last_error"),
+    attempts: integer("attempts").notNull().default(0),
+    nextAttemptAt: timestamp("next_attempt_at", { withTimezone: true })
+      .notNull()
+      .defaultNow(),
+  },
+  (t) => [
+    check(
+      "daily_target_valid",
+      sql`${t.id}='primary' AND ${t.mode}='test' AND ${t.attempts}>=0`,
+    ),
+  ],
+);
+export const dailyReportDay = pgTable(
+  "sheets_daily_day",
+  {
+    date: text("date").primaryKey(),
+    saleCount: integer("sale_count").notNull(),
+    catalog: jsonb("catalog")
+      .$type<import("@/modules/daily-report/types").CatalogItem[]>()
+      .notNull(),
+    catalogHash: text("catalog_hash").notNull(),
+    statusRow: integer("status_row").notNull().unique(),
+    dirty: boolean("dirty").notNull().default(true),
+    publishedAt: timestamp("published_at", { withTimezone: true }),
+    catalogHistorical: boolean("catalog_historical").notNull().default(false),
+  },
+  (t) => [
+    check(
+      "daily_day_valid",
+      sql`${t.date} ~ '^[0-9]{4}-[0-9]{2}-[0-9]{2}$' AND ${t.saleCount}>=0 AND ${t.statusRow}>=6`,
+    ),
+  ],
+);
+export const dailyReportRow = pgTable(
+  "sheets_daily_row",
+  {
+    key: text("key").primaryKey(),
+    date: text("date")
+      .notNull()
+      .references(() => dailyReportDay.date, { onDelete: "cascade" }),
+    rowNumber: integer("row_number").notNull().unique(),
+    active: boolean("active").notNull().default(true),
+  },
+  (t) => [
+    check(
+      "daily_row_valid",
+      sql`${t.key} ~ '^[a-f0-9]{64}$' AND ${t.rowNumber} BETWEEN 6 AND 100005`,
+    ),
+    index("daily_row_day_idx").on(t.date),
+  ],
+);
+
+// Upload lifecycle only. Menu references remain in the existing image_url field.
+export const menuPhotoAsset = pgTable(
+  "menu_photo_asset",
+  {
+    id: uuid("id").primaryKey(),
+    inputHash: text("input_hash").notNull(),
+    contentHash: text("content_hash").notNull(),
+    bytes: integer("bytes").notNull(),
+    mode: text("mode").notNull(),
+    target: text("target").notNull(),
+    state: text("state").notNull().default("pending"),
+    createdAt: timestamp("created_at", { withTimezone: true })
+      .notNull()
+      .defaultNow(),
+    touchedAt: timestamp("touched_at", { withTimezone: true })
+      .notNull()
+      .defaultNow(),
+  },
+  (t) => [
+    check(
+      "menu_photo_valid",
+      sql`${t.mode} IN ('local','s3') AND ${t.state} IN ('pending','ready','deleting','deleted') AND ${t.bytes} BETWEEN 1 AND 500000 AND ${t.inputHash} ~ '^[a-f0-9]{64}$' AND ${t.contentHash} ~ '^[a-f0-9]{64}$' AND ${t.target} ~ '^[a-f0-9]{64}$'`,
+    ),
+    index("menu_photo_cleanup_idx").on(t.state, t.touchedAt),
   ],
 );

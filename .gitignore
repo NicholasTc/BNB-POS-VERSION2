@@ -9,6 +9,7 @@ test-results/
 .DS_Store
 backups/
 .verification/
+.local/
 
 # Private Google service-account credentials (including downloaded copies).
 bnb-pos-*.json

@@ -3,7 +3,7 @@ import { auth, OWNER_SESSION_SECONDS, OWNER_IDLE_SECONDS } from "./auth";
 import { env } from "./env";
 import { db } from "@/db";
 import { eq, sql } from "drizzle-orm";
-import { session as ownerSession } from "@/db/schema";
+import { session as ownerSession, user } from "@/db/schema";
 export class AppError extends Error {
   constructor(
     public status: number,
@@ -57,6 +57,16 @@ export async function body<T extends z.ZodType>(
   }
 }
 export async function requireOwner(request: Request) {
+  return requireRole(request, "owner");
+}
+export async function requireAdmin(request: Request) {
+  return requireRole(request, "admin");
+}
+async function requireRole(request: Request, role: "owner" | "admin") {
+  const message =
+    role === "admin"
+      ? "Silakan masuk sebagai administrator."
+      : "Silakan masuk sebagai pemilik.";
   const session = await auth.api.getSession({
     headers: request.headers,
     // Library refresh is disabled globally. Activity below updates only the
@@ -67,8 +77,13 @@ export async function requireOwner(request: Request) {
         request.headers.get("x-lisi-background") === "1",
     },
   });
-  if (session?.user.id !== "owner")
-    throw new AppError(401, "Silakan masuk sebagai pemilik.");
+  if (!session) throw new AppError(401, message);
+  // Role is read from SQL on every request, never trusted from the browser.
+  const [identity] = await db
+    .select({ role: user.role })
+    .from(user)
+    .where(eq(user.id, session.user.id));
+  if (identity?.role !== role) throw new AppError(401, message);
   const now = Date.now();
   if (
     now - session.session.createdAt.getTime() >= OWNER_SESSION_SECONDS * 1000 ||
@@ -77,7 +92,7 @@ export async function requireOwner(request: Request) {
     await db
       .delete(ownerSession)
       .where(eq(ownerSession.id, session.session.id));
-    throw new AppError(401, "Silakan masuk sebagai pemilik.");
+    throw new AppError(401, message);
   }
   if (!(
     request.method === "GET" && request.headers.get("x-lisi-background") === "1"
@@ -87,10 +102,9 @@ export async function requireOwner(request: Request) {
       .set({ updatedAt: new Date(now) })
       .where(eq(ownerSession.id, session.session.id))
       .returning({ id: ownerSession.id });
-    if (!updated.length)
-      throw new AppError(401, "Silakan masuk sebagai pemilik.");
+    if (!updated.length) throw new AppError(401, message);
   }
-  return session.user;
+  return { ...session.user, sessionId: session.session.id };
 }
 export async function limit(key: string, max: number, seconds: number) {
   const result = await db.execute<{ count: number }>(sql`

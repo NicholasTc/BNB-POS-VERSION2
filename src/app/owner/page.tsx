@@ -18,6 +18,8 @@ import { useOwnerAccess } from "@/lib/use-owner-access";
 import { OwnerNavigation, type OwnerView } from "@/components/owner-navigation";
 import type { MenuProduct } from "@/lib/menu";
 import "./owner.css";
+import { OwnerAlerts } from "@/components/owner-alerts";
+import type { AlertDestination } from "@/modules/alerts/types";
 export default function Owner() {
   return (
     <OwnerLanguageProvider>
@@ -35,6 +37,19 @@ function OwnerContent() {
     [savingLanguage, setSavingLanguage] = useState(false),
     [languageNotice, setLanguageNotice] = useState(false);
   const [view, setView] = useState<OwnerView>("summary");
+  const [alertSettings, setAlertSettings] = useState<
+    { tab: "menu" | "stock" | "device"; token: number } | undefined
+  >();
+  function navigateAlert(destination: AlertDestination) {
+    if (destination === "transactions") navigate("transactions");
+    else {
+      setAlertSettings((previous) => ({
+        tab: destination,
+        token: (previous?.token ?? 0) + 1,
+      }));
+      navigate("settings");
+    }
+  }
   const [cashierSetup, setCashierSetup] = useState(false);
   const [products, setProducts] = useState<MenuProduct[]>([]);
   const clearOwner = useCallback(() => setName(null), []);
@@ -168,6 +183,9 @@ function OwnerContent() {
             lisi<small>café</small>
           </span>
           <div className="owner-tools">
+            {name && !access.checking && (
+              <OwnerAlerts onNavigate={navigateAlert} />
+            )}
             {languagePicker}
             <Link
               className="button secondary"
@@ -224,6 +242,7 @@ function OwnerContent() {
           ) : name ? (
             <div hidden={access.checking} inert={access.checking}>
               <Reports
+                settingsRequest={alertSettings}
                 view={view}
                 onNavigate={navigate}
                 products={products}

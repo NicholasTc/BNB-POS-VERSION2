@@ -52,7 +52,11 @@ import {
   GET as stock,
   POST as editStock,
 } from "../../src/app/api/owner/stock/route";
-const reads = [owner, reports, employees, menu, sheets, promos, stock];
+import {
+  GET as alerts,
+  POST as manageAlerts,
+} from "../../src/app/api/owner/alerts/route";
+const reads = [owner, reports, employees, menu, sheets, promos, stock, alerts];
 const writes = [
   editEmployee,
   editMenu,
@@ -61,6 +65,7 @@ const writes = [
   retrySheets,
   editPromos,
   editStock,
+  manageAlerts,
 ];
 async function denied(cookie = "", extra: Record<string, string> = {}) {
   for (const route of reads)
@@ -102,6 +107,39 @@ afterAll(async () => {
   await pool.end();
 });
 describe("owner/cashier trust boundary", () => {
+  it("rejects forged alert owners, query fields and duplicate targets", async () => {
+    const cookie = await login();
+    expect(
+      (await alerts(req("/api/owner/alerts?ownerId=owner", cookie))).status,
+    ).toBe(400);
+    for (const payload of [
+      { action: "clear", targets: [], ownerId: "owner" },
+      {
+        action: "clear",
+        targets: [
+          { key: "categories", version: 1 },
+          { key: "categories", version: 1 },
+        ],
+      },
+      { action: "dismiss", targets: [{ key: "sale", version: 1 }] },
+    ])
+      expect(
+        (await manageAlerts(req("/api/owner/alerts", cookie, payload))).status,
+      ).toBe(400);
+    expect(
+      (
+        await manageAlerts(
+          req(
+            "/api/owner/alerts",
+            cookie,
+            {},
+            { "content-type": "text/plain" },
+          ),
+        )
+      ).status,
+    ).toBe(415);
+  });
+
   it("validates stock query/body shapes and exposes no stock to cashier endpoints", async () => {
     const cookie = await login();
     for (const query of [

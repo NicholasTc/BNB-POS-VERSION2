@@ -42,6 +42,7 @@ export async function api<T>(
   if (
     payload !== undefined &&
     (path.startsWith("/api/owner/") ||
+      path === "/api/admin/employees" ||
       path === "/api/sales" ||
       path === "/api/orders" ||
       (path === "/api/pos" &&

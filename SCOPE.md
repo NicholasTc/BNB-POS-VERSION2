@@ -18,4 +18,6 @@ Approved follow-up: owner-configurable percentage promos with optional product/q
 
 Approved follow-up (2026-10-20): owner-only supplies, whole-unit per-product usage, atomic completed-sale deductions, low/negative warnings, restocking, physical adjustments and immutable movement history. Preserve existing cashier/payment/auth/report/Sheets behavior. See docs/STOCK.md.
 
+Approved follow-up (2026-11-02): grouped owner alerts for uncategorized menus, low/negative stock, delayed/failed spreadsheet copying and overdue pending/paid transactions. Persist owner dismiss/snooze/acknowledgment with safe clear-all; no business-record or cashier workflow changes. See docs/ALERTS.md.
+
 Excluded: public deployment, live financial integrations, customer ordering/accounts, delivery, advanced inventory/cost accounting, payroll, accounting, loyalty, AI, multi-branch/native apps, complex pricing, and sale edits/voids/refunds.
