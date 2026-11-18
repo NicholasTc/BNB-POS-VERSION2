@@ -1,5 +1,13 @@
 # Decisions
 
+## Live spreadsheet rollout (2026-11-18)
+
+- User explicitly requested deployment and verification of Sales, Attendance and Laporan Harian together on the previously approved LIVE spreadsheet. This supersedes the earlier TEST-only daily-report rollout restriction.
+- Keep local/manual tests pinned to the existing TEST spreadsheet. Shared destination validation must reject live exports from local/test databases and require explicit live confirmation; report reads validate the actual pool connection target.
+- Deploy an independent worker; do not push/redeploy the web application merely to activate spreadsheet export. Preserve all financial, attendance and authentication source records. Apply additive schema migrations only after the pre-migration backup is authorized and completed.
+- Automatic approval review separately requires explicit permission for copying a full production database (including password/PIN hashes) to the developer Mac. The user explicitly approved this encrypted local backup and separate private key destination. Backup and isolated restoration were verified before rollout.
+
+
 ## Developer account manager (2026-11-05)
 
 - User approved URL-only `/admin`, with no buttons/links from the owner dashboard or cashier. Use a separate developer email/password administrator account, provisioned/reset through a protected terminal command. Google login and administrator 2FA are not part of this approved version. URL concealment is navigation only; server role checks provide security.

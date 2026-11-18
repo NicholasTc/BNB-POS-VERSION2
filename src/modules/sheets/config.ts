@@ -15,21 +15,18 @@ export class SheetsError extends Error {
     this.name = "SheetsError";
   }
 }
-export function sheetsConfig(
-  input: Record<string, string | undefined> = process.env,
-): SheetsConfig | null {
-  const mode = input.SHEETS_SYNC_MODE ?? "off";
-  if (mode === "off") return null;
-  if (mode !== "test" && mode !== "live")
-    throw new SheetsError("configuration");
-  const spreadsheetId = input.SHEETS_SPREADSHEET_ID ?? "";
-  if (!/^[a-zA-Z0-9_-]{20,150}$/.test(spreadsheetId))
-    throw new SheetsError("configuration");
+/** Shared destination guard; validate the actual PostgreSQL connection target. */
+export function assertSheetsTarget(
+  mode: "test" | "live",
+  spreadsheetId: string,
+  connectionString: string | undefined,
+  liveConfirmed: boolean,
+) {
   let database: URL;
   let hostname: string;
   let pathname: string;
   try {
-    database = new URL(input.DATABASE_URL ?? "");
+    database = new URL(connectionString ?? "");
     hostname = decodeURIComponent(database.hostname)
       .toLowerCase()
       .replace(/\.$/, "");
@@ -69,11 +66,28 @@ export function sheetsConfig(
     throw new SheetsError("test_environment_required");
   if (
     mode === "live" &&
-    (input.SHEETS_LIVE_CONFIRMED !== "true" ||
+    (!liveConfirmed ||
       spreadsheetId !== LIVE_SPREADSHEET_ID ||
       localDatabase)
   )
     throw new SheetsError("live_setup_required");
+}
+export function sheetsConfig(
+  input: Record<string, string | undefined> = process.env,
+): SheetsConfig | null {
+  const mode = input.SHEETS_SYNC_MODE ?? "off";
+  if (mode === "off") return null;
+  if (mode !== "test" && mode !== "live")
+    throw new SheetsError("configuration");
+  const spreadsheetId = input.SHEETS_SPREADSHEET_ID ?? "";
+  if (!/^[a-zA-Z0-9_-]{20,150}$/.test(spreadsheetId))
+    throw new SheetsError("configuration");
+  assertSheetsTarget(
+    mode,
+    spreadsheetId,
+    input.DATABASE_URL,
+    input.SHEETS_LIVE_CONFIRMED === "true",
+  );
   if (
     !!input.GOOGLE_SERVICE_ACCOUNT_FILE === !!input.GOOGLE_SERVICE_ACCOUNT_JSON
   )

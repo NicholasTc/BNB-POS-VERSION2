@@ -198,7 +198,26 @@ it("explicitly blocks production, wrong sheets and pg URL overrides before any c
       { ...config, mode: "live" },
       "postgresql://u:p@127.0.0.1/lisi_dev",
     ),
-  ).toThrow("test_environment_required");
+  ).toThrow("live_setup_required");
+});
+it("permits only the approved live destination with explicit confirmation and a remote database", () => {
+  const live = { mode: "live" as const, spreadsheetId: "1Pmv5xiEUWUmG1VnI1dRkqDZoP96APAgPsVLYYRvh_GU" };
+  const remote = "postgresql://u:p@postgres.railway.internal/railway?sslmode=require";
+  expect(() => reportGuard(live, remote, true)).not.toThrow();
+  expect(() => reportGuard(live, remote, false)).toThrow("live_setup_required");
+  expect(() => reportGuard({ ...live, spreadsheetId: TEST_SPREADSHEET_ID }, remote, true)).toThrow("live_setup_required");
+  for (const url of [
+    "postgresql://u:p@127.0.0.1/railway",
+    "postgresql://u:p@localhost/railway",
+    "postgresql://u:p@[::1]/railway",
+    "postgresql://u:p@host.docker.internal/railway",
+    "postgresql://u:p@postgres.railway.internal/lisi_test",
+    "postgresql://u:p@postgres.railway.internal/lisi_dev",
+    "postgresql://u:p@postgres.railway.internal/railway?host=127.0.0.1",
+    "postgresql://u:p@%2Ftmp/railway",
+    "https://postgres.railway.internal/railway",
+    undefined,
+  ]) expect(() => reportGuard(live, url, true)).toThrow("live_setup_required");
 });
 it("creates only Laporan Harian and sends untrusted names as literal cells", async () => {
   const call = vi.fn(async (path: string) =>

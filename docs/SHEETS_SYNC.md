@@ -62,3 +62,14 @@ Reference the existing production DATABASE_URL, BETTER_AUTH_URL, BETTER_AUTH_SEC
 Uses Google's [official Node authentication library](https://github.com/googleapis/google-cloud-node-core) and [Sheets batch value updates](https://developers.google.com/workspace/sheets/api/reference/rest/v4/spreadsheets.values/batchUpdate). Bounded batches/backoff follow [Google's quotas guidance](https://developers.google.com/workspace/sheets/api/limits). Sheets has finite row/cell capacity; a full spreadsheet reports a delayed export and requires an explicitly planned archive/destination migration. Do not reset row maps against an existing populated destination. Restore the database and its sync metadata together.
 
 Automated fixtures always use the guarded local `lisi_test` database and fake Google transport. The real API smoke check uses only the approved test spreadsheet and local development data; it is separate from regression fixtures.
+
+
+## Three-tab live worker rollout (2026-11-18)
+
+LIVE deployment of Sales, Attendance and Laporan Harian is now explicitly authorized. Use `deploy/railway.sheets.json` as the worker service's root Railway configuration and the non-secret settings in `deploy/sheets.production.env.example`. The daily report requires migration 0014, which allows live metadata mode while retaining destination guards. On an older production database, the canonical migration chain also applies additive migrations 0010–0013; existing owner credentials and financial source records are preserved. Back up and validate restore before migration.
+
+Deploy an independent unexposed worker service with `npm run sheets:worker`, existing production database references and a private Google service-account JSON variable. Do not replace the web start command or push main solely to deploy this worker. Local tests remain TEST/off; the existing approved sheet IDs remain pinned. Worker retries/background reconciliation are separate from cashier transactions. Do not edit/sort generated IDs/headers/rows; B2 is the daily-report date input.
+
+Verification must compare completed SQL sale IDs/amounts and attendance IDs/times with their exported rows, compare the daily summary's quantities and net total against SQL by Jakarta day, and confirm later worker passes do not duplicate rows. Never invent a live sale or clock-out just to test export. Existing real records and repeated read-only snapshots can verify delivery; subsequent genuine cashier activity should be checked as it occurs.
+
+The live worker does not expose a web healthcheck. Monitor its logs and last-success/pending counts; the current web UI exposes core Sales/Attendance status, while report errors also appear as `sheets_daily_report` logs and metadata. A readable spreadsheet is not a complete database backup.

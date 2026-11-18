@@ -1,6 +1,7 @@
 import type { Pool, PoolClient } from "pg";
 import {
   SheetsError,
+  assertSheetsTarget,
   TEST_SPREADSHEET_ID,
   type SheetsConfig,
 } from "@/modules/sheets/config";
@@ -20,7 +21,18 @@ const LOCK = 891110;
 export function reportGuard(
   config: SheetsConfig,
   connectionString: string | undefined,
+  liveConfirmed = process.env.SHEETS_LIVE_CONFIRMED === "true",
 ) {
+  if (config.mode === "live") {
+    try {
+      assertSheetsTarget(
+        config.mode, config.spreadsheetId, connectionString, liveConfirmed,
+      );
+      return;
+    } catch {
+      throw new DailyReportError("live_setup_required");
+    }
+  }
   try {
     const url = new URL(connectionString ?? "");
     if (

@@ -1,0 +1,2 @@
+ALTER TABLE "sheets_daily_target" DROP CONSTRAINT "daily_target_valid";--> statement-breakpoint
+ALTER TABLE "sheets_daily_target" ADD CONSTRAINT "daily_target_valid" CHECK ("sheets_daily_target"."id"='primary' AND "sheets_daily_target"."mode" IN ('test','live') AND "sheets_daily_target"."attempts">=0);

@@ -591,7 +591,7 @@ export const ownerAlertState = pgTable(
   ],
 );
 
-// Independent test-only daily-report projection; no triggers on business tables.
+// Independent daily-report projection; no triggers on business tables.
 export const dailyReportTarget = pgTable(
   "sheets_daily_target",
   {
@@ -612,7 +612,7 @@ export const dailyReportTarget = pgTable(
   (t) => [
     check(
       "daily_target_valid",
-      sql`${t.id}='primary' AND ${t.mode}='test' AND ${t.attempts}>=0`,
+      sql`${t.id}='primary' AND ${t.mode} IN ('test','live') AND ${t.attempts}>=0`,
     ),
   ],
 );

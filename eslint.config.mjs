@@ -6,6 +6,7 @@ export default defineConfig([
   ...nextTs,
   globalIgnores([
     ".next/**",
+    ".verification/**",
     "drizzle/meta/**",
     "test-results/**",
     "playwright-report/**",

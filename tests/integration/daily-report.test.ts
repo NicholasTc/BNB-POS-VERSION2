@@ -228,7 +228,7 @@ it("serializes report workers with an independent lock", async () => {
   release();
   await running;
 });
-it("does nothing when disabled and refuses live export or changed stored destination", async () => {
+it("does nothing when disabled and refuses mismatched live export or changed stored destination", async () => {
   const create = vi.fn();
   expect((await syncDailyReport(pool, config, create, false)).state).toBe(
     "off",
@@ -236,7 +236,7 @@ it("does nothing when disabled and refuses live export or changed stored destina
   expect(
     (await syncDailyReport(pool, { ...config, mode: "live" }, create, true))
       .error,
-  ).toBe("test_environment_required");
+  ).toBe("live_setup_required");
   expect(create).not.toHaveBeenCalled();
   const f = fake();
   await f.run();
@@ -336,4 +336,11 @@ it("reads saved promo allocations from real completed quotes after the owner cha
     60800,
     "Halloween (10%): -Rp3.200",
   ]);
+});
+
+it("stores a live report destination without altering business records and rejects unknown modes", async () => {
+  await pool.query("INSERT INTO sheets_daily_target (spreadsheet_id,mode) VALUES ($1,'live')", ["1Pmv5xiEUWUmG1VnI1dRkqDZoP96APAgPsVLYYRvh_GU"]);
+  expect((await pool.query("SELECT mode FROM sheets_daily_target")).rows[0].mode).toBe("live");
+  await expect(pool.query("UPDATE sheets_daily_target SET mode='unknown'")).rejects.toMatchObject({ code: "23514" });
+  expect((await pool.query("SELECT count(*)::int AS count FROM sale")).rows[0].count).toBe(0);
 });
