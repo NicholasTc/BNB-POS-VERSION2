@@ -1,5 +1,10 @@
 # Verification record
 
+## Three-tab LIVE worker (2026-11-18)
+
+Full sequential local gate: **70 unit / 132 integration / 58 browser = 260 tests**, typecheck/lint, no drift, build, 16-asset secret scan, 35-table restore. Added live target/actual-connection guard cases and SQL live-mode constraint coverage. Production backup encrypted on explicitly approved Mac destination and restored into disposable local DB before migration. Independent worker deployment 3484c8e9-ca3b-4b85-80aa-dff50032632c applied additive migrations through 0014; no web deployment/push. Every live core row and daily projection matched read-only SQL: 3 sales/4 attendance, 31 days/63 report rows, Rp120,998; pending/dirty/error/formula counts zero, no duplicates across repeated passes. Live history date 2026-10-19 showed 6 items/Rp120,998, original B2 input restored. Existing source/account columns matched across 14 aggregate fingerprints; old web remained HTTP 200. Details and operational/UI-status limits: PROGRESS.md and SHEETS_SYNC.md. This is not a production outage test, future-delivery guarantee or complete database-backup automation.
+
+
 ## Consolidated main with Next.js 16.4.6 (2026-11-18)
 
 Full sequential gate passed: **69 unit / 131 PostgreSQL integration / 58 Chromium = 258 tests**, typecheck, zero-warning lint, no schema drift, production build, 16-asset browser-secret scan and 35-table backup/restore including stock reconciliation. All approved feature branches are included; Next/@next/env/eslint-config-next are aligned at 16.4.6 and clean npm ci succeeded with native platform bindings retained. Business source code/scripts/migrations are unchanged from the latest fetched feature branch. Fixtures used guarded lisi_test only; Sheets off and photo storage local. No push, production migration/deployment, live Google writes or real business-record changes. Runtime audit retains five high related dependency entries; security and hosted operational limits in PROGRESS.md remain. Earlier audit build failure is historical, not the final combined result.

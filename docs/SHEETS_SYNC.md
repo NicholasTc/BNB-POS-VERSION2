@@ -1,5 +1,8 @@
 # Google Sheets sales and attendance copy
 
+LIVE activation verified 2026-11-18: the independent POS-Sheets-Worker now exports Sales, Attendance and Laporan Harian to the approved LIVE sheet. All historical rows/totals matched SQL and repeated passes remained duplicate-free. This supersedes historical "production activation pending" statements below. The production web app was not redeployed; its old status label can still report off until web status configuration is aligned with the worker. This does not indicate failed delivery when SQL/worker/Google checks are healthy.
+
+
 Promo-aware code requires migration 0008 and a restarted worker matching the web revision. The Sales layout stays unchanged: Total is the amount after discounts; Rincian item also contains original total, named promo deductions and final total from the immutable sale snapshot. Attendance and row mappings are unchanged. See PROMOS.md.
 
 ## Current authorization
@@ -66,10 +69,14 @@ Automated fixtures always use the guarded local `lisi_test` database and fake Go
 
 ## Three-tab live worker rollout (2026-11-18)
 
-LIVE deployment of Sales, Attendance and Laporan Harian is now explicitly authorized. Use `deploy/railway.sheets.json` as the worker service's root Railway configuration and the non-secret settings in `deploy/sheets.production.env.example`. The daily report requires migration 0014, which allows live metadata mode while retaining destination guards. On an older production database, the canonical migration chain also applies additive migrations 0010–0013; existing owner credentials and financial source records are preserved. Back up and validate restore before migration.
+LIVE deployment of Sales, Attendance and Laporan Harian is now explicitly authorized. Use `deploy/railway.sheets.json` as the reviewed worker deployment profile and the non-secret settings in `deploy/sheets.production.env.example`. The daily report requires migration 0014, which allows live metadata mode while retaining destination guards. On an older production database, the canonical migration chain also applies additive migrations 0010–0013; existing owner credentials and financial source records are preserved. Back up and validate restore before migration.
 
 Deploy an independent unexposed worker service with `npm run sheets:worker`, existing production database references and a private Google service-account JSON variable. Do not replace the web start command or push main solely to deploy this worker. Local tests remain TEST/off; the existing approved sheet IDs remain pinned. Worker retries/background reconciliation are separate from cashier transactions. Do not edit/sort generated IDs/headers/rows; B2 is the daily-report date input.
 
 Verification must compare completed SQL sale IDs/amounts and attendance IDs/times with their exported rows, compare the daily summary's quantities and net total against SQL by Jakarta day, and confirm later worker passes do not duplicate rows. Never invent a live sale or clock-out just to test export. Existing real records and repeated read-only snapshots can verify delivery; subsequent genuine cashier activity should be checked as it occurs.
 
 The live worker does not expose a web healthcheck. Monitor its logs and last-success/pending counts; the current web UI exposes core Sales/Attendance status, while report errors also appear as `sheets_daily_report` logs and metadata. A readable spreadsheet is not a complete database backup.
+
+Operational deployment note: the initial CLI upload/redeploy retained an old default web-command manifest despite the reviewed config file. The worker service was explicitly configured with `startCommand=npm run sheets:worker`, `preDeployCommand=[npm run db:migrate]`, a 300-second pre-deploy timeout, one Singapore replica, no sleeping, and ON_FAILURE restart policy. A fresh upload without a root config override captured those settings correctly; redeploying the old manifest did not. Verify the actual deployment manifest/startup log rather than treating a generic Railway SUCCESS as proof that the worker is running. The earlier default-command worker deployments did not expose a public app or replace the production web service.
+
+Verified final worker deployment: `3484c8e9-ca3b-4b85-80aa-dff50032632c` (uploaded source e0fc197); start/migration commands and Singapore single-replica settings confirmed in its effective deployment manifest. Production migration count 15. Three sales/four attendance records and all 31 report days matched; total net revenue Rp120,998, existing sale date 2026-10-19. Green B2 history selection showed six items/Rp120,998 and was restored afterward. Sheet1 remains intentionally untouched and blank. Worker continued healthy zero-work passes after backfill. No source/account record changes across 14 aggregate fingerprints, and web HTTP 200/current revision unchanged.

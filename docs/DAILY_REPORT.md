@@ -26,3 +26,8 @@ Zero-sale active products are included. PostgreSQL does not hold a complete hist
 After passing the gate, back up the local development database, apply migration 0011, and restart the matching local worker with `SHEETS_DAILY_REPORT_ENABLED=true` alongside the existing TEST settings. Keep private credentials outside the repository. Automated tests use isolated lisi_test and fake Google transports; only the separate approved TEST smoke uses local café records. LIVE support is approved; activation and real delivery must be verified separately before claiming it operational. Migration 0014 is required.
 
 Verification status is recorded in PROGRESS.md and VERIFICATION.md. The existing SQL backup remains necessary; a human-readable spreadsheet report does not replace database disaster recovery.
+
+
+## LIVE acceptance (2026-11-18)
+
+Separate worker deployed with explicit service start/migration configuration; production migration 0014 applied. All 31 days/63 report rows matched SQL, aggregate net revenue Rp120,998, zero dirty days/errors. Live date selector tested on 2026-10-19: 6 items/Rp120,998, original date selection restored. Exact six headers, blank TOTAL column, no formula errors and repeated-pass stability verified. Current-day zero sales is expected because existing completed sales are October 19. No invented transactions or source-record modifications. Existing web dashboard sync label configuration is a separate follow-up; this report is live in Google Sheets.
