@@ -7,6 +7,7 @@ import { ownerMessage } from "@/lib/owner-language";
 import { localTime } from "@/lib/dates";
 type Status = {
   mode: "off" | "test" | "live" | "configuration";
+  health: "disabled" | "configuration" | "delayed" | "waiting" | "pending" | "healthy";
   total: number;
   pending: number;
   failed: number;
@@ -64,11 +65,17 @@ export function SpreadsheetBackup() {
               {t(
                 data.mode === "off"
                   ? "Sinkronisasi nonaktif"
-                  : data.mode === "test"
-                    ? "Mode pengujian"
-                    : data.mode === "live"
-                      ? "Sinkronisasi aktif"
-                      : "Periksa konfigurasi sinkronisasi",
+                  : data.mode === "configuration"
+                    ? "Periksa konfigurasi sinkronisasi"
+                    : data.health === "delayed"
+                      ? "Sinkronisasi tertunda"
+                      : data.health === "waiting"
+                        ? "Menunggu worker sinkronisasi"
+                        : data.health === "pending"
+                          ? "Menunggu sinkronisasi"
+                          : data.mode === "test"
+                            ? "Mode pengujian"
+                            : "Sinkronisasi aktif",
               )}
             </strong>
           </p>

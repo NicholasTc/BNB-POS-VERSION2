@@ -89,3 +89,28 @@ test("owner can inspect the isolated sync queue; employee cannot inspect or retr
   ).toBe(true);
   await page.screenshot({ path: "test-results/sheets-owner-mobile.png" });
 });
+
+test("owner status follows a separate worker and distinguishes stale, failed and waiting states", async ({ page }) => {
+  const url = process.env.TEST_DATABASE_URL;
+  if (!url || new URL(url).hostname !== "127.0.0.1" || new URL(url).pathname !== "/lisi_test")
+    throw new Error("Isolated test DB required");
+  const pool = new Pool({ connectionString: url });
+  try {
+    await pool.query("TRUNCATE employee,device,menu_item,sheets_sync_target,throttle,auth_rate_limit CASCADE");
+    await pool.query("DELETE FROM owner_preferences");
+    await pool.query("INSERT INTO sheets_sync_target (spreadsheet_id,mode,last_success_at,last_attempt_at) VALUES ($1,'test',now(),now())", ["1Dw6Cu-t3zTSfG70-rVuuSuMXBl9IvQf5tOXVNDum1Sc"]);
+    await login(page);
+    await ownerSection(page, "settings", "device");
+    const panel = page.getByRole("region", { name: "Cadangan spreadsheet", exact: true });
+    await expect(panel.getByText("Mode pengujian", { exact: true })).toBeVisible();
+    expect((await (await page.request.get("/api/owner/sheets")).json()).health).toBe("healthy");
+    await pool.query("UPDATE sheets_sync_target SET last_attempt_at=now()-interval '3 minutes'");
+    await expect(panel.getByText("Sinkronisasi tertunda", { exact: true })).toBeVisible({ timeout: 10000 });
+    await pool.query("UPDATE sheets_sync_target SET last_attempt_at=now(),last_error='google_403'");
+    await expect(panel.getByText(/Sinkronisasi tertunda\. Periksa akses/)).toBeVisible({ timeout: 10000 });
+    await pool.query("UPDATE sheets_sync_target SET last_attempt_at=now(),last_error=NULL,last_success_at=NULL");
+    await expect(panel.getByText("Menunggu worker sinkronisasi", { exact: true })).toBeVisible({ timeout: 10000 });
+    await page.getByLabel("Bahasa / Language").selectOption("en");
+    await expect(page.getByRole("region", { name: "Spreadsheet backup", exact: true }).getByText("Waiting for sync worker", { exact: true })).toBeVisible();
+  } finally { await pool.end(); }
+});

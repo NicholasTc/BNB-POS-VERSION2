@@ -270,3 +270,23 @@ it("upgrades previously synced sales in place while preserving legacy maps and a
   ).toBe("1");
   expect((await f.run()).processed).toBe(0);
 });
+
+it("status reads a separate worker binding with web sync off without mutating receipts or source records", async () => {
+  const { sheetsStatus } = await import("../../src/modules/sheets/status");
+  const f = fake();
+  await f.run();
+  const snapshot = async () => {
+    const rows = await Promise.all([
+      pool.query("SELECT * FROM sheets_sync_target ORDER BY id"),
+      pool.query("SELECT * FROM sheets_sync_job ORDER BY id"),
+      pool.query("SELECT * FROM attendance ORDER BY id"),
+    ]);
+    return JSON.stringify(rows.map(r => r.rows));
+  };
+  const before = await snapshot();
+  expect(process.env.SHEETS_SYNC_MODE).toBe("off");
+  const result = await sheetsStatus();
+  expect(result).toMatchObject({ mode: "test", health: "healthy", pending: 0, workerStale: false });
+  expect(await snapshot()).toBe(before);
+  expect(JSON.stringify(result)).not.toMatch(/PRIVATE KEY|credential|postgresql|pin_hash/);
+});

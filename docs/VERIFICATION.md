@@ -1,5 +1,12 @@
 # Verification record
 
+## Separate-worker status display (2026-11-21)
+
+Final complete sequential gate passed **78 unit / 133 integration / 59 Chromium = 270 tests**, typecheck/lint, no schema drift, build, 16-asset secret scan, 35-table restore. New status resolver is pure and credential-independent for a valid recorded worker binding; actual database scope validation is retained. Status queries remain SELECT-only, with receipt/attendance snapshots unchanged in integration coverage. Browser tests cover healthy/stale/failed/first-sync waiting with web export off and English/Indonesian labels; existing employee-denial tests pass. No migration or changes to source financial/attendance/auth/export operations.
+
+First full browser run: an existing category-refresh test timed out; it passed unchanged in isolation (6.4s) and final full run (6.1s). No assertion/timeouts/retry policy were weakened. A fixture-time alert deadlock in the initial run recovered; no alert source code changed. Production read-only metadata preview returned live/healthy with 0 pending/failed while web mode was off. No production restart, configuration change, data write, Google operation, push or web deployment for this fix. The current live label is unchanged until this code is deployed. Logs: /tmp/lisi-status-fix-final-gate.log and earlier failure/recheck logs.
+
+
 ## Three-tab LIVE worker (2026-11-18)
 
 Full sequential local gate: **70 unit / 132 integration / 58 browser = 260 tests**, typecheck/lint, no drift, build, 16-asset secret scan, 35-table restore. Added live target/actual-connection guard cases and SQL live-mode constraint coverage. Production backup encrypted on explicitly approved Mac destination and restored into disposable local DB before migration. Independent worker deployment 3484c8e9-ca3b-4b85-80aa-dff50032632c applied additive migrations through 0014; no web deployment/push. Every live core row and daily projection matched read-only SQL: 3 sales/4 attendance, 31 days/63 report rows, Rp120,998; pending/dirty/error/formula counts zero, no duplicates across repeated passes. Live history date 2026-10-19 showed 6 items/Rp120,998, original B2 input restored. Existing source/account columns matched across 14 aggregate fingerprints; old web remained HTTP 200. Details and operational/UI-status limits: PROGRESS.md and SHEETS_SYNC.md. This is not a production outage test, future-delivery guarantee or complete database-backup automation.

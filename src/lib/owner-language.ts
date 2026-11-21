@@ -29,6 +29,8 @@ export const ownerEnglish = {
   "Sinkronisasi nonaktif": "Sync disabled",
   "Mode pengujian": "Test mode",
   "Sinkronisasi aktif": "Sync enabled",
+  "Sinkronisasi tertunda": "Sync delayed",
+  "Menunggu worker sinkronisasi": "Waiting for sync worker",
   "Periksa konfigurasi sinkronisasi": "Check sync configuration",
   "Menunggu sinkronisasi": "Waiting to sync",
   "Sinkronisasi terakhir": "Last successful sync",
