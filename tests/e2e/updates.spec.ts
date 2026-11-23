@@ -71,7 +71,7 @@ async function setup(page: Page, browser: Browser) {
     .addCookies(
       (await admin.cookies()).filter((c) => c.name === "lisi_device"),
     );
-  await page.goto("/");
+  await page.goto("/?access=cashier");
   await pin(page, "Mulai kerja", "0123", "Mulai kerja");
   return { admin, owner };
 }
@@ -400,22 +400,22 @@ test("owner language preserves form drafts and persists through reload, logout a
       owner.getByRole("heading", { name: "Settings", exact: true }),
     ).toBeVisible();
     await owner.getByRole("button", { name: "Sign out", exact: true }).click();
-    await owner.getByLabel("Email", { exact: true }).fill("owner@test.local");
+    await owner.getByLabel("Owner email", { exact: true }).fill("owner@test.local");
     await owner
       .getByLabel("Password", { exact: true })
       .fill("test-owner-password-2026");
-    await owner.getByRole("button", { name: "Sign in", exact: true }).click();
+    await owner.getByRole("button", { name: "Sign in to dashboard", exact: true }).click();
     await expect(
       owner.getByRole("navigation", { name: "Owner navigation" }),
     ).toBeVisible();
     fresh = await browser.newContext({ baseURL: origin });
     const other = await fresh.newPage();
     await other.goto("/owner");
-    await other.getByLabel("Email", { exact: true }).fill("owner@test.local");
+    await other.getByLabel("Email pemilik", { exact: true }).fill("owner@test.local");
     await other
       .getByLabel("Kata sandi", { exact: true })
       .fill("test-owner-password-2026");
-    await other.getByRole("button", { name: "Masuk", exact: true }).click();
+    await other.getByRole("button", { name: "Masuk ke dasbor", exact: true }).click();
     await expect(
       other.getByRole("navigation", { name: "Owner navigation" }),
     ).toBeVisible();
@@ -478,7 +478,7 @@ test("personal owner browsers need no cashier pairing and can use reports concur
     await first.bringToFront();
     await first.getByRole("button", { name: "Keluar", exact: true }).click();
     await expect(
-      first.getByRole("button", { name: "Masuk", exact: true }),
+      first.getByRole("button", { name: "Masuk ke dasbor", exact: true }),
     ).toBeVisible();
     expect((await laptop.request.get("/api/owner")).status()).toBe(401);
     expect((await tablet.request.get("/api/owner")).status()).toBe(200);

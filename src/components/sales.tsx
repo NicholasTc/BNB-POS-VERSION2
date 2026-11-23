@@ -90,9 +90,11 @@ export type SalesHandle = {
 export function Sales({
   state,
   ref,
+  onRestored,
 }: {
   state: PosState;
   ref: Ref<SalesHandle>;
+  onRestored?: () => void;
 }) {
   const [menu, setMenu] = useState<Item[]>([]),
     [cart, setCart] = useState<Cart | null>(null),
@@ -109,6 +111,12 @@ export function Sales({
     [menuStale, setMenuStale] = useState(false),
     [missing, setMissing] = useState(false);
   const restoredCart = useRef(false);
+  const [restorationCommitted, setRestorationCommitted] = useState(false);
+  // Entry presentation must wait for the same restored cart/recovery that its
+  // existing discard/pending guards inspect. This signal grants no permission.
+  useEffect(() => {
+    if (restorationCommitted) onRestored?.();
+  }, [restorationCommitted, onRestored]);
   const [promoChoice, setPromoChoice] = useState<{
     payment: "cash" | "qris";
     promos: Promo[];
@@ -213,6 +221,7 @@ export function Sales({
           if (savedRecovery)
             setRecovery(recoverySchema.parse(JSON.parse(savedRecovery)));
           restoredCart.current = true;
+          setRestorationCommitted(true);
         }
         const items = await loadCashier<Item[]>("/api/menu", controller.signal);
         if (controller.signal.aborted) return;

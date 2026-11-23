@@ -3,7 +3,7 @@ import "./globals.css";
 import { BrowserDiagnostics } from "@/components/browser-diagnostics";
 import { diagnosticRelease } from "@/modules/diagnostics/safe";
 export const metadata: Metadata = {
-  title: "LISI POS",
+  title: "BNB POS — Bites and Blends",
   description: "Kasir sederhana untuk hari yang menyenangkan.",
 };
 export default function RootLayout({

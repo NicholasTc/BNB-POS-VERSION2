@@ -4,15 +4,17 @@ export function PinPad({
   busy,
   onSubmit,
   label,
+  appearance,
 }: {
   busy: boolean;
   onSubmit: (pin: string) => void;
   label: string;
+  appearance?: "entry";
 }) {
   const [pin, setPin] = useState("");
   return (
     <form
-      className="stack"
+      className={appearance === "entry" ? "access-pin-form" : "stack"}
       onSubmit={(e) => {
         e.preventDefault();
         if (pin.length === 4) {
@@ -40,19 +42,22 @@ export function PinPad({
         <small id="pin-help">Empat angka milik Anda.</small>
       </div>
       <div className="pin-grid">
-        {[1, 2, 3, 4, 5, 6, 7, 8, 9, "Hapus", 0].map((n) => (
+        {(appearance === "entry"
+          ? [1, 2, 3, 4, 5, 6, 7, 8, 9, "clear", 0, "Hapus"]
+          : [1, 2, 3, 4, 5, 6, 7, 8, 9, "Hapus", 0]).map((n) => (
           <button
             type="button"
             className="secondary"
             key={n}
+            aria-label={appearance === "entry" && n === "Hapus" ? "Hapus satu angka" : undefined}
             disabled={busy}
             onClick={() =>
               setPin((p) =>
-                n === "Hapus" ? p.slice(0, -1) : (p + String(n)).slice(0, 4),
+                n === "clear" ? "" : n === "Hapus" ? p.slice(0, -1) : (p + String(n)).slice(0, 4),
               )
             }
           >
-            {n}
+            {n === "clear" ? "Hapus" : n === "Hapus" && appearance === "entry" ? <svg aria-hidden="true" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.65" strokeLinecap="round" strokeLinejoin="round"><path d="M9 5h12v14H9l-7-7 7-7Zm3 4 6 6m0-6-6 6" /></svg> : n}
           </button>
         ))}
       </div>

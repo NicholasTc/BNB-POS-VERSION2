@@ -34,13 +34,9 @@ test.beforeEach(async () => {
   }
 });
 async function enterPin(page: Page, code: string, capture = false) {
-  await page
-    .getByRole("button", { name: "Cashier login", exact: true })
-    .click();
-  const dialog = page.getByRole("dialog", {
-    name: "Cashier login",
-    exact: true,
-  });
+  const dialog = page.getByRole("dialog", { name: "Masuk kasir", exact: true });
+  if (new URL(page.url()).searchParams.get("login") === "1") await expect(dialog).toBeVisible();
+  else if (!(await dialog.isVisible())) await page.getByRole("button", { name: "Cashier login", exact: true }).click();
   if (capture) {
     const bounds = await dialog.boundingBox();
     const viewport = page.viewportSize();
@@ -74,9 +70,9 @@ test("unpaired entry guides owner to explicit authorization before cashier PIN l
   page,
 }) => {
   await page.setViewportSize({ width: 390, height: 844 });
-  await page.goto("/");
+  await page.goto("/?access=cashier");
   await expect(
-    page.getByRole("heading", { name: "Siap menyambut hari?" }),
+    page.getByRole("heading", { name: "Siapkan kasir di sini." }),
   ).toBeVisible();
   await page.screenshot({
     path: "test-results/cashier-entry-mobile.png",
@@ -84,57 +80,32 @@ test("unpaired entry guides owner to explicit authorization before cashier PIN l
   });
   for (const width of [320, 820, 1440]) {
     await page.setViewportSize({ width, height: 900 });
-    expect(
-      await page.evaluate(
-        () => document.documentElement.scrollWidth <= innerWidth,
-      ),
-    ).toBe(true);
-    await expect(
-      page.getByRole("button", { name: "Cashier login", exact: true }),
-    ).toBeInViewport();
-    await page.screenshot({
-      path: `test-results/cashier-entry-${width}.png`,
-      fullPage: true,
-    });
+    expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
+    await expect(page.getByRole("link", { name: "Siapkan kasir", exact: true })).toBeInViewport();
+    await page.screenshot({ path: `test-results/cashier-entry-${width}.png`, fullPage: true });
   }
   await page.setViewportSize({ width: 390, height: 844 });
-  await page
-    .getByRole("button", { name: "Cashier login", exact: true })
-    .click();
-  const dialog = page.getByRole("dialog", { name: "Cashier login" });
-  await expect(
-    dialog.getByText(/Minta pemilik menghubungkan browser ini/),
-  ).toBeVisible();
-  await expect(dialog.getByLabel("PIN karyawan", { exact: true })).toHaveCount(
-    0,
-  );
-  expect(
-    (
-      await page.request.post("/api/pos", {
-        headers: { origin },
-        data: { action: "clock-in", pin: "0123" },
-      })
-    ).status(),
-  ).toBe(401);
-  await dialog
-    .getByRole("link", { name: "Hubungkan perangkat", exact: true })
-    .click();
+  await expect(page.getByLabel("PIN karyawan", { exact: true })).toHaveCount(0);
+  expect((await page.request.post("/api/pos", { headers: { origin }, data: { action: "clock-in", pin: "0123" } })).status()).toBe(401);
+  await page.getByRole("link", { name: "Siapkan kasir", exact: true }).click();
   await expect(page).toHaveURL(/owner\?setup=cashier/);
-  await page.getByLabel("Email", { exact: true }).fill("owner@test.local");
-  await page.getByLabel("Kata sandi").fill("test-owner-password-2026");
-  await page.getByRole("button", { name: "Masuk", exact: true }).click();
-  const connect = page.getByRole("button", {
-    name: "Hubungkan perangkat ini",
-    exact: true,
-  });
+  await page.getByLabel("Email pemilik", { exact: true }).fill("owner@test.local");
+  await page.getByLabel("Kata sandi", { exact: true }).fill("test-owner-password-2026");
+  await page.getByRole("button", { name: "Lanjut", exact: true }).click();
+  const connect = page.getByRole("button", { name: "Ya, hubungkan kasir", exact: true });
   await expect(connect).toBeVisible();
   // Signing in or visiting the setup URL never pairs implicitly.
   expect((await page.request.get("/api/pos")).status()).toBe(401);
-  page.on("dialog", (d) => void d.accept());
   await connect.click();
-  await page
-    .getByRole("link", { name: "Lanjut ke Cashier login", exact: true })
-    .click();
+  await expect(page.getByRole("link", { name: "Lanjut ke PIN kasir", exact: true })).toBeVisible();
+  // Focus revalidation masks access but must preserve completed setup UI state.
+  await page.evaluate(() => {
+    window.dispatchEvent(new Event("blur"));
+    window.dispatchEvent(new Event("focus"));
+  });
+  await expect(page.getByRole("link", { name: "Lanjut ke PIN kasir", exact: true })).toBeVisible();
+  await page.getByRole("link", { name: "Lanjut ke PIN kasir", exact: true }).click();
+  await expect(page).toHaveURL(/\?access=cashier&login=1$/);
   await enterPin(page, "0123", true);
   await expect(page.getByLabel("Kasir: Ayu", { exact: true })).toBeVisible();
   expect((await page.request.get("/api/owner")).status()).toBe(401);
@@ -190,7 +161,7 @@ test("fast PIN entry retains pairing across refresh, reuses shifts and supports 
   ])
     expect((await page.request.get(path)).status()).toBe(401);
   await page.goto("/owner?setup=cashier");
-  await expect(page.getByLabel("Kata sandi")).toBeVisible();
+  await expect(page.getByLabel("Kata sandi", { exact: true })).toBeVisible();
   await expect(
     page.getByRole("button", { name: "Hubungkan perangkat ini", exact: true }),
   ).toHaveCount(0);
@@ -217,12 +188,8 @@ test("a revoked browser cannot use the login shortcut or a valid PIN", async ({
     ).toBe(200);
     await page.bringToFront();
     await page.reload();
-    await page
-      .getByRole("button", { name: "Cashier login", exact: true })
-      .click();
-    await expect(
-      page.getByRole("dialog").getByLabel("PIN karyawan", { exact: true }),
-    ).toHaveCount(0);
+    await expect(page.getByRole("heading", { name: "Siapkan kasir di sini." })).toBeVisible();
+    await expect(page.getByLabel("PIN karyawan", { exact: true })).toHaveCount(0);
     expect(
       (
         await page.request.post("/api/pos", {

@@ -5,6 +5,8 @@ import { useCallback, useEffect, useState } from "react";
 import { api } from "@/lib/client";
 import { Employees } from "@/components/employees";
 import { DeviceSettings } from "@/components/device-settings";
+import { OwnerLogin } from "@/components/owner-login";
+import { AccessShell, CASHIER_PATH } from "@/components/access-shell";
 import { DeviceTrustReminder } from "@/components/device-trust-reminder";
 import { MenuManagement } from "@/components/menu-management";
 import { PromoManagement } from "@/components/promo-management";
@@ -102,7 +104,7 @@ function OwnerContent() {
       setBusy(false);
     }
   }
-  async function leave(e: React.MouseEvent<HTMLAnchorElement>) {
+  async function leave(e: React.MouseEvent<HTMLAnchorElement>, destination = CASHIER_PATH) {
     e.preventDefault();
     if (busy || savingLanguage) return;
     setBusy(true);
@@ -110,7 +112,7 @@ function OwnerContent() {
     try {
       await api("/api/auth/sign-out", {});
       setName(null);
-      router.push("/");
+      router.push(destination);
     } catch (e) {
       setError((e as Error).message);
     } finally {
@@ -153,6 +155,13 @@ function OwnerContent() {
       </select>
     </div>
   );
+  if (!name) return <OwnerLogin setup={cashierSetup} loading={loading} busy={busy} error={error ? ownerMessage(error, language) : ""} tools={languagePicker} onSubmit={e => void login(e)} />;
+  if (cashierSetup) return <>
+    {access.checking && <AccessShell setup language={language} busy={busy} onHome={e => void leave(e, "/")}><h1 id="access-title">{t("Memeriksa akses pemilik…")}</h1><p role="status">{access.error ? ownerMessage(access.error, language) : t("Memuat…")}</p></AccessShell>}
+    <div hidden={access.checking} inert={access.checking}>
+      <DeviceSettings setupOnly onCancel={leave} onHome={e => void leave(e, "/")} leaving={busy} leaveError={error ? ownerMessage(error, language) : ""} />
+    </div>
+  </>;
   return (
     <div
       lang={language}
@@ -160,8 +169,8 @@ function OwnerContent() {
     >
       {name && (
         <aside className="owner-sidebar">
-          <div className="owner-wordmark" aria-label="lisi café">
-            lisi<small>café</small>
+          <div className="owner-wordmark" aria-label="BNB — Bites and Blends">
+            BnB<small>Bites and Blends</small>
           </div>
           <OwnerNavigation view={view} onChange={navigate} />
           <div className="owner-profile">
@@ -179,9 +188,9 @@ function OwnerContent() {
         <header className="owner-toolbar">
           <span
             className="owner-mobile-brand owner-wordmark"
-            aria-label="lisi café"
+            aria-label="BNB — Bites and Blends"
           >
-            lisi<small>café</small>
+            BnB<small>Bites and Blends</small>
           </span>
           {name && !access.checking && (
             <DeviceTrustReminder onSettings={() => navigateAlert("device")} />
@@ -193,7 +202,7 @@ function OwnerContent() {
             {languagePicker}
             <Link
               className="button secondary"
-              href="/"
+              href={CASHIER_PATH}
               onClick={leave}
               aria-disabled={busy || savingLanguage}
             >
@@ -241,9 +250,6 @@ function OwnerContent() {
                 : t("Memeriksa akses pemilik…")}
             </p>
           )}
-          {loading ? (
-            <p role="status">{t("Memuat…")}</p>
-          ) : name ? (
             <div hidden={access.checking} inert={access.checking}>
               <Reports
                 settingsRequest={alertSettings}
@@ -258,46 +264,9 @@ function OwnerContent() {
                 }
                 device={<DeviceSettings />}
                 promos={<PromoManagement products={products} />}
-                initialSettingsTab={cashierSetup ? "device" : "menu"}
+                initialSettingsTab="menu"
               />
             </div>
-          ) : (
-            <form className="card stack" onSubmit={login}>
-              <h1>{t("Ruang pemilik")}</h1>
-              <p className="muted">
-                {t(
-                  cashierSetup
-                    ? "Masuk sebagai pemilik, lalu konfirmasi Hubungkan perangkat ini. PIN karyawan tidak dapat menghubungkan perangkat."
-                    : "Masuk untuk mengelola kafe.",
-                )}
-              </p>
-              <div>
-                <label htmlFor="email">{t("Email")}</label>
-                <input
-                  id="email"
-                  name="email"
-                  type="email"
-                  autoComplete="username"
-                  required
-                  maxLength={254}
-                />
-              </div>
-              <div>
-                <label htmlFor="password">{t("Kata sandi")}</label>
-                <input
-                  id="password"
-                  name="password"
-                  type="password"
-                  autoComplete="current-password"
-                  required
-                  maxLength={128}
-                />
-              </div>
-              <button disabled={busy}>
-                {busy ? t("Memeriksa…") : t("Masuk")}
-              </button>
-            </form>
-          )}
         </main>
       </div>
     </div>

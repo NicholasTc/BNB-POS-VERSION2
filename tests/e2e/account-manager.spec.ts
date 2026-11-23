@@ -106,9 +106,9 @@ test("URL-only administrator creates an owner and staff; the new owner sees the 
   try {
     const owner = await context.newPage();
     await owner.goto("/owner");
-    await owner.getByLabel("Email", { exact: true }).fill("partner@test.local");
+    await owner.getByLabel("Email pemilik", { exact: true }).fill("partner@test.local");
     await owner.getByLabel("Kata sandi", { exact: true }).fill(partnerPassword);
-    await owner.getByRole("button", { name: "Masuk", exact: true }).click();
+    await owner.getByRole("button", { name: "Masuk ke dasbor", exact: true }).click();
     await expect(owner.locator(".owner-profile strong")).toHaveText("Partner");
     await expect(owner.locator('a[href="/admin"]')).toHaveCount(0);
     await ownerSection(owner, "staff", "employees");
@@ -149,11 +149,10 @@ test("wrong-portal owner credentials cannot enter admin; owner and cashier navig
   expect((await page.request.get("/api/admin/owners")).status()).toBe(401);
   await ownerLogin(page);
   await expect(page.locator('a[href="/admin"]')).toHaveCount(0);
-  await page.goto("/");
+  await page.goto("/?access=cashier");
   await expect(
-    page.getByRole("button", { name: "Staf", exact: true }),
+    page.getByRole("heading", { name: "Siapkan kasir di sini.", exact: true }),
   ).toBeVisible();
-  await page.getByRole("button", { name: "Staf", exact: true }).click();
   await expect(page.locator('a[href="/admin"]')).toHaveCount(0);
 });
 test("lost committed account-creation reply retries the same operation without duplicating credentials", async ({
@@ -224,9 +223,9 @@ test("revocation hides administrative data and clears drafts; cached admin tabs 
   ).toHaveCount(0);
   await loginAdmin(page);
   const cashier = await page.context().newPage();
-  await cashier.goto("/");
+  await cashier.goto("/?access=cashier");
   await expect(
-    cashier.getByRole("button", { name: "Staf", exact: true }),
+    cashier.getByRole("heading", { name: "Siapkan kasir di sini.", exact: true }),
   ).toBeVisible();
   await page.bringToFront();
   await expect(
@@ -282,7 +281,7 @@ test("an owner tab rejecting an administrator cookie does not sign out the valid
   try {
     await ownerTab.goto("/owner");
     await expect(
-      ownerTab.getByRole("button", { name: "Masuk", exact: true }),
+      ownerTab.getByRole("button", { name: "Masuk ke dasbor", exact: true }),
     ).toBeVisible();
     await page.bringToFront();
     await expect(

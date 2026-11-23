@@ -34,6 +34,17 @@
   align-items: center;
   font-size: 22px;
 }
+.cashier-app .cashier-owner-entry {
+  color: var(--leaf);
+  font-size: 13px;
+  line-height: 1.4;
+  max-width: 90px;
+  text-decoration: none;
+}
+@media (max-width: 799px) {
+  .cashier-app .cashier-identity { gap: 12px; }
+  .cashier-app .cashier-owner-entry { font-size: 12px; max-width: 72px; }
+}
 .cashier-app .staff-toggle {
   background: transparent;
   border: 1px solid var(--line);

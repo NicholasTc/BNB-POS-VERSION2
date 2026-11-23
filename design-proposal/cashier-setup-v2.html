@@ -1,0 +1,195 @@
+<!doctype html>
+<html lang="id">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <meta name="color-scheme" content="light">
+  <title>Lisi — Usulan penyiapan kasir</title>
+  <!-- Standalone proposal only. No APIs, external assets, cookies or browser storage.
+       Design: existing Lisi green/cream, quiet humanist typography, one primary
+       action per state. The rail describes the actual two-part setup sequence.
+       Unpaired → owner authentication → explicit pairing → cashier PIN.
+       Paired browsers go straight to PIN; owner-dashboard access stays separate.
+       Authentication, pairing and attendance below are simulations, not security. -->
+  <style>
+    :root{--paper:#faf8f3;--white:#fff;--green:#195638;--green-dark:#123e2a;--mint:#edf3e9;--ink:#2e302b;--muted:#666e65;--line:#e1e5dc;--amber:#856019;--amber-bg:#fcf5e7;--red:#a5352e;--red-bg:#fff2ee;--radius:20px}
+    *{box-sizing:border-box}body{margin:0;min-width:320px;min-height:100svh;background:var(--paper);color:var(--ink);font-family:"Avenir Next","Segoe UI",Arial,sans-serif;-webkit-font-smoothing:antialiased}
+    button,input,select{font:inherit}button,a,input,select,summary{-webkit-tap-highlight-color:transparent}button{cursor:pointer}button:disabled{cursor:default;opacity:.48}button:focus-visible,a:focus-visible,select:focus-visible,summary:focus-visible{outline:3px solid #b28227;outline-offset:4px}input:focus-visible{outline:2px solid var(--green);outline-offset:3px}button,a{touch-action:manipulation}button{color:inherit}a{color:var(--green)}[hidden]{display:none!important}.icon{width:22px;height:22px;fill:none;stroke:currentColor;stroke-width:1.65;stroke-linecap:round;stroke-linejoin:round;flex-shrink:0}.defs{position:absolute;width:0;height:0;overflow:hidden}
+    .topbar{max-width:1120px;margin:auto;display:flex;justify-content:space-between;align-items:center;padding:27px 32px}.brand{display:flex;align-items:center;gap:18px;color:var(--green)}.logo{width:60px;height:53px;display:block}.brand-label{font-size:14px;font-weight:600;border-left:1px solid #d5dcd1;padding-left:18px}.owner-link{display:flex;align-items:center;gap:8px;background:transparent;border:0;font-weight:600;font-size:14px;min-height:44px;padding:8px 0 8px 12px}.owner-link .icon{width:18px;height:18px}
+    main{min-height:calc(100svh - 214px);padding:42px 24px 60px;display:grid;place-items:center}.workspace{display:grid;grid-template-columns:210px minmax(0,450px);gap:62px;align-items:center;width:100%;max-width:722px}.rail{align-self:stretch;display:flex;flex-direction:column;justify-content:center;padding-bottom:18px}.rail h2{font-size:21px;font-weight:600;letter-spacing:-.6px;margin:0 0 8px}.rail>p{font-size:14px;color:var(--muted);line-height:1.6;margin:0 0 34px}.steps{list-style:none;padding:0;margin:0}.steps li{position:relative;display:grid;grid-template-columns:32px 1fr;gap:12px;padding-bottom:29px}.steps li:last-child{padding-bottom:0}.steps li:first-child:after{content:"";position:absolute;width:1px;left:15px;top:38px;bottom:7px;background:#d5ddcf}.step-number{display:grid;place-items:center;width:32px;height:32px;border-radius:50%;border:1px solid #cbd4c6;color:var(--muted);font-size:13px;font-weight:600}.current .step-number{color:var(--white);background:var(--green);border-color:var(--green)}.complete .step-number{background:var(--mint);color:var(--green);border-color:#cadbc3}.step-text{padding-top:4px}.step-text strong{display:block;font-size:14px;font-weight:600}.step-text small{display:block;color:var(--muted);font-size:12px;margin-top:4px;line-height:1.5}.later .step-text{color:var(--muted)}.rail-note{display:flex;align-items:center;gap:7px;color:var(--muted);font-size:12px;margin-top:34px}.rail-note .icon{width:15px;height:15px}
+    .card{background:var(--white);border:1px solid var(--line);border-radius:var(--radius);padding:34px 34px 28px;box-shadow:0 14px 48px -34px #314b3240;min-width:0}.state-line{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:28px;min-height:24px}.status{display:inline-flex;align-items:center;gap:7px;font-size:12px;font-weight:600;color:var(--muted)}.status .icon{width:16px;height:16px}.status.connected{color:var(--green)}.status.expired{color:var(--amber)}.status.offline{color:var(--red)}.step-count{font-size:12px;color:var(--muted)}.visual{height:110px;display:flex;align-items:center;justify-content:flex-start;margin:0 0 18px}.device-art{position:relative;width:102px;height:83px;color:var(--green)}.device-art:before{content:"";position:absolute;inset:0 3px 17px;background:var(--mint);border:1.5px solid #b9cfb0;border-radius:11px;transform:rotate(-5deg)}.screen{position:absolute;left:12px;top:10px;width:78px;height:48px;background:#fff;border:1px solid #ccdbc4;border-radius:6px;transform:rotate(-5deg);display:grid;grid-template-columns:repeat(3,1fr);gap:4px;padding:8px}.screen span{background:#e5eedf;border-radius:3px}.screen span:first-child{background:var(--green)}.device-art:after{content:"";position:absolute;bottom:3px;width:54px;height:6px;left:24px;background:#b9cfb0;border-radius:8px;box-shadow:0 -9px 0 -1px #d6e3ce}.art-check{position:absolute;right:-10px;bottom:17px;z-index:1;background:var(--green);color:#fff;border:4px solid #fff;border-radius:50%;width:36px;height:36px;display:grid;place-items:center}.art-check .icon{width:18px;height:18px}
+    h1{font-size:30px;font-weight:650;line-height:1.18;letter-spacing:-1.05px;margin:0 0 12px;max-width:none;text-wrap:balance}.description{font-size:15px;line-height:1.65;color:var(--muted);margin:0 0 25px;text-wrap:pretty}.primary,.secondary{display:flex;align-items:center;justify-content:center;gap:10px;width:100%;min-height:51px;padding:12px 18px;border-radius:11px;font-size:15px;font-weight:600;border:1px solid transparent}.primary{color:#fff;background:var(--green)}.primary:not(:disabled):hover{background:var(--green-dark)}.secondary{color:var(--green);background:white;border-color:var(--line)}.secondary:hover{background:var(--mint)}.quiet{border:0;background:none;padding:0;color:var(--muted);font-size:13px;line-height:1.5;min-height:44px}.quiet:hover{color:var(--green)}.recheck{display:flex;justify-content:center;align-items:center;gap:7px;margin:10px auto 0}.recheck .icon{width:15px;height:15px}.card-bottom{border-top:1px solid var(--line);padding-top:17px;margin-top:22px}.help{font-size:13px;color:var(--muted)}.help summary{cursor:pointer;min-height:28px;list-style:none;display:flex;align-items:center;justify-content:space-between;gap:10px}.help summary::-webkit-details-marker{display:none}.help summary:after{content:"+";font-size:18px;color:var(--green)}.help[open] summary:after{content:"−"}.help p{line-height:1.65;font-size:13px;margin:12px 0 0;max-width:44ch}.help p+p{margin-top:8px}.back{display:flex;align-items:center;gap:5px;background:none;border:0;padding:0;min-height:38px;margin:-8px 0 16px;color:var(--muted);font-size:13px}.back .icon{width:16px;height:16px}
+    label{display:block;font-size:13px;font-weight:600;margin-bottom:8px}.field{margin-bottom:19px}input{width:100%;height:48px;border:1px solid #d7ded1;border-radius:10px;background:#fff;color:var(--ink);padding:0 13px;font-size:16px}.password-wrap{position:relative}.password-wrap input{padding-right:48px}.reveal{position:absolute;right:4px;top:3px;width:42px;height:42px;border:0;background:none;color:var(--muted);display:grid;place-items:center}.reveal .icon{width:19px;height:19px}.tiny-note{font-size:12px;line-height:1.5;color:var(--muted);text-align:center;margin:15px 0 0}.device-info{display:flex;gap:13px;align-items:center;padding:16px;background:var(--mint);border-radius:11px;margin-bottom:17px}.device-info .icon{width:29px;height:29px;color:var(--green)}.device-info strong{display:block;font-weight:600;font-size:14px}.device-info small{display:block;font-size:12px;color:var(--muted);margin-top:4px}.warning{padding:12px 14px;margin:0 0 21px;background:var(--amber-bg);border-radius:9px;color:#795314;font-size:13px;line-height:1.6}.confirmation-caption{font-size:12px;color:var(--muted);line-height:1.6;margin:0 0 23px}.success-icon{width:58px;height:58px;display:grid;place-items:center;color:var(--green);background:var(--mint);border-radius:50%;margin:4px 0 22px}.success-icon .icon{width:28px;height:28px}.error-message{color:var(--red);background:var(--red-bg);font-size:13px;line-height:1.5;padding:11px 13px;border-radius:9px;margin:0 0 18px}.security-note{display:flex;align-items:center;justify-content:center;gap:7px;font-size:12px;color:var(--muted);margin:20px 0 0}.security-note .icon{width:14px;height:14px}
+    .pin-field{position:relative;margin:25px auto 22px;max-width:245px}.pin-field input{height:52px;text-align:center;letter-spacing:15px;font-size:25px;padding-left:27px;font-variant-numeric:tabular-nums;background:#fafbf8}.pin-field label{text-align:left;font-size:12px;color:var(--muted);font-weight:500}.keypad{display:grid;grid-template-columns:repeat(3,1fr);gap:7px;margin-bottom:18px}.key{height:48px;border:1px solid #e7ebe2;background:#fff;border-radius:9px;font-size:22px;font-weight:500;font-variant-numeric:tabular-nums}.key:hover{background:var(--mint)}.key:active{background:#d9e7d1}.key.utility{font-size:12px;border-color:transparent;color:var(--muted)}.key.utility .icon{width:20px;height:20px;vertical-align:middle}.shift-choice{border:0;padding:0;margin:0 0 18px;display:flex;gap:7px}.shift-choice legend{font-size:12px;color:var(--muted);margin-bottom:8px}.shift-choice button{flex:1;background:#fff;border:1px solid var(--line);border-radius:8px;padding:10px 6px;font-size:12px;min-height:42px}.shift-choice button[aria-pressed=true]{background:var(--mint);border-color:var(--green);color:var(--green);font-weight:600}.entry-result{padding:16px;background:var(--mint);border-radius:11px;margin:18px 0 22px;display:flex;gap:10px;align-items:center;font-size:14px;color:var(--green)}.entry-result .icon{width:20px;height:20px}.wide-heading{max-width:none}.under-card{padding-top:17px;text-align:center}.under-card button{color:var(--green);font-size:13px;font-weight:600}.product-footer{max-width:1056px;margin:0 auto 26px;padding:0 24px;display:flex;justify-content:space-between;align-items:center;color:var(--muted);font-size:12px;gap:14px}.product-footer .icon{width:14px;height:14px}.footer-note{display:flex;align-items:center;gap:7px}
+    .prototype{background:#f0eee7;border-top:1px solid #e1ded3;color:#5e6157;padding:15px 24px}.prototype-inner{max-width:1056px;margin:auto;display:flex;align-items:center;justify-content:space-between;gap:16px;flex-wrap:wrap}.prototype strong{font-size:12px;font-weight:650}.prototype p{font-size:11px;margin:4px 0 0;line-height:1.5}.prototype-tools{display:flex;gap:8px;align-items:center}.prototype-tools label{font-size:11px;font-weight:500;margin:0}.prototype-tools select{height:36px;max-width:200px;border:1px solid #d5d8cd;border-radius:7px;font-size:12px;background:#fff;color:var(--ink);padding:0 28px 0 10px}.reset{border:0;background:none;font-size:12px;text-decoration:underline;text-underline-offset:3px;min-height:36px;padding:0 8px}.sr-only{position:absolute;width:1px;height:1px;padding:0;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;border:0}
+    @media(min-width:800px){.workspace.pin-view{grid-template-columns:minmax(0,450px);max-width:450px}.pin-view .rail{display:none}.pin-view .card{padding-top:25px;padding-bottom:24px}.pin-view .state-line{margin-bottom:19px}.pin-view h1{font-size:28px}.pin-view .description{margin-bottom:8px}}
+    @media(max-width:799px){.topbar{padding:20px 24px}.logo{width:50px;height:44px}.brand-label{font-size:12px;padding-left:12px}.brand{gap:12px}.owner-link{font-size:12px}.owner-link .icon{width:16px;height:16px}main{padding:25px 22px 38px;min-height:calc(100svh - 238px)}.workspace{grid-template-columns:1fr;max-width:440px;gap:18px}.rail{padding:0 3px;display:block}.rail h2,.rail>p,.rail-note{display:none}.steps{display:flex;gap:20px}.steps li{display:flex;align-items:center;gap:8px;flex:1;padding:0;min-width:0}.steps li:first-child:after{display:none}.step-number{width:25px;height:25px;flex-shrink:0;font-size:11px}.step-text{padding:0}.step-text strong{font-size:12px}.step-text small{display:none}.card{padding:27px 27px 24px;border-radius:18px}.state-line{margin-bottom:21px}.visual{height:89px;margin-bottom:18px}.device-art{transform:scale(.88);transform-origin:left center}h1{font-size:29px}.description{font-size:14px}.pin-view .rail{display:none}.pin-view .card{padding-top:24px}.pin-view .state-line{margin-bottom:20px}.pin-view .description{margin-bottom:6px}.pin-field{margin:20px auto}.key{height:47px}.product-footer{margin-bottom:22px;font-size:11px;justify-content:center}.product-footer>span:last-child{display:none}.prototype{padding:14px 22px}.prototype-inner{gap:12px}.prototype-tools{width:100%;justify-content:space-between}.prototype-tools select{flex:1;max-width:none}.prototype p{max-width:48ch}.owner-link span{max-width:95px;text-align:left;line-height:1.35}}
+    @media(max-width:359px){.topbar{padding-inline:18px}.brand-label{display:none}main{padding-inline:14px}.card{padding:24px 22px}.steps{gap:10px}.step-text strong{font-size:11px}h1{font-size:27px}}
+    @media(prefers-reduced-motion:no-preference){.primary,.secondary,.key{transition:background .15s}.card:focus-within{scroll-margin-top:20px}}
+  </style>
+</head>
+<body>
+  <svg class="defs" aria-hidden="true"><defs>
+    <symbol id="i-arrow" viewBox="0 0 24 24"><path d="m9 5-7 7 7 7M2 12h19"/></symbol>
+    <symbol id="i-lock" viewBox="0 0 24 24"><rect x="5" y="10" width="14" height="11" rx="2"/><path d="M8 10V7a4 4 0 0 1 8 0v3m-4 5v2"/></symbol>
+    <symbol id="i-person" viewBox="0 0 24 24"><circle cx="12" cy="8" r="4"/><path d="M4 21v-2a8 8 0 0 1 16 0v2"/></symbol>
+    <symbol id="i-device" viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="13" rx="2"/><path d="M12 16v5m-4 0h8"/></symbol>
+    <symbol id="i-check" viewBox="0 0 24 24"><path d="m5 12 4 4L19 6"/></symbol>
+    <symbol id="i-refresh" viewBox="0 0 24 24"><path d="M20 8a8 8 0 1 0 0 8m0-13v5h-5"/></symbol>
+    <symbol id="i-eye" viewBox="0 0 24 24"><path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7S2 12 2 12Z"/><circle cx="12" cy="12" r="3"/></symbol>
+    <symbol id="i-delete" viewBox="0 0 24 24"><path d="M9 5h12v14H9l-7-7 7-7Zm3 4 6 6m0-6-6 6"/></symbol>
+    <symbol id="i-offline" viewBox="0 0 24 24"><path d="m3 3 18 18M2 8a16 16 0 0 1 4-2m4-1a16 16 0 0 1 12 3M5 12a11 11 0 0 1 5-2m5 1a11 11 0 0 1 4 1m-11 4a6 6 0 0 1 8 0m-4 4h.01"/></symbol>
+  </defs></svg>
+  <header class="topbar">
+    <div class="brand">
+      <svg class="logo" viewBox="0 0 100 86" role="img" aria-label="Lisi"><g fill="currentColor"><path d="M48 22C47 10 54 3 67 2c0 13-7 20-19 20Z"/><path d="M50 19 61 8" stroke="#faf8f3" stroke-width="1.8"/><rect x="5" y="17" width="10" height="61" rx="5"/><rect x="24" y="33" width="10" height="45" rx="5"/><circle cx="29" cy="22" r="5.5"/><path d="M65 38c-5-4-10-6-16-4-7 2-10 8-9 15 1 6 6 9 12 11 5 2 7 3 6 6-1 4-8 4-14 0l-5 8c8 6 17 7 24 2 7-4 8-13 4-19-3-4-8-5-13-7-4-1-5-3-4-5 1-3 5-3 10 0Z"/><rect x="78" y="33" width="10" height="45" rx="5"/><circle cx="83" cy="22" r="5.5"/></g></svg>
+      <span class="brand-label">Kasir</span>
+    </div>
+    <button class="owner-link" type="button" data-action="owner"><svg class="icon" aria-hidden="true"><use href="#i-person"/></svg><span>Dasbor pemilik</span></button>
+  </header>
+  <main>
+    <div class="workspace" id="workspace">
+      <aside class="rail" aria-label="Langkah penyiapan">
+        <h2>Sebelum mulai.</h2>
+        <p>Siapkan perangkat, lalu mulai melayani.</p>
+        <ol class="steps">
+          <li id="step-setup" class="current"><span class="step-number" aria-hidden="true">1</span><div class="step-text"><strong>Siapkan perangkat</strong><small>Dilakukan oleh pemilik</small></div></li>
+          <li id="step-pin" class="later"><span class="step-number" aria-hidden="true">2</span><div class="step-text"><strong>Masuk dengan PIN</strong><small>Untuk setiap karyawan</small></div></li>
+        </ol>
+      </aside>
+      <div>
+        <section class="card" id="stage" aria-labelledby="screen-title"></section>
+      </div>
+    </div>
+  </main>
+  <footer class="product-footer"><span class="footer-note"><svg class="icon" aria-hidden="true"><use href="#i-lock"/></svg>PIN karyawan hanya membuka kasir.</span><span>Lisi POS</span></footer>
+  <section class="prototype" aria-label="Kontrol prototipe, bukan bagian aplikasi">
+    <div class="prototype-inner">
+      <div><strong>Usulan desain · interaktif</strong><p>Simulasi saja. Gunakan akun contoh. PIN: 1234; PIN salah: 0000.</p></div>
+      <div class="prototype-tools"><label for="scenario">Lihat kondisi</label><select id="scenario"><option value="new">Perangkat baru</option><option value="ready">Sudah terhubung</option><option value="shift">Shift sudah berjalan</option><option value="expired">Akses kedaluwarsa</option><option value="offline">Koneksi terputus</option></select><button class="reset" id="reset" type="button">Ulangi</button></div>
+    </div>
+  </section>
+  <div class="sr-only" role="status" id="announcement" aria-live="polite"></div>
+  <noscript><p style="padding:24px">Aktifkan JavaScript untuk mencoba prototipe ini.</p></noscript>
+  <script>
+    'use strict';
+    const $ = id => document.getElementById(id);
+    const icon = name => `<svg class="icon" aria-hidden="true"><use href="#i-${name}"/></svg>`;
+    let screen = 'start', scenario = 'new', paired = false, hasShift = false, entry = 'clock-in', loginPurpose = 'setup', busy = false, timer = null;
+    const original = {
+      start: () => `
+        <div class="state-line"><span class="status ${scenario === 'expired' ? 'expired' : ''}">${icon('device')}${scenario === 'expired' ? 'Akses kasir berakhir' : 'Belum disiapkan'}</span></div>
+        <div class="visual" aria-hidden="true"><div class="device-art"><div class="screen">${'<span></span>'.repeat(6)}</div><span class="art-check">${icon('lock')}</span></div></div>
+        <h1 id="screen-title" tabindex="-1">${scenario === 'expired' ? 'Hubungkan kembali kasir.' : 'Siapkan kasir di sini.'}</h1>
+        <p class="description">${scenario === 'expired' ? 'Minta pemilik memperbarui akses perangkat ini.' : 'Pemilik menyiapkan perangkat. Setelah itu, karyawan cukup memakai PIN.'}</p>
+        <button class="primary" type="button" data-action="setup">${scenario === 'expired' ? 'Hubungkan kembali' : 'Siapkan kasir'}</button>
+        <button class="quiet recheck" type="button" data-action="recheck">${icon('refresh')}Sudah disiapkan? Periksa</button>
+        <div id="inline-status" class="tiny-note" role="status" hidden></div>
+        <details class="help card-bottom" id="help"><summary>Kenapa perlu disiapkan?</summary><p>Pemilik mengizinkan browser ini untuk dipakai sebagai kasir selama 90 hari. PIN karyawan tidak membuka dasbor pemilik.</p></details>`,
+      login: () => `
+        <button class="back" type="button" data-action="back">${icon('arrow')}Kembali</button>
+        <div class="state-line"><span class="status">${icon('lock')}${loginPurpose === 'setup' ? 'Penyiapan oleh pemilik' : 'Khusus pemilik'}</span></div>
+        <h1 id="screen-title" tabindex="-1">Masuk sebagai pemilik.</h1>
+        <p class="description">${loginPurpose === 'setup' ? 'Gunakan akun pemilik untuk melanjutkan.' : 'Buka laporan dan pengaturan kafe.'}</p>
+        <form id="owner-form">
+          <div class="field"><label for="owner-email">Email pemilik</label><input id="owner-email" type="email" autocomplete="off" value="pemilik@contoh.local" readonly aria-describedby="demo-note"></div>
+          <div class="field"><label for="owner-password">Kata sandi</label><div class="password-wrap"><input id="owner-password" type="password" autocomplete="off" value="akun-contoh" readonly aria-describedby="demo-note"><button class="reveal" type="button" data-action="reveal" aria-label="Tampilkan kata sandi" aria-pressed="false">${icon('eye')}</button></div></div>
+          <button class="primary" type="submit">${loginPurpose === 'setup' ? 'Lanjut' : 'Masuk ke dasbor'}</button>
+          <p class="tiny-note" id="demo-note">Akun contoh untuk pratinjau.</p>
+        </form>`,
+      confirm: () => `
+        <button class="back" type="button" data-action="back">${icon('arrow')}Kembali</button>
+        <div class="state-line"><span class="status connected">${icon('check')}Pemilik terverifikasi</span></div>
+        <h1 id="screen-title" tabindex="-1">Jadikan ini perangkat kasir?</h1>
+        <p class="description">Karyawan akan masuk dengan PIN di browser ini.</p>
+        <div class="device-info">${icon('device')}<div><strong>Browser ini</strong><small>Akses kasir berlaku 90 hari</small></div></div>
+        <p class="warning">Jika ada kasir di browser lain, aksesnya akan terputus.</p>
+        <p class="confirmation-caption">Penjualan dan absensi tetap tersimpan.</p>
+        <button class="primary" type="button" data-action="pair">Ya, hubungkan kasir</button>
+        <button class="quiet recheck" type="button" data-action="cancel">Batal</button>`,
+      connected: () => `
+        <div class="success-icon">${icon('check')}</div>
+        <h1 id="screen-title" tabindex="-1">Kasir siap dipakai.</h1>
+        <p class="description">Sekarang karyawan bisa masuk dengan PIN.</p>
+        <button class="primary" type="button" data-action="pin">Lanjut ke PIN kasir</button>
+        <p class="security-note">${icon('lock')}Akun pemilik ditutup sebelum masuk kasir.</p>`,
+      pin: () => `
+        <div class="state-line"><span class="status connected">${icon('check')}Perangkat terhubung</span>${hasShift ? '<span class="step-count">Shift tersedia</span>' : ''}</div>
+        <h1 id="screen-title" class="wide-heading" tabindex="-1">Masuk kasir.</h1>
+        <p class="description">Masukkan PIN 4 angka Anda.</p>
+        <form id="pin-form">
+          ${hasShift ? '<fieldset class="shift-choice"><legend>Shift Anda</legend><button type="button" data-entry="switch" aria-pressed="true">Sudah mulai kerja</button><button type="button" data-entry="clock-in" aria-pressed="false">Mulai shift baru</button></fieldset>' : ''}
+          <div class="pin-field"><label for="employee-pin">PIN karyawan</label><input id="employee-pin" type="password" inputmode="numeric" autocomplete="off" maxlength="4" pattern="[0-9]{4}" aria-describedby="pin-error" required></div>
+          <p id="pin-error" class="error-message" role="alert" hidden></p>
+          <div class="keypad" aria-label="Papan angka PIN">${[1,2,3,4,5,6,7,8,9].map(n=>`<button class="key" type="button" data-digit="${n}">${n}</button>`).join('')}<button class="key utility" type="button" data-digit="clear">Hapus</button><button class="key" type="button" data-digit="0">0</button><button class="key utility" type="button" data-digit="delete" aria-label="Hapus satu angka">${icon('delete')}</button></div>
+          <button id="enter-pin" class="primary" type="submit" disabled>${entry === 'switch' ? 'Masuk kasir' : 'Mulai kerja'}</button>
+        </form>
+        <details class="help card-bottom" id="help"><summary>Lupa PIN?</summary><p>Minta pemilik mengatur ulang PIN Anda. PIN hanya untuk kasir.</p></details>`,
+      entered: () => `
+        <div class="success-icon">${icon('check')}</div><h1 id="screen-title" tabindex="-1">Siap melayani.</h1><p class="description">${entry === 'switch' ? 'Kasir dibuka tanpa membuat absensi baru.' : 'Mulai kerja tercatat. Menu kasir bisa dibuka.'}</p><div class="entry-result">${icon('person')}Kasir contoh aktif</div><button class="primary" type="button" data-action="lock">Kunci kasir</button><p class="tiny-note">Pratinjau berakhir di sini. Tidak ada absensi atau transaksi asli.</p>`,
+      owner: () => `
+        <div class="success-icon">${icon('person')}</div><h1 id="screen-title" tabindex="-1">Dasbor pemilik.</h1><p class="description">Di aplikasi, laporan dan pengaturan dibuka di sini.</p><div class="device-info">${icon('lock')}<div><strong>Akses pemilik terpisah</strong><small>Masuk ke dasbor tidak menghubungkan kasir.</small></div></div><button class="secondary" type="button" data-action="cancel">Kembali ke kasir</button><p class="tiny-note">Simulasi saja. Tidak ada sesi pemilik asli.</p>`,
+      offline: () => `
+        <div class="state-line"><span class="status offline">${icon('offline')}Belum dapat terhubung</span></div><div class="success-icon">${icon('offline')}</div><h1 id="screen-title" tabindex="-1">Periksa koneksi internet.</h1><p class="description">Kami belum bisa memeriksa akses kasir.</p><button class="primary" type="button" data-action="retry">Coba lagi</button><details class="help card-bottom" id="help"><summary>Apa yang perlu dilakukan?</summary><p>Pastikan internet terhubung. Jangan hubungkan ulang perangkat hanya karena koneksi terputus.</p></details>`
+    };
+    function announce(message){$('announcement').textContent=message;}
+    function go(next, focus=true){clearTimeout(timer);busy=false;screen=next;render();if(focus){$('screen-title').focus({preventScroll:true});}}
+    function render(){
+      $('stage').innerHTML=original[screen]();
+      const pinStage=['pin','entered'].includes(screen);
+      $('workspace').classList.toggle('pin-view',pinStage);
+      $('step-setup').className=paired?'complete':'current';
+      $('step-setup').querySelector('.step-number').textContent=paired?'✓':'1';
+      $('step-pin').className=paired?'current':'later';
+      $('step-setup').setAttribute('aria-current',paired?'false':'step');
+      $('step-pin').setAttribute('aria-current',paired?'step':'false');
+      // Owner-dashboard navigation is separate; never model PIN as owner access.
+      document.querySelector('.owner-link').disabled=busy;
+    }
+    function simulate(button,label,done){
+      if(busy)return;busy=true;
+      for(const el of document.querySelectorAll('#stage button'))el.disabled=true;
+      button.textContent=label;
+      timer=setTimeout(()=>{busy=false;done();},550);
+    }
+    function updatePin(){const input=$('employee-pin');if(!input)return;input.value=input.value.replace(/\D/g,'').slice(0,4);$('enter-pin').disabled=input.value.length!==4;$('pin-error').hidden=true;}
+    function setScenario(value){
+      clearTimeout(timer);scenario=value;paired=['ready','shift'].includes(value);hasShift=value==='shift';entry=hasShift?'switch':'clock-in';$('scenario').value=value;
+      go(value==='offline'?'offline':paired?'pin':'start',false);
+    }
+    document.addEventListener('click',event=>{
+      const key=event.target.closest('[data-digit]');
+      if(key&&!busy){const input=$('employee-pin');const digit=key.dataset.digit;input.value=digit==='clear'?'':digit==='delete'?input.value.slice(0,-1):(input.value+digit).slice(0,4);updatePin();return;}
+      const choice=event.target.closest('[data-entry]');if(choice&&!busy){entry=choice.dataset.entry;document.querySelectorAll('[data-entry]').forEach(b=>b.setAttribute('aria-pressed',String(b===choice)));$('enter-pin').textContent=entry==='switch'?'Masuk kasir':'Mulai kerja';return;}
+      const button=event.target.closest('[data-action]');if(!button||busy)return;
+      const action=button.dataset.action;
+      if(action==='setup'){loginPurpose='setup';go('login');}
+      if(action==='owner'){loginPurpose='dashboard';go('login');}
+      if(action==='back')go(screen==='confirm'?'login':paired?'pin':'start');
+      if(action==='cancel')go(paired?'pin':'start');
+      if(action==='pair')simulate(button,'Menghubungkan…',()=>{paired=true;go('connected');announce('Perangkat terhubung. Lanjutkan dengan PIN kasir.');});
+      if(action==='pin'||action==='lock'){entry=hasShift?'switch':'clock-in';go('pin');}
+      if(action==='recheck')simulate(button,'Memeriksa…',()=>{go(paired?'pin':'start',false);if(!paired){$('inline-status').hidden=false;$('inline-status').textContent='Belum terhubung. Minta pemilik menyiapkan kasir.';}});
+      if(action==='retry')simulate(button,'Memeriksa…',()=>{scenario=paired?'ready':'new';$('scenario').value=scenario;go(paired?'pin':'start');announce('Koneksi kembali tersedia dalam simulasi.');});
+      if(action==='reveal'){const input=$('owner-password');const visible=input.type==='password';input.type=visible?'text':'password';button.setAttribute('aria-pressed',String(visible));button.setAttribute('aria-label',visible?'Sembunyikan kata sandi':'Tampilkan kata sandi');}
+      if(action==='help'){const details=$('help');if(details){details.open=!details.open;details.querySelector('summary').focus();}else announce('Ini pratinjau desain. Hubungi pemilik untuk akses atau PIN.');}
+    });
+    $('stage').addEventListener('input',event=>{if(event.target.id==='employee-pin')updatePin();});
+    $('stage').addEventListener('submit',event=>{
+      event.preventDefault();if(busy)return;
+      if(event.target.id==='owner-form')simulate(event.target.querySelector('[type=submit]'),'Memeriksa…',()=>go(loginPurpose==='setup'?'confirm':'owner'));
+      if(event.target.id==='pin-form'){
+        const input=$('employee-pin');if(!paired||input.value.length!==4)return;
+        const valid=input.value==='1234';
+        simulate($('enter-pin'),'Memeriksa…',()=>{
+          if(valid){hasShift=true;go('entered');}
+          else{render();$('pin-error').hidden=false;$('pin-error').textContent='PIN tidak cocok. Coba lagi.';$('employee-pin').focus();}
+        });
+      }
+    });
+    $('scenario').addEventListener('change',event=>setScenario(event.target.value));
+    $('reset').addEventListener('click',()=>setScenario('new'));
+    setScenario('new');
+  </script>
+</body>
+</html>

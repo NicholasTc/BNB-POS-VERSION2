@@ -101,7 +101,7 @@ test("direct cashier navigation revokes owner cookies and cached owner tabs cann
     other.getByRole("navigation", { name: "Navigasi pemilik" }),
   ).toBeVisible();
   await page.bringToFront();
-  await page.goto("/");
+  await page.goto("/?access=cashier");
   await expect(
     page.getByRole("button", { name: "Cashier login", exact: true }),
   ).toBeVisible();
@@ -112,7 +112,7 @@ test("direct cashier navigation revokes owner cookies and cached owner tabs cann
   ).toBe(401);
   await other.bringToFront();
   await expect(
-    other.getByRole("button", { name: "Masuk", exact: true }),
+    other.getByRole("button", { name: "Masuk ke dasbor", exact: true }),
   ).toBeVisible();
   expect(await other.getByLabel("Nama karyawan", { exact: true }).count()).toBe(
     0,
@@ -120,16 +120,16 @@ test("direct cashier navigation revokes owner cookies and cached owner tabs cann
   await page.bringToFront();
   await page.goBack();
   await expect(
-    page.getByRole("button", { name: "Masuk", exact: true }),
+    page.getByRole("button", { name: "Masuk ke dasbor", exact: true }),
   ).toBeVisible();
   expect(await page.getByTestId("sales-count").count()).toBe(0);
-  await page.goto("/");
+  await page.goto("/?access=cashier");
   await pin(page, "Mulai kerja", "0123", "Mulai kerja");
   await expectEmployeeDenied(page);
   await page.getByRole("button", { name: "Staf", exact: true }).click();
   await page.getByRole("link", { name: "Pemilik", exact: true }).click();
   await expect(
-    page.getByRole("button", { name: "Masuk", exact: true }),
+    page.getByRole("button", { name: "Masuk ke dasbor", exact: true }),
   ).toBeVisible();
   expect(await page.getByLabel("Nama karyawan", { exact: true }).count()).toBe(
     0,
@@ -162,7 +162,7 @@ test("expired or remotely revoked owner access removes dashboard data and manage
   }
   await page.evaluate(() => window.dispatchEvent(new Event("focus")));
   await expect(
-    page.getByRole("button", { name: "Masuk", exact: true }),
+    page.getByRole("button", { name: "Masuk ke dasbor", exact: true }),
   ).toBeVisible();
   expect(await page.getByLabel("Nama menu", { exact: true }).count()).toBe(0);
   expect(await page.getByTestId("sales-count").count()).toBe(0);
@@ -176,7 +176,7 @@ test("expired or remotely revoked owner access removes dashboard data and manage
   }
   await page.evaluate(() => window.dispatchEvent(new Event("focus")));
   await expect(
-    page.getByRole("button", { name: "Masuk", exact: true }),
+    page.getByRole("button", { name: "Masuk ke dasbor", exact: true }),
   ).toBeVisible();
   expect(await page.getByLabel("Nama karyawan", { exact: true }).count()).toBe(
     0,
@@ -201,7 +201,7 @@ test("cashier handoff stays blocked until owner logout is confirmed and safely r
       }),
     }),
   );
-  await page.goto("/");
+  await page.goto("/?access=cashier&login=1");
   await expect(
     page.getByRole("alert").filter({ hasText: "Layanan belum tersedia" }),
   ).toBeVisible();
@@ -209,7 +209,7 @@ test("cashier handoff stays blocked until owner logout is confirmed and safely r
   await page.clock.install();
   await page.clock.fastForward(6000);
   await page
-    .getByRole("button", { name: "Cashier login", exact: true })
+    .getByRole("button", { name: "Coba lagi", exact: true })
     .click();
   expect(posReads).toBe(0);
   await expect(page.getByRole("dialog")).toHaveCount(0);
@@ -224,7 +224,7 @@ test("cashier handoff stays blocked until owner logout is confirmed and safely r
   await expectEmployeeDenied(page);
   // The waiting login may open only after database-backed logout succeeds.
   const entry = page.getByRole("dialog", {
-    name: "Cashier login",
+    name: "Masuk kasir",
     exact: true,
   });
   await entry.getByLabel("PIN karyawan", { exact: true }).fill("0123");
@@ -270,7 +270,7 @@ test("owner inactivity locks after fifteen minutes; genuine activity preserves i
     );
     await page.evaluate(() => window.dispatchEvent(new Event("focus")));
     await expect(
-      page.getByRole("button", { name: "Masuk", exact: true }),
+      page.getByRole("button", { name: "Masuk ke dasbor", exact: true }),
     ).toBeVisible();
     expect(
       await page.getByLabel("Nama karyawan", { exact: true }).count(),

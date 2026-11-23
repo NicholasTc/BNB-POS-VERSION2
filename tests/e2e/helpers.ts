@@ -2,9 +2,9 @@ import { expect, type Page } from "@playwright/test";
 export async function login(page: Page) {
   await page.bringToFront();
   await page.goto("/owner");
-  await page.getByLabel("Email", { exact: true }).fill("owner@test.local");
-  await page.getByLabel("Kata sandi").fill("test-owner-password-2026");
-  await page.getByRole("button", { name: "Masuk", exact: true }).click();
+  await page.getByLabel("Email pemilik", { exact: true }).fill("owner@test.local");
+  await page.getByLabel("Kata sandi", { exact: true }).fill("test-owner-password-2026");
+  await page.getByRole("button", { name: "Masuk ke dasbor", exact: true }).click();
   await expect(
     page.getByRole("navigation", { name: /Navigasi pemilik|Owner navigation/ }),
   ).toBeVisible();

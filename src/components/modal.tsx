@@ -7,6 +7,7 @@ export function Modal({
   children,
   className,
   closeLabel = "Tutup",
+  showHeader = true,
 }: {
   title: string;
   onClose: () => void;
@@ -14,6 +15,7 @@ export function Modal({
   children: React.ReactNode;
   className?: string;
   closeLabel?: string;
+  showHeader?: boolean;
 }) {
   const ref = useRef<HTMLDialogElement>(null);
   useEffect(() => {
@@ -68,12 +70,12 @@ export function Modal({
       }}
     >
       <div className="stack">
-        <div className="row between">
+        {showHeader && <div className="row between">
           <h2>{title}</h2>
           <button className="secondary" onClick={onClose} disabled={busy}>
             {closeLabel}
           </button>
-        </div>
+        </div>}
         {children}
       </div>
     </dialog>

@@ -2,6 +2,16 @@
 
 Historical cashier redesign record. The newer owner phone/iPad/laptop reference supersedes the owner-layout freeze below; see OWNER_UI.md for the current owner layout and complete function mapping. Cashier behavior remains as recorded here.
 
+## BNB owner/cashier entry (approved 2026-11-23)
+
+The approved role-entry-v3.html supersedes earlier entry/PIN presentation below. Use the BNB leaf wordmark and Bites and Blends name. The responsive welcome has equal owner/cashier cards (side by side on desktop, owner first on phones), direct password login for personal owner devices and a separate cashier setup/PIN path. The shared access-shell.css is scoped; existing catalogue/payment/stock/promo/report geometry remains in its existing stylesheets. Keep the working owner language picker, password field names/validation, staff actions and manual/automatic recovery.
+
+Component mapping: RoleEntry is public navigation; AccessShell/BnbMark provide the shared visuals; OwnerLogin uses the existing owner submit handler; CashierEntry reflects the real loader's paired/unauthorized/unavailable state; DeviceSettings has a guided setup presentation using its existing owner API operation; quick PIN uses the existing modal, PinPad and attendance submit/open guards. Generic staff PIN dialogs keep their original appearance. The new entry keypad exposes clear and one-digit delete without changing the original staff keypad. No prototype credentials, successful-login timers, scenario switcher, browser persistence or fake authorized state is included in application code.
+
+Root query values select presentation only: access=cashier mounts Pos; login=1 requests one initial quick entry after handoff. They never select identity or grant permissions. Initial active cashiers do not reopen PIN later on clock-out. Owner setup focus masking preserves its completion state; new logo/cancel exits use confirmed logout. All existing API routes and server modules remain unchanged. Browser cases were updated for the approved labels/entry URLs while preserving financial and security assertions. Full verification status is recorded in PROGRESS.md / VERIFICATION.md; no deployment is implied.
+
+Automatic quick entry waits for Sales to commit its existing local cart/recovery restoration before calling the existing open/discard/pending guards. An optional presentation callback signals that readiness; it changes no price calculation, recovery write, payment request or financial transition. A targeted regression failed before this ordering fix and passed afterward: cancelling the discard prompt retains the saved cart, while confirming allows the usual PIN-authenticated switch.
+
 ## Desktop cashier restructuring (2026-10-20)
 
 User authorized desktop layout only; preserve phone/tablet composition, the existing theme and all functions. New cashier-desktop.css is scoped to cashier-app and `(min-width: 1280px) and (hover: hover) and (pointer: fine)`. It is imported after cashier.css; existing phone/tablet rules and all application/API/financial logic are unchanged. Wide touch tablets keep the reference layout.

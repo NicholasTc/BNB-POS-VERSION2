@@ -1,5 +1,11 @@
 # Decisions
 
+## BNB access UI integration (2026-11-23)
+
+- User approved role-entry-v3.html, corrected the café identity to **BNB / Bites and Blends**, and authorized integrating that design on new-login. Keep the leaf, green/cream theme, equal owner/cashier choices, concise setup and direct paired PIN presentation. No new business policies, backend architecture, authentication service, public admin navigation or production rollout is authorized.
+- The welcome is public presentation only. Cashier selection invokes the existing logout-before-cashier loader; owner selection opens the existing password portal. Explicit pairing, 90-day deadline, PIN/shift actions, idle limits, immutable sales/idempotency, stock/export and all permissions remain authoritative in their existing services.
+- Preserve the complete working catalogue/cart/payment/preparation views and staff actions. A quick PIN screen uses the existing modal/handlers, keeps the catalogue/recovery mounted and offers Lihat menu. Normal owner settings retain their complete device/Sheets controls; the setup navigation hint gets a focused confirmation presentation. See WORKFLOWS.md and UI_REDESIGN.md.
+
 ## Developer diagnostics and maintenance comments (approved 2026-11-21)
 
 - Extend explicit new/replacement cashier pairing to 90 days; preserve existing actual deadlines. Add an owner countdown/expiry reminder, without automatic renewal or changing session/PIN limits.

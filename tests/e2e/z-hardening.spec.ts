@@ -122,8 +122,12 @@ test("real PostgreSQL connection outage preserves paid sale and recovers once", 
   );
   await page.unroute("**/api/sales");
   const sockets = new Set<Socket>();
+  let disconnected = false;
   const upstream = new URL(process.env.TEST_DATABASE_URL!);
   const proxy = createServer((client) => {
+    // A connection already queued by the OS must not reopen the faulted proxy
+    // after its current sockets were destroyed but before close completes.
+    if (disconnected) { client.destroy(); return; }
     const remote = connect({
       host: upstream.hostname,
       port: Number(upstream.port),
@@ -185,13 +189,14 @@ test("real PostgreSQL connection outage preserves paid sale and recovers once", 
         { timeout: 15000 },
       )
       .toBe(200);
-    await page.goto("http://127.0.0.1:3102");
+    await page.goto("http://127.0.0.1:3102/?access=cashier");
     await expect(
       page.getByRole("button", {
         name: "Pembayaran diterima · Simpan",
         exact: true,
       }),
     ).toBeEnabled();
+    disconnected = true;
     for (const socket of sockets) socket.destroy();
     await new Promise<void>((resolve) => proxy.close(() => resolve()));
     await page
@@ -206,6 +211,7 @@ test("real PostgreSQL connection outage preserves paid sale and recovers once", 
     await expect(
       page.getByRole("heading", { name: "Penjualan tersimpan!" }),
     ).not.toBeVisible();
+    disconnected = false;
     await listen(port);
     await page
       .getByRole("dialog")
@@ -236,10 +242,14 @@ test("real PostgreSQL connection outage preserves paid sale and recovers once", 
       await pool.end();
     }
   } finally {
-    if (app.exitCode === null) {
+    // Quiesce browser polling/prefetch before draining the temporary server.
+    // All outage, exactly-once and amount assertions above remain unchanged.
+    await page.close();
+    if (app.exitCode === null && app.signalCode === null) {
       app.kill("SIGTERM");
       await new Promise((resolve) => app.once("exit", resolve));
     }
+    disconnected = true;
     for (const socket of sockets) socket.destroy();
     if (proxy.listening)
       await new Promise<void>((resolve) => proxy.close(() => resolve()));
