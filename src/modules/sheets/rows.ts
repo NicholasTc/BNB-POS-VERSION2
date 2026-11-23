@@ -48,8 +48,10 @@ export type ExportRow = {
   values: Cell[];
 };
 // Sheets serial dates in Jakarta wall time. Real numeric dates remain sortable.
+/** Format a stored timestamp as a Jakarta spreadsheet value; no browser timezone is trusted. */
 export const sheetDate = (date: Date) =>
   (date.getTime() + 7 * 3600000) / 86400000 + 25569;
+/** Immutable completed sale/lines/discount snapshot → one readable Sales row with cashier, quantities, items and promo details; no SQL or Google write. */
 export function saleRows(
   sale: {
     id: string;
@@ -109,6 +111,7 @@ export function saleRows(
     },
   ];
 }
+/** Stored shift + employee display name → one attendance row reused when clock-out changes; never derive attendance from cashier switching. */
 export function attendanceRow(
   shift: {
     id: string;
@@ -137,7 +140,9 @@ export function attendanceRow(
   };
 }
 export type MappedRow = ExportRow & { rowNumber: number };
+/** Build the managed tab row range used with stable SQL row reservations. */
 export const cellRange = (tab: Tab, row: number) =>
   `'${tab}'!A${row}:${String.fromCharCode(64 + headers[tab].length)}${row}`;
+/** Compute capped exponential worker retry delay; this is export backoff, never a retry of a payment write. */
 export const retryDelay = (attempts: number) =>
   Math.min(3600, 5 * 2 ** Math.min(attempts, 10));

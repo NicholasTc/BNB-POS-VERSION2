@@ -6,11 +6,13 @@ import { auth } from "./auth";
 import { env } from "./env";
 import { body, limit, json } from "./http";
 
+/** Add private no-store/Pragma headers to authentication responses without logging their cookies or contents. */
 export function privateAuthResponse(response: Response) {
   response.headers.set("Cache-Control", "no-store");
   response.headers.set("Pragma", "no-cache");
   return response;
 }
+/** Strict bounded credentials + SQL throttling → Better Auth password verification → SQL portal-role check and wrong-role session revocation → private response. PINs and submitted roles cannot grant owner/admin access. */
 export async function credentialLogin(
   request: Request,
   role: "owner" | "admin",

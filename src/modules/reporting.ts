@@ -9,12 +9,14 @@ import {
 } from "@/db/schema";
 import { businessRange } from "@/lib/dates";
 import { AppError } from "@/lib/http";
+/** Convert SQL aggregate strings/numbers to safe integers; reject totals that cannot be represented exactly. */
 const amount = (value: string | number) => {
   const n = Number(value);
   if (!Number.isSafeInteger(n))
     throw new Error("Report exceeds safe integer range");
   return n;
 };
+/** Owner-authorized date/page query → Jakarta half-open date range → repeatable-read SQL snapshot of completed net revenue, payment/product/cashier totals, paged sale snapshots, unfinished sales and overlapping attendance. No export or business write occurs. */
 export async function report(input: {
   from: string;
   to: string;

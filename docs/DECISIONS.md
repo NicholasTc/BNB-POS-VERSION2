@@ -1,5 +1,13 @@
 # Decisions
 
+## Developer diagnostics and maintenance comments (approved 2026-11-21)
+
+- Extend explicit new/replacement cashier pairing to 90 days; preserve existing actual deadlines. Add an owner countdown/expiry reminder, without automatic renewal or changing session/PIN limits.
+- Add readable, developer-only System logs inside the existing URL-only `/admin`: observed failure summaries, investigation guidance, grouped incidents, filters, references, sanitized export and resolved/reopened state. Preserve the existing role/session boundaries and LISI theme.
+- Capture bounded sanitized server/browser/worker observations outside business transactions, using isolated diagnostic tables, a separate writer pool, platform-console fallback and 30-day sample/inactive-group retention. Never collect raw messages, SQL, request bodies, credentials or business records. Reports are best effort and do not prove a failed sale; platform logs remain necessary during outages.
+- User chose database/server functions first for the subsequent comments-only documentation pass. Describe function purpose and data flow; do not rewrite executable logic or historical SQL migrations as part of documentation. UI-wide function documentation is deferred.
+- Local implementation/migration/testing is authorized; no production deployment is included in this task. See DIAGNOSTICS.md for implementation limits and VERIFICATION.md for actual results.
+
 ## Live spreadsheet rollout (2026-11-18)
 
 - User explicitly requested deployment and verification of Sales, Attendance and Laporan Harian together on the previously approved LIVE spreadsheet. This supersedes the earlier TEST-only daily-report rollout restriction.
@@ -59,7 +67,7 @@
 ## Cashier entry follow-up (2026-10-19)
 
 - Add a prominent **Cashier login** shortcut using the existing four-digit PIN actions. Existing-shift login switches/reauthenticates without new attendance; an explicit new-shift choice uses clock-in. Preserve staff controls, cart-discard guards, unfinished-sale recovery and owner-session revocation before cashier entry.
-- The shortcut does not override device authorization or grant owner access. Unpaired/revoked browsers require explicit owner pairing; the setup link opens the owner device settings after password authentication. A navigation query never pairs a device. Successful pairing provides a return-to-cashier link; owner login alone is not pairing. Keep the existing one-browser/30-day pairing policy.
+- The shortcut does not override device authorization or grant owner access. Unpaired/revoked browsers require explicit owner pairing; the setup link opens the owner device settings after password authentication. A navigation query never pairs a device. Successful pairing provides a return-to-cashier link; owner login alone is not pairing. Keep the one-browser pairing policy. The approved Nov 21 extension sets new/replacement pairings to 90 days in SQL and the protected cookie; existing pairings retain their actual expiry. Reading status never renews trust or pairs a personal owner browser. The owner dashboard shows days remaining and expiry in WIB, with an amber reminder in the final seven days or when expired/unpaired. Owner/admin session limits and the cashier PIN/idle lock are unchanged. Remote pairing approval remains proposal-only; developer diagnostics are covered by the later approval above.
 
 ## Owner navigation follow-up (2026-10-18)
 

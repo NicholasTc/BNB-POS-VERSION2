@@ -6,6 +6,7 @@ import {
 } from "@/lib/menu-photo";
 import { PhotoError, photoHash } from "./config";
 
+/** Bound and decode an allowed image, reject invalid/oversized content, remove metadata and normalize to limited WebP bytes with input/content digests before storage. */
 export async function normalizePhoto(input: Buffer, mime: string) {
   if (input.length > MAX_PHOTO_UPLOAD_BYTES) throw new PhotoError("too_large");
   const signature = input.subarray(0, 12);

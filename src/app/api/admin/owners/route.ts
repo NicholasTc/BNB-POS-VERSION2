@@ -9,6 +9,7 @@ import {
 } from "@/lib/http";
 import { createOwner, listOwners } from "@/modules/account-manager/server";
 import { newOwnerInput } from "@/modules/account-manager/types";
+/** Admin role → strict pagination → safe shared-cafe owner metadata. */
 export const GET = endpoint(async (request) => {
   await requireAdmin(request);
   const query = new URL(request.url).searchParams;
@@ -26,6 +27,7 @@ export const GET = endpoint(async (request) => {
   if (!page.success) throw new AppError(400, "Halaman tidak valid.");
   return json(await listOwners(page.data));
 });
+/** Admin role + Origin/strict input → fresh administrator password and idempotent owner creation transaction. */
 export const POST = endpoint(async (request) => {
   assertOrigin(request);
   const admin = await requireAdmin(request);

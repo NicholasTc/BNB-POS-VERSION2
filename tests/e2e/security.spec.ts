@@ -37,7 +37,7 @@ async function pair(page: Page) {
     .getByRole("button", { name: "Hubungkan perangkat ini", exact: true })
     .click();
   await expect(
-    page.getByText("Perangkat terhubung selama 30 hari.", { exact: false }),
+    page.getByText("Perangkat terhubung selama 90 hari.", { exact: false }),
   ).toBeVisible();
 }
 async function expectEmployeeDenied(page: Page) {

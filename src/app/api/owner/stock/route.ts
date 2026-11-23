@@ -27,6 +27,7 @@ const query = z.discriminatedUnion("view", [
     .strict(),
   z.object({ view: z.literal("command"), id: z.uuid() }).strict(),
 ]);
+/** Owner role + strict view/cursor → stock list, recipe, ledger history or durable command receipt. */
 export const GET = endpoint(async (request) => {
   await requireOwner(request);
   const params = new URL(request.url).searchParams;
@@ -48,6 +49,7 @@ export const GET = endpoint(async (request) => {
           : await stockReceipt(q.id),
   );
 });
+/** Owner role + Origin/strict command → idempotent stock service; immutable financial records stay separate. */
 export const POST = endpoint(async (request) => {
   assertOrigin(request);
   await requireOwner(request);

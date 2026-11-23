@@ -1,6 +1,7 @@
 import { z } from "zod";
 import { endpoint, json, assertOrigin, body } from "@/lib/http";
 import { attendanceAction, deviceToken, posState } from "@/modules/attendance";
+/** Device cookie → SQL pairing/idle check → active shifts/current cashier/generation, without owner credentials. */
 export const GET = endpoint(async (request) =>
   json(await posState(deviceToken(request))),
 );
@@ -13,6 +14,7 @@ const schema = z
       .optional(),
   })
   .strict();
+/** Origin/strict action → paired-device PIN/attendance service → state transition and optional final-session summary. */
 export const POST = endpoint(async (request) => {
   assertOrigin(request);
   const input = await body(request, schema);

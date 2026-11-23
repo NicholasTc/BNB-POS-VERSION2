@@ -1,3 +1,4 @@
+/** CLI environment → existing Drizzle journal → pending versioned migrations → close the business pool. This command changes the configured database; test fixtures use a separately guarded database. */
 import { createRequire } from "node:module";
 const { loadEnvConfig } = createRequire(process.cwd() + "/package.json")(
   "@next/env",

@@ -21,6 +21,7 @@ import {
 } from "./types";
 
 const lock = sql`SELECT pg_advisory_xact_lock(891107)`;
+/** Owner route → current stock rows and low/negative counts; balances are maintained by SQL movement triggers, not recomputed in the browser. */
 export async function stockItems(): Promise<StockData> {
   const items = await db
     .select()
@@ -32,6 +33,7 @@ export async function stockItems(): Promise<StockData> {
     negativeCount: items.filter((i) => i.balance < 0).length,
   };
 }
+/** Read a menu and its recipe revision/lines in a repeatable-read transaction; an absent recipe is revision zero. */
 export async function getStockRecipe(menuItemId: string) {
   return db.transaction(
     async (tx) => {
@@ -61,6 +63,7 @@ export async function getStockRecipe(menuItemId: string) {
     { isolationLevel: "repeatable read", accessMode: "read only" },
   );
 }
+/** Serialize with stock commands and return the durable operation receipt, resolving a lost reply without reapplying stock. */
 export async function stockReceipt(id: string) {
   return db.transaction(async (tx) => {
     await tx.execute(lock);
@@ -71,6 +74,7 @@ export async function stockReceipt(id: string) {
     return op?.result ?? null;
   });
 }
+/** Read immutable movements with a validated keyset cursor and bounded page; no balance is changed by browsing history. */
 export async function stockHistory(
   stockItemId?: string,
   cursor?: string,
@@ -108,6 +112,7 @@ export async function stockHistory(
     { isolationLevel: "repeatable read", accessMode: "read only" },
   );
 }
+/** Owner route → strict command + stable UUID/hash → stock advisory lock → replay receipt or apply create/restock/adjust/recipe operation and audit atomically. SQL validates ledger deltas and updates balances; this service never edits sale history. */
 export async function runStockCommand(raw: StockCommand): Promise<StockResult> {
   const input = stockCommand.parse(raw);
   if (input.action === "recipe")

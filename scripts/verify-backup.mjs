@@ -15,6 +15,7 @@ if (
     "Backup verification requires the isolated Compose test database.",
   );
 const name = "lisi_restore_check_" + randomBytes(6).toString("hex");
+/** Run the required PostgreSQL utility only in the guarded local test Compose service; fail closed on command errors. */
 function docker(args, input) {
   const r = spawnSync("docker", ["compose", "exec", "-T", "test-db", ...args], {
     input,
@@ -24,11 +25,13 @@ function docker(args, input) {
     throw new Error("Backup verification command failed: " + args[0]);
   return r.stdout;
 }
+/** Read all public/drizzle table digests, row counts, sequences and financial/stock reconciliation markers to compare an isolated restore without printing record contents. */
 async function fingerprint(pool) {
   const tables = await pool.query(
     "SELECT table_schema,table_name FROM information_schema.tables WHERE table_schema IN ('public','drizzle') AND table_type='BASE TABLE' ORDER BY table_schema,table_name",
   );
   const result = {};
+  /** Quote trusted catalogue identifiers used by verification SQL; never interpolate unquoted names. */
   const quote = (s) => '"' + s.replaceAll('"', '""') + '"';
   for (const t of tables.rows) {
     const key = t.table_schema + "." + t.table_name;
@@ -125,6 +128,7 @@ try {
   if (restored) await restored.end();
   if (created) docker(["dropdb", "-U", "lisi_test", name]);
 }
+/** Count table fingerprint entries for the backup/restore verification summary. */
 function tablesCount(fingerprints) {
   return Object.keys(fingerprints).filter((k) => k !== "sequences").length;
 }

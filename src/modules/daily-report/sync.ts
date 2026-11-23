@@ -1,4 +1,5 @@
 import type { Pool, PoolClient } from "pg";
+import { recordDiagnostic } from "../diagnostics/record";
 import {
   SheetsError,
   assertSheetsTarget,
@@ -18,6 +19,7 @@ import {
 } from "./types";
 
 const LOCK = 891110;
+/** Validate the actual database and approved test/live spreadsheet before any report export; hosted live needs explicit confirmation and local test stays pinned. */
 export function reportGuard(
   config: SheetsConfig,
   connectionString: string | undefined,
@@ -58,6 +60,7 @@ type Day = {
   catalog_historical: boolean;
 };
 
+/** Worker SQL read of completed-sale dates and active catalogue → bounded per-day snapshot/dirty metadata; freeze past observed catalogues and mark unknown pre-activation prices explicitly. */
 async function discover(client: PoolClient, today: string, reconcile: boolean) {
   const counts = (
     await client.query<{ date: string; count: number }>(
@@ -119,6 +122,7 @@ async function discover(client: PoolClient, today: string, reconcile: boolean) {
   return { first, days: days.length };
 }
 
+/** Within a consistent source transaction, project one day, reserve stable hidden-sheet rows and tombstone vanished projections; returns a write plan without modifying sales. */
 async function reserve(
   client: PoolClient,
   day: Day,
@@ -194,6 +198,7 @@ async function reserve(
   };
 }
 
+/** Independent opt-in worker → destination/advisory lock → due dirty-day snapshots/reservations → atomic report data/status publication → metadata acknowledgment/backoff. Core Sales/Attendance delivery and the selected report date remain independent. */
 export async function syncDailyReport(
   pool: Pool,
   config: SheetsConfig | null,
@@ -212,6 +217,7 @@ export async function syncDailyReport(
     bound = false,
     transaction = false,
     processed = 0;
+  /** Abort report transport when the SQL connection owning its lock is lost. */
   const controller = new AbortController(),
     lost = () => controller.abort();
   try {
@@ -306,6 +312,7 @@ export async function syncDailyReport(
         "UPDATE sheets_daily_target SET last_error=$1,next_attempt_at=$2::timestamptz+LEAST(3600,30*power(2,LEAST(attempts,7)))*interval '1 second',attempts=LEAST(attempts+1,100) WHERE id='primary'",
         [code, now],
       );
+    recordDiagnostic({ kind: "daily_report", source: "worker", error, technicalCode: code });
     return { state: "retry", processed, error: code } as Result;
   } finally {
     if (client) {

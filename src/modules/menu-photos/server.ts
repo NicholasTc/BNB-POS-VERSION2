@@ -10,6 +10,7 @@ import { normalizePhoto } from "./normalize";
 import { photoStore, type PhotoStore } from "./storage";
 
 let processing = 0;
+/** Owner-authorized bounded upload → normalize bytes → durable ID/content reservation → asset lock and private storage PUT → ready metadata/audit. Same-ID retries cannot replace a different image. */
 export async function uploadPhoto(
   id: string,
   bytes: Buffer,
@@ -77,6 +78,7 @@ export async function uploadPhoto(
     processing--;
   }
 }
+/** Authorize a read using valid pairing or passive owner access without taking a cashier lock or extending owner idle time. */
 export async function authorizePhotoRead(request: Request) {
   // Read-only pairing check: image requests never take the cashier device lock.
   let token: string | undefined;
@@ -99,6 +101,7 @@ export async function authorizePhotoRead(request: Request) {
   headers.set("x-lisi-background", "1");
   await requireOwner(new Request(request.url, { headers }));
 }
+/** Validated image ID → ready metadata and matching storage target → bounded object read → content/size verification; SQL metadata alone is not an image backup. */
 export async function readPhoto(
   id: string,
   config: PhotoConfig = photoConfig(),
@@ -119,6 +122,7 @@ export async function readPhoto(
     throw new PhotoError("unavailable");
   return bytes;
 }
+/** Administrative dry run by default; explicit apply owns a separate session lock across committed tombstones and external storage deletes. */
 export async function cleanupPhotos(
   apply = false,
   config: PhotoConfig = photoConfig(),
@@ -147,6 +151,7 @@ export async function cleanupPhotos(
     }
   }
 }
+/** Inspect at most 25 old unreferenced assets, recheck under the asset lock, persist deleting state before DELETE and finish a resumable tombstone; active menu references are preserved. */
 async function cleanupBatch(
   apply: boolean,
   config: PhotoConfig,

@@ -1,0 +1,49 @@
+.owner-app .owner-toolbar {
+  flex-wrap: wrap;
+}
+.owner-app .device-trust-reminder {
+  flex: 1 1 260px;
+  min-width: 0;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 8px;
+  padding: 6px 12px;
+  border: 1px solid var(--owner-border);
+  border-left: 4px solid var(--owner-leaf);
+  border-radius: 14px;
+  background: white;
+}
+.owner-app .device-trust-reminder.is-warning {
+  border-left-color: #bd7c22;
+  background: #fff9ed;
+}
+.owner-app .device-trust-reminder > div {
+  flex: 1 1 120px;
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+.owner-app .device-trust-reminder p {
+  margin: 4px 0;
+  font-size: 12px;
+  line-height: 1.5;
+}
+.owner-app .device-trust-reminder strong {
+  font-size: 13px;
+}
+.owner-app .device-trust-reminder .device-trust-expiry {
+  color: #6b6158;
+  font-size: 12px;
+}
+.owner-app .device-trust-reminder button {
+  min-height: 44px;
+  padding: 8px 12px;
+  font-size: 12px;
+}
+@media (max-width: 640px) {
+  .owner-app .device-trust-reminder {
+    order: 1;
+    flex-basis: 100%;
+  }
+}

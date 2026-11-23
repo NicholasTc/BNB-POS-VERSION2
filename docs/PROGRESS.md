@@ -1,6 +1,18 @@
 # LISI POS progress checkpoint
 
-Updated: 2026-11-21 (Asia/Jakarta), read-only dashboard sync-status fix verified locally.
+## Completed locally — diagnostics, 90-day pairing and server comments (new-login)
+
+Updated: 2026-11-23 (Asia/Jakarta). Resumed after usage interruption; confirmed the Nov 21 full gate actually finished. **87 unit / 143 integration / 64 Chromium = 294 tests passed**, typecheck/lint, no schema drift, production build/19-asset client-secret scan and **37-table backup/restore**. Evidence: /tmp/lisi-diagnostics-gate.log. Fresh Nov 23 typecheck/lint and diff-whitespace checks also passed after restoring generated next-env.d.ts. Initial focused browser label/locator failures were fixed before this final gate. Phone/desktop screenshots reviewed; physical Safari/hosted acceptance unverified.
+
+Implemented readable admin-only System logs, sanitized bounded server/browser/worker capture, grouped references/filter/detail/download/resolve/reopen, separate writer pool, 30-day retention/capacity controls and platform-console fallback. Migration 0015 adds only two diagnostic tables and their own FK/indexes/checks. Existing financial/attendance transitions and role/session boundaries retained. Logging is best effort: SQL/offline/process failures may leave events only in platform logs. See DIAGNOSTICS.md / VERIFICATION.md.
+
+The earlier 90-day pairing/reminder is preserved: SQL/cookie share one policy, owner header shows actual remaining days/WIB expiry and a final-seven-day warning. Existing pairings are not extended automatically. No changes to PINs, owner idle/absolute limits, pairing replacement or sale recovery.
+
+Database scan found 34 tables/16 SQL functions/19 triggers/32 FKs. Completed database/server comments first: **210 named functions across 85 files**, table purposes and SQL trigger flows. Nov 23 normalized-source comparison confirmed zero executable changes in that pass and no missing comments. Historical migrations/live SQL functions were not edited for documentation; UI-wide comments remain deferred.
+
+Local dev backup backups/lisi-2026-11-21T07-36-05-843Z.dump preceded pending 0014/0015 migrations. All **34 existing public table contents unchanged**, two diagnostic tables added (36 public tables). Details in ignored .verification/local-diagnostics-migration.json. Generated next-env.d.ts restored. No production connection/migration/deployment, Google writes, Git commit or push for this task. Unrelated design-proposal/ preserved. Changes remain local/uncommitted on **new-login**.
+
+Next: review locally at /admin → System logs and the owner-header device reminder. A separately authorized release must review unreleased branch contents, apply the metadata migration and deploy compatible web/worker before these features exist live. This checkpoint supersedes the prior proposal-only/pending diagnostics notes.
 
 ## Current stage
 Sync-status display fix (Nov 21): implemented locally in status.ts/status-state.ts and the existing bilingual status card. Reads the worker's durable destination, heartbeat, last success, queue and error metadata instead of requiring Google credentials or active export settings on the web service. Validates recorded ID/mode against the actual database scope; does not grant export authorization. Distinguishes healthy, pending, waiting, stale/failed and configuration states. No migration/dependency/worker/auth/financial changes; retry endpoint remains unchanged and owner-only. This card continues to cover the existing Sales/Attendance receipts; the independent daily-report module/alerts subsystem were not redesigned.

@@ -64,6 +64,7 @@ export interface DailyTransport {
   write(input: ReportWrite): Promise<void>;
 }
 export class DailyReportError extends Error {
+  /** Represent a report-specific failure with a safe typed code for independent retries and diagnostics. */
   constructor(public code: string) {
     super(code);
     this.name = "DailyReportError";

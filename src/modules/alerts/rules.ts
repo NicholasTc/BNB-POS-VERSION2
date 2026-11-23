@@ -19,12 +19,14 @@ export type AlertFacts = {
 export type SyncSetting =
   | { mode: "off" | "configuration" }
   | { mode: "test" | "live"; spreadsheetId: string };
+/** Pure current-facts/config/time projection into sorted issue-group candidates; no SQL, network request or source correction. */
 export function detectAlerts(
   f: AlertFacts,
   setting: SyncSetting,
   now: Date,
 ): AlertCandidate[] {
   const alerts: AlertCandidate[] = [];
+  /** Include only nonempty alert groups while assembling this pure candidate list. */
   const add = (candidate: AlertCandidate) => {
     if (candidate.count > 0) alerts.push(candidate);
   };
@@ -110,6 +112,7 @@ export function detectAlerts(
       a.key.localeCompare(b.key),
   );
 }
+/** Check severity/hidden/disposition rules before a requested alert-management action; source business state is never changed. */
 export function canManageAlert(
   action: AlertCommand["action"],
   alert: Pick<OwnerAlert, "severity" | "hidden" | "disposition">,

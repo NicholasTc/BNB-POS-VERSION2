@@ -6,9 +6,11 @@ import { AppError, limit } from "@/lib/http";
 import { digest, pinLookup, verifyPin, hashPin } from "@/lib/credentials";
 import { sessionFarewell } from "./orders/sessions";
 import type { SessionFarewell } from "./orders/types";
+import { DEVICE_TRUST_SECONDS } from "./device-trust/policy";
 export const DEVICE_COOKIE = "lisi_device";
 export const IDLE_MS = 15 * 60 * 1000;
 export type Transaction = Parameters<Parameters<typeof db.transaction>[0]>[0];
+/** Read and validate the cashier cookie shape; SQL verification happens in lockedDevice, not here. */
 export function deviceToken(request: Request) {
   const value = request.headers
     .get("cookie")
@@ -20,6 +22,7 @@ export function deviceToken(request: Request) {
     throw new AppError(401, "Perangkat belum terhubung. Hubungi pemilik.");
   return value;
 }
+/** Check the active cashier identity and 15-minute touch deadline from a device row; this does not authenticate an owner. */
 export function cashierValid(d: typeof device.$inferSelect) {
   return (
     !!d.cashierId &&
@@ -27,6 +30,7 @@ export function cashierValid(d: typeof device.$inferSelect) {
     Date.now() - d.touchedAt.getTime() < IDLE_MS
   );
 }
+/** Within the caller transaction, lock the single shared-device row and verify token hash and pairing expiry before cashier work. */
 export async function lockedDevice(tx: Transaction, token: string) {
   const [d] = await tx
     .select()
@@ -41,8 +45,10 @@ export async function lockedDevice(tx: Transaction, token: string) {
     throw new AppError(401, "Perangkat belum terhubung. Hubungi pemilik.");
   return d;
 }
+/** Called after owner authorization: generate a new token, atomically replace the one shared pairing/expiry, clear active cashier and append an audit record. Existing shifts and sales survive. */
 export async function pairDevice() {
   const token = randomBytes(32).toString("hex");
+  const expiresAt = new Date(Date.now() + DEVICE_TRUST_SECONDS * 1000);
   await db.transaction(async (tx) => {
     await tx.execute(sql`SELECT pg_advisory_xact_lock(891102)`);
     await tx
@@ -50,13 +56,13 @@ export async function pairDevice() {
       .values({
         id: "shared",
         tokenHash: digest(token),
-        expiresAt: new Date(Date.now() + 30 * 86400000),
+        expiresAt,
       })
       .onConflictDoUpdate({
         target: device.id,
         set: {
           tokenHash: digest(token),
-          expiresAt: new Date(Date.now() + 30 * 86400000),
+          expiresAt,
           cashierId: null,
           touchedAt: null,
           generation: sql`${device.generation}+1`,
@@ -66,6 +72,7 @@ export async function pairDevice() {
   });
   return token;
 }
+/** Owner-authorized service: null the shared token and cashier identity, advance generation and audit revocation without deleting shifts or sales. */
 export async function revokeDevice() {
   await db.transaction(async (tx) => {
     await tx.update(device).set({
@@ -77,6 +84,7 @@ export async function revokeDevice() {
     await tx.insert(audit).values({ actor: "owner", action: "device.revoke" });
   });
 }
+/** Reserve durable throttle slots, look up an active employee using the keyed PIN digest and verify its salted hash; release only this successful attempt slot. */
 async function authenticatePin(pin: string) {
   await limit("pin-attempts", 60, 60);
   // Reserve a failure slot before hashing; successful verification releases only
@@ -97,6 +105,7 @@ async function authenticatePin(pin: string) {
   );
   return e;
 }
+/** Paired browser + PIN/action → serialize on device, recheck employee credentials → clock in/switch/out or lock/touch atomically. SQL triggers maintain work-session and export metadata; cashier switching never changes attendance. */
 export async function attendanceAction(
   token: string,
   action: "clock-in" | "switch" | "clock-out" | "lock" | "touch",
@@ -205,6 +214,7 @@ export async function attendanceAction(
     return farewell;
   });
 }
+/** Verify/lock the pairing, join active shifts and return the valid current cashier, generation and cashier idle deadline; never return PINs or owner credentials. */
 export async function posState(token: string) {
   return db.transaction(async (tx) => {
     const d = await lockedDevice(tx, token);
@@ -232,6 +242,7 @@ export async function posState(token: string) {
     };
   });
 }
+/** Privileged route → optional PIN hashing → device/employee locks → staff create/update, uniqueness/active-shift checks and audit. PIN changes invalidate the active cashier while preserving attendance. */
 export async function saveEmployee(
   input: {
     id?: string;

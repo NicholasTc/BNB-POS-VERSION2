@@ -55,7 +55,7 @@ async function start(page: Page) {
     .getByRole("button", { name: "Hubungkan perangkat ini", exact: true })
     .click();
   await expect(
-    page.getByText("Perangkat terhubung selama 30 hari.", { exact: false }),
+    page.getByText("Perangkat terhubung selama 90 hari.", { exact: false }),
   ).toBeVisible();
   await page.getByRole("link", { name: "Kasir", exact: true }).click();
   await pin(page, "Mulai kerja", "0123", "Mulai kerja");
@@ -357,7 +357,7 @@ test("reference header keeps locked/active proportions and Cashier login reauthe
     .getByRole("button", { name: "Hubungkan perangkat ini", exact: true })
     .click();
   await expect(
-    page.getByText("Perangkat terhubung selama 30 hari.", { exact: false }),
+    page.getByText("Perangkat terhubung selama 90 hari.", { exact: false }),
   ).toBeVisible();
   await page.getByRole("link", { name: "Kasir", exact: true }).click();
   const status = page.getByTestId("cashier-status");

@@ -3,6 +3,7 @@ import { hashPassword } from "better-auth/crypto";
 import { and, eq, sql } from "drizzle-orm";
 import { db } from "@/db";
 import { user, account, session, audit } from "@/db/schema";
+/** Protected CLI input → hash password → serialize reserved owner/admin provisioning → explicitly create or reset only that identity and revoke its prior sessions. No public web signup is provided. */
 export async function provisionIdentity(
   role: "owner" | "admin",
   input: { email: string; password: string; reset: boolean },

@@ -1,5 +1,6 @@
 import { pool } from "@/db";
 import { resolveSheetsStatus, type SyncTargetStatus } from "./status-state";
+/** Owner-authorized SELECTs of delivery counts and durable worker binding/heartbeat → credential-independent status resolver; does not export or renew anything. */
 export async function sheetsStatus() {
   const result = await pool.query(
     "SELECT count(*)::int AS total,count(*) FILTER (WHERE synced_revision<revision)::int AS pending,count(*) FILTER (WHERE synced_revision<revision AND last_error IS NOT NULL)::int AS failed FROM sheets_sync_job",
@@ -15,6 +16,7 @@ export async function sheetsStatus() {
     pool.options.connectionString,
   );
 }
+/** Owner-authorized action → make only unsynced jobs immediately eligible again; the independent worker still owns delivery and its destination checks. */
 export async function retrySheets() {
   await pool.query(
     "UPDATE sheets_sync_job SET next_attempt_at=now(),attempts=0 WHERE synced_revision<revision",

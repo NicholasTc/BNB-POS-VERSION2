@@ -9,6 +9,7 @@ const query = z
     finishedBefore: z.uuid().optional(),
   })
   .strict();
+/** Strict cursor input + paired active cashier → bounded current preparation/session pages. */
 export const GET = endpoint(async (request) => {
   const search = new URL(request.url).searchParams;
   const parsed = query.safeParse(Object.fromEntries(search));
@@ -19,6 +20,7 @@ export const GET = endpoint(async (request) => {
     throw new AppError(400, "Halaman pesanan tidak valid.");
   return json(await readOrders(deviceToken(request), parsed.data));
 });
+/** Origin/schema + paired active cashier and generation → idempotent preparation finish; never another payment. */
 export const POST = endpoint(async (request) => {
   assertOrigin(request);
   const input = await body(

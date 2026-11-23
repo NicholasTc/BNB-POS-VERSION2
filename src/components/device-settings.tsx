@@ -33,7 +33,7 @@ export function DeviceSettings() {
       setPaired(action === "pair");
       setMessage(
         action === "pair"
-          ? "Perangkat terhubung selama 30 hari. Buka Kasir untuk mulai."
+          ? "Perangkat terhubung selama 90 hari. Buka Kasir untuk mulai."
           : "Akses perangkat diputus.",
       );
     } catch (e) {

@@ -10,6 +10,7 @@ export type SheetsConfig = {
   credentialJson?: string;
 };
 export class SheetsError extends Error {
+  /** Represent a recognized export failure using a safe code instead of raw provider/credential messages. */
   constructor(public code: string) {
     super(code);
     this.name = "SheetsError";
@@ -72,6 +73,7 @@ export function assertSheetsTarget(
   )
     throw new SheetsError("live_setup_required");
 }
+/** Server environment → validated off/test/live destination and exactly one private credential source; local/live guards fail closed before Google is contacted. */
 export function sheetsConfig(
   input: Record<string, string | undefined> = process.env,
 ): SheetsConfig | null {
@@ -99,6 +101,7 @@ export function sheetsConfig(
     credentialJson: input.GOOGLE_SERVICE_ACCOUNT_JSON,
   };
 }
+/** Reduce thrown export errors to a recognized SheetsError code or unavailable, avoiding raw provider payloads in status/logs. */
 export function sheetsErrorCode(error: unknown): string {
   return error instanceof SheetsError ? error.code : "unavailable";
 }

@@ -4,6 +4,7 @@ import type { SessionFarewell } from "./types";
 
 // Called inside the successful clock-out transaction, after its session trigger.
 // No browser identity, totals or participant names are trusted.
+/** Inside successful clock-out, read the session closed by the attendance trigger and derive participant names, sold product quantities and pending preparation count from SQL; return null before the final clock-out. */
 export async function sessionFarewell(
   tx: Transaction,
   attendanceId: string,

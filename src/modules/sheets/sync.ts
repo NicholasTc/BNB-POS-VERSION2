@@ -23,12 +23,14 @@ export type SyncResult = {
   processed: number;
   error?: string;
 };
+/** Worker-only SQL → idempotently enqueue completed sales and attendance missing durable export jobs; source records are not rewritten. */
 async function backfill(client: PoolClient) {
   await client.query(`INSERT INTO sheets_sync_job (kind,source_id,sale_id)
     SELECT 'sale',id,id FROM sale WHERE status='completed' ON CONFLICT (kind,source_id) DO NOTHING`);
   await client.query(`INSERT INTO sheets_sync_job (kind,source_id,attendance_id)
     SELECT 'attendance',id,id FROM attendance ON CONFLICT (kind,source_id) DO NOTHING`);
 }
+/** Read reserved jobs and immutable sale/discount or current attendance/name snapshots, then build rows and stable delivery reservations in SQL. */
 async function sourceRows(client: PoolClient, jobs: Job[]) {
   const rows: ExportRow[] = [];
   await client.query("BEGIN ISOLATION LEVEL REPEATABLE READ READ ONLY");
@@ -72,6 +74,7 @@ async function sourceRows(client: PoolClient, jobs: Job[]) {
     throw error;
   }
 }
+/** Independent worker → destination/session lock → backfill and due-job reservation → guarded Google prepare/write → acknowledge only delivered revisions; failures preserve jobs and schedule bounded backoff. Never runs inside checkout. */
 export async function syncSheets(
   pool: Pool,
   config: SheetsConfig | null,
@@ -80,6 +83,7 @@ export async function syncSheets(
   if (!config) return { state: "off", processed: 0 };
   const client = await pool.connect();
   const controller = new AbortController();
+  /** Abort this worker transport if its lock-owning PostgreSQL connection is lost; do not continue exporting without the lock. */
   const lostConnection = () => controller.abort();
   client.on("error", lostConnection);
   let locked = false;

@@ -3,6 +3,7 @@ import { db } from "@/db";
 import { ownerPreferences } from "@/db/schema";
 import { assertOrigin, body, endpoint, json, requireOwner } from "@/lib/http";
 
+/** Owner role + Origin/strict language value → preference row for that SQL owner only. */
 export const POST = endpoint(async (request) => {
   assertOrigin(request);
   const owner = await requireOwner(request);

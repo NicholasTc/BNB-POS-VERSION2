@@ -5,6 +5,7 @@ import { env } from "@/lib/env";
 import { photoId } from "@/lib/menu-photo";
 import type { Transaction } from "@/modules/attendance";
 import { photoConfig } from "./config";
+/** During owner menu save, normalize same-origin uploaded URLs and lock the ready asset against cleanup; verify target binding and touch only its lifecycle metadata. */
 export async function lockPhotoReference(
   tx: Transaction,
   value: string | undefined,

@@ -171,6 +171,16 @@ export const ownerEnglish = {
   "Tambahkan menu dan harga kafe Anda.": "Add your café menu and prices.",
   "Menu disimpan.": "Menu saved.",
   "Perangkat kasir": "Cashier device",
+  "Koneksi perangkat kasir": "Cashier device connection",
+  "Perangkat kasir toko": "Shop cashier device",
+  "Status perangkat belum dapat diperiksa.": "Device status could not be checked.",
+  "Memeriksa koneksi perangkat…": "Checking device connection…",
+  "Koneksi perangkat telah berakhir.": "Device connection has expired.",
+  "Belum ada perangkat terhubung.": "No device is connected.",
+  "Berlaku sampai": "Expires",
+  "Kelola perangkat": "Manage device",
+  "Hubungkan ulang hanya pada browser kasir toko. Browser kasir sebelumnya akan terputus.":
+    "Reconnect only on the shop cashier browser. The previous cashier browser will be disconnected.",
   "Dasbor pemilik dapat dibuka di perangkat apa pun dengan akun pemilik. Tidak perlu menghubungkan perangkat untuk membuka dasbor.":
     "Open the owner dashboard on any device by signing in with your owner account. You do not need to connect a device to use the dashboard.",
   "Hubungkan hanya browser yang akan dipakai sebagai kasir. Menghubungkan ulang mencabut akses kasir sebelumnya; penjualan dan shift tetap tersimpan.":
@@ -181,8 +191,8 @@ export const ownerEnglish = {
     "Connect this device? The previous device will lock and the cashier must enter their PIN again.",
   "Putuskan akses perangkat kasir? Shift karyawan tetap tercatat.":
     "Disconnect the cashier device? Employee shifts remain recorded.",
-  "Perangkat terhubung selama 30 hari. Buka Kasir untuk mulai.":
-    "Device connected for 30 days. Open Cashier to begin.",
+  "Perangkat terhubung selama 90 hari. Buka Kasir untuk mulai.":
+    "Device connected for 90 days. Open Cashier to begin.",
   "Akses perangkat diputus.": "Device access disconnected.",
   "Cerita kafe hari ini.": "Your café at a glance.",
   "Penjualan yang dicatat kasir. Waktu Indonesia Barat.":

@@ -12,6 +12,7 @@ export const employeeInput = z
     active: z.boolean(),
   })
   .strict();
+/** Privileged owner/admin route → shared staff list containing only id, name and availability; PIN hashes/lookups are deliberately excluded. */
 export async function listEmployees() {
   return db
     .select({ id: employee.id, name: employee.name, active: employee.active })

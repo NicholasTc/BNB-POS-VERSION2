@@ -4,6 +4,7 @@ const { loadEnvConfig } = createRequire(import.meta.url)(
   "@next/env",
 ) as typeof import("@next/env");
 loadEnvConfig(process.cwd());
+/** Hidden-helper JSON on bounded stdin → strict credentials → reserved identity provisioning transaction → close the DB pool; do not put passwords in arguments or environment files. */
 export async function runProvisioning(role: "owner" | "admin") {
   const chunks: Buffer[] = [];
   let bytes = 0;
@@ -34,6 +35,7 @@ export async function runProvisioning(role: "owner" | "admin") {
     await pool.end();
   }
 }
+/** Print only recognized provisioning guidance or a generic failure and set nonzero exit; never print raw credential/SQL errors. */
 export function provisioningFailed(error: unknown) {
   const allowed = [
     "Account exists. Explicit reset required.",

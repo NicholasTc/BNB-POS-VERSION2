@@ -2,6 +2,7 @@ import { endpoint, AppError } from "@/lib/http";
 import { photoId } from "@/lib/menu-photo";
 import { authorizePhotoRead, readPhoto } from "@/modules/menu-photos/server";
 export const runtime = "nodejs";
+/** Validate filename and paired/passive-owner access → verified private image bytes with private immutable cache headers. */
 export async function GET(
   request: Request,
   context: { params: Promise<{ filename: string }> },

@@ -20,6 +20,7 @@ import {
   type OwnerAlert,
 } from "./types";
 type Tx = Parameters<Parameters<typeof db.transaction>[0]>[0];
+/** Read export configuration into a minimal alert setting; configuration failures become an alert state, never an authorization bypass. */
 function syncSetting(): SyncSetting {
   try {
     const config = sheetsConfig();
@@ -30,6 +31,7 @@ function syncSetting(): SyncSetting {
     return { mode: "configuration" };
   }
 }
+/** Read one MVCC aggregate of uncategorized menus, low/negative supplies, overdue unfinished sales and export queue/heartbeat facts; do not scan every historical sale. */
 async function facts(tx: Tx, now: Date): Promise<AlertFacts> {
   // Single MVCC statement. Only current menu, bounded supplies, unfinished sales
   // and the indexed pending export queue are inspected; no full sales history.
@@ -54,6 +56,7 @@ async function facts(tx: Tx, now: Date): Promise<AlertFacts> {
     ) AS facts`);
   return result.rows[0].facts;
 }
+/** Current SQL facts → pure alert candidates → per-owner episode/version/disposition metadata → visible/hidden feed. Only alert metadata is reconciled, not its source business records. */
 async function reconcile(
   tx: Tx,
   ownerId: string,
@@ -146,6 +149,7 @@ async function reconcile(
     observedAt: now.toISOString(),
   };
 }
+/** Owner identity from route → alert-only advisory lock → reconcile episodes → validate versioned dismissal/snooze/acknowledgment/restore → metadata and audit update → refreshed feed. */
 export async function ownerAlerts(
   ownerId: string,
   raw?: AlertCommand,

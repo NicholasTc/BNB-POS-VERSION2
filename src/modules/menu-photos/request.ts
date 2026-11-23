@@ -1,6 +1,7 @@
 import { AppError } from "@/lib/http";
 import { env } from "@/lib/env";
 import { MAX_PHOTO_UPLOAD_BYTES, PHOTO_TYPES } from "@/lib/menu-photo";
+/** Require canonical Origin and an allowed image MIME type before reading upload bytes; authorization remains the route responsibility. */
 export function uploadHeaders(request: Request) {
   if (request.headers.get("origin") !== new URL(env().BETTER_AUTH_URL).origin)
     throw new AppError(403, "Permintaan tidak diizinkan. Muat ulang halaman.");
@@ -9,6 +10,7 @@ export function uploadHeaders(request: Request) {
     throw new AppError(415, "Gunakan foto JPG, PNG, atau WebP.");
   return mime;
 }
+/** Read an upload stream with the existing 8 MB bound and release its reader; never buffer an unbounded file. */
 export async function photoBody(request: Request) {
   const declared = request.headers.get("content-length");
   if (

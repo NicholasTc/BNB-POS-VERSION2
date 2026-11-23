@@ -6,11 +6,13 @@ import { session } from "@/db/schema";
 import { eq } from "drizzle-orm";
 import { credentialLogin, privateAuthResponse } from "@/lib/credential-login";
 export const runtime = "nodejs";
+/** Expose only the authentication library session-read endpoint; privileged routes still run their own SQL role/idle checks. */
 export const GET = endpoint(async (request) => {
   if (new URL(request.url).pathname !== "/api/auth/get-session")
     throw new AppError(404, "Halaman tidak ditemukan.");
   return privateAuthResponse(await auth.handler(request));
 });
+/** Allow only owner credential login or durable explicit logout; reject public signup/password-reset/other auth operations. */
 export const POST = endpoint(async (request) => {
   assertOrigin(request);
   const path = new URL(request.url).pathname;

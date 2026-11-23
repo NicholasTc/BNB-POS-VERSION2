@@ -26,6 +26,7 @@ export default defineConfig({
       BETTER_AUTH_URL: "http://127.0.0.1:3100",
       // Automated browser fixtures never contact Google or a live destination.
       SHEETS_SYNC_MODE: "off",
+      DIAGNOSTICS_ENABLED: "true",
       MENU_PHOTO_STORAGE: "local",
       MENU_PHOTO_LOCAL_DIR: process.cwd() + "/.local/menu-photos/lisi_test",
     },

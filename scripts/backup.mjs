@@ -1,3 +1,4 @@
+/** Local development backup only: fixed Compose db service/lisi_dev → private custom-format dump in ignored backups/. This does not back up production or uploaded image binaries. */
 import { spawnSync } from "node:child_process";
 import { mkdirSync, openSync, closeSync } from "node:fs";
 const directory = "backups";

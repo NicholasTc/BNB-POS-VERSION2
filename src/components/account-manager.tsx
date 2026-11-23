@@ -9,6 +9,7 @@ import {
 import { ownerMessage } from "@/lib/owner-language";
 import { adminApi } from "@/lib/admin-client";
 import { useAdminAccess } from "@/lib/use-admin-access";
+import { SystemLogs } from "./system-logs";
 import type { OwnerList } from "@/modules/account-manager/types";
 export function AccountManager() {
   return (
@@ -27,7 +28,7 @@ function AdminContent() {
     [loading, setLoading] = useState(true),
     [busy, setBusy] = useState(false),
     [error, setError] = useState(""),
-    [tab, setTab] = useState<"owners" | "staff">("owners");
+    [tab, setTab] = useState<"owners" | "staff" | "logs">("owners");
   const clear = useCallback(() => {
     setIdentity(null);
     setTab("owners");
@@ -204,12 +205,18 @@ function AdminContent() {
                 >
                   {t("Staf", "Staff")}
                 </button>
+                <button type="button" className={tab === "logs" ? "" : "secondary"} aria-pressed={tab === "logs"} onClick={() => setTab("logs")}>
+                  {t("Log sistem", "System logs")}
+                </button>
               </nav>
               <div hidden={tab !== "owners"}>
                 <Owners />
               </div>
               <div hidden={tab !== "staff"}>
                 <Employees endpoint="/api/admin/employees" request={adminApi} />
+              </div>
+              <div hidden={tab !== "logs"}>
+                <SystemLogs enabled={tab === "logs" && !access.checking} />
               </div>
             </div>
           </>

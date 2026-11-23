@@ -30,6 +30,7 @@ import { GET as stock } from "../../src/app/api/owner/stock/route";
 import { GET as alerts } from "../../src/app/api/owner/alerts/route";
 import { GET as sheets } from "../../src/app/api/owner/sheets/route";
 import { GET as promos } from "../../src/app/api/owner/promos/route";
+import { GET as deviceStatus } from "../../src/app/api/owner/device/route";
 import {
   pairDevice,
   attendanceAction,
@@ -176,6 +177,7 @@ it("admin sessions cannot access owner reports or management APIs", async () => 
     alerts,
     sheets,
     promos,
+    deviceStatus,
   ])
     expect((await route(request("/api/owner", cookie))).status).toBe(401);
   expect(

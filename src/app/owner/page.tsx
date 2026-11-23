@@ -5,6 +5,7 @@ import { useCallback, useEffect, useState } from "react";
 import { api } from "@/lib/client";
 import { Employees } from "@/components/employees";
 import { DeviceSettings } from "@/components/device-settings";
+import { DeviceTrustReminder } from "@/components/device-trust-reminder";
 import { MenuManagement } from "@/components/menu-management";
 import { PromoManagement } from "@/components/promo-management";
 import { Reports } from "@/components/reports";
@@ -182,6 +183,9 @@ function OwnerContent() {
           >
             lisi<small>café</small>
           </span>
+          {name && !access.checking && (
+            <DeviceTrustReminder onSettings={() => navigateAlert("device")} />
+          )}
           <div className="owner-tools">
             {name && !access.checking && (
               <OwnerAlerts onNavigate={navigateAlert} />

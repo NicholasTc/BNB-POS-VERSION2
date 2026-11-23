@@ -53,6 +53,7 @@ export type DiscountSnapshot = {
 
 // Eligibility always uses the original basket; a preceding promo cannot change
 // quantity/spend qualification. Selected scope counts only selected products.
+/** Pure rule evaluation over cart quantities/gross values and promo conditions; returns eligibility without writing SQL or applying a discount. */
 export function promoEligibility(
   p: PromoRules,
   lines: PromoLine[],

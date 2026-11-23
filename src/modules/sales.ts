@@ -27,6 +27,7 @@ export type PrepareSale = {
   items: { id: string; quantity: number; unitPrice: number }[];
   promos?: PromoSelection;
 };
+/** Read the one pending/paid quote inside a transaction whose caller already holds the shared-device lock. */
 export async function openSale(tx: Transaction) {
   const [s] = await tx
     .select()
@@ -34,6 +35,7 @@ export async function openSale(tx: Transaction) {
     .where(inArray(sale.status, ["pending", "paid"]));
   return s ?? null;
 }
+/** Validate the locked device idle deadline, active employee and open attendance shift; derive attribution from SQL rather than browser fields. */
 export async function cashier(
   tx: Transaction,
   d: Awaited<ReturnType<typeof lockedDevice>>,
@@ -54,6 +56,7 @@ export async function cashier(
     throw new AppError(401, "Kasir tidak aktif. Masukkan PIN kembali.");
   return e;
 }
+/** Read one durable sale with immutable line and discount snapshots for checkout recovery or an idempotent response. */
 export async function saleDetails(tx: Transaction, id: string) {
   const [s] = await tx.select().from(sale).where(eq(sale.id, id));
   if (!s) throw new AppError(404, "Transaksi belum ditemukan.");
@@ -73,6 +76,7 @@ export async function saleDetails(tx: Transaction, id: string) {
     .where(eq(saleDiscount.saleId, id));
   return { ...s, lines, discountSnapshot: discount?.snapshot ?? null };
 }
+/** Validate/sort cart and promo selections → lock device → replay matching UUID or authorize cashier → lock current menu/promos → persist pending sale, lines and discount snapshot atomically. SQL captures stock usage now; stock is deducted only on completion. */
 export async function prepareSale(token: string, input: PrepareSale) {
   const sorted = [...input.items].sort((a, b) => a.id.localeCompare(b.id));
   if (new Set(sorted.map((i) => i.id)).size !== sorted.length)
@@ -213,6 +217,7 @@ export async function prepareSale(token: string, input: PrepareSale) {
     return saleDetails(tx, input.id);
   });
 }
+/** Paired-browser recovery read: lock the device and return the requested sale or current open quote, including after cashier idle expiry. */
 export async function getSale(token: string, id?: string) {
   return db.transaction(async (tx) => {
     await lockedDevice(tx, token);
@@ -220,6 +225,7 @@ export async function getSale(token: string, id?: string) {
     return target ? await saleDetails(tx, target) : null;
   });
 }
+/** Lock device and sale → verify the original cashier → attest received payment, complete an attested sale or cancel only an unpaid quote. Completion triggers stock consumption, preparation and Sheets jobs in the same SQL transaction; completed replay returns existing data. */
 export async function changeSale(
   token: string,
   input: {
@@ -278,6 +284,7 @@ export async function changeSale(
     return saleDetails(tx, s.id);
   });
 }
+/** Owner-authorized route → lock/validate uploaded-photo reference and optional stale-photo expectation → create/update current catalogue and audit; existing sale snapshots are not rewritten. */
 export async function saveMenu(input: {
   id?: string;
   name: string;

@@ -112,7 +112,7 @@ test("owner configures supplies and usage; the unchanged cashier sale deducts on
     .getByRole("button", { name: "Hubungkan perangkat ini", exact: true })
     .click();
   await expect(
-    page.getByText("Perangkat terhubung selama 30 hari.", { exact: false }),
+    page.getByText("Perangkat terhubung selama 90 hari.", { exact: false }),
   ).toBeVisible();
   await page.getByRole("link", { name: "Kasir", exact: true }).click();
   await pin(page, "Mulai kerja", "0123", "Mulai kerja");

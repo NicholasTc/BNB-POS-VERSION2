@@ -32,12 +32,14 @@ const change = z
     paymentNotReceived: z.literal(true).optional(),
   })
   .strict();
+/** Validated sale reference + pairing → durable quote/completion recovery, including after cashier idle expiry. */
 export const GET = endpoint(async (request) => {
   const value = new URL(request.url).searchParams.get("id");
   if (value && !z.uuid().safeParse(value).success)
     return json({ error: "Referensi tidak valid." }, 400);
   return json(await getSale(deviceToken(request), value ?? undefined));
 });
+/** Origin/strict body + paired identity → prepare/attest/complete/cancel service with immutable snapshots and durable UUID idempotency. */
 export const POST = endpoint(async (request) => {
   assertOrigin(request);
   const input = await body(request, z.union([prepare, change]));

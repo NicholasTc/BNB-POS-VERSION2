@@ -1,4 +1,5 @@
 export const BUSINESS_TIMEZONE = "Asia/Jakarta";
+/** Derive the current Jakarta calendar date, independent of the browser locale/timezone. */
 export const businessToday = () =>
   new Intl.DateTimeFormat("en-CA", {
     timeZone: BUSINESS_TIMEZONE,
@@ -6,6 +7,7 @@ export const businessToday = () =>
     month: "2-digit",
     day: "2-digit",
   }).format(new Date());
+/** Validate a bounded inclusive date selection and convert it to a half-open Jakarta timestamp range for SQL reporting. */
 export function businessRange(from: string, to: string) {
   for (const value of [from, to]) {
     if (!/^\d{4}-\d{2}-\d{2}$/.test(value))
@@ -23,6 +25,7 @@ export function businessRange(from: string, to: string) {
     throw new Error("Pilih rentang berurutan, paling lama 366 hari.");
   return { start, end };
 }
+/** Format a persisted timestamp in Jakarta time for owner display without changing its stored value. */
 export const localTime = (value: string, language: "id" | "en" = "id") =>
   new Intl.DateTimeFormat(language === "en" ? "en-GB" : "id-ID", {
     timeZone: BUSINESS_TIMEZONE,

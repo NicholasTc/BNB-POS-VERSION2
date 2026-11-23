@@ -1,4 +1,5 @@
 import { api, ApiError } from "./client";
+import { reportBrowserDiagnostic } from "@/modules/diagnostics/browser";
 
 type LoadPath =
   | "/api/auth/sign-out"
@@ -58,6 +59,8 @@ export async function loadCashier<T>(
       )
         throw error;
       if (attempt === 2) {
+        if (!(error instanceof ApiError && error.reference))
+          reportBrowserDiagnostic("cashier_load", path, error, path === "/api/auth/sign-out" ? "POST" : "GET");
         if (error instanceof ApiError) throw error;
         throw new Error("Koneksi belum stabil. Periksa koneksi dan coba lagi.");
       }

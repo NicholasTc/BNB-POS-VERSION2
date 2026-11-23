@@ -1,3 +1,35 @@
+/**
+ * Database map: route authorization → server modules → Drizzle transactions →
+ * PostgreSQL constraints/triggers → immutable records and independent export metadata.
+ * This file describes table structure; versioned drizzle/*.sql migrations also own
+ * the trigger functions below. Do not edit an applied migration to change behavior.
+ *
+ * Functions verified against the local database definitions:
+ * - protect_sale: preserves the quote/terminal snapshots and allowed status transitions.
+ * - protect_sale_line: permits inserts for a pending parent only; blocks edits/deletes.
+ * - protect_sale_discount: permits new quote allocations only in their creation
+ *   transaction; later edits/deletes are rejected.
+ * - check_sale_totals: deferred validation reconciles line gross, frozen discount
+ *   allocations and payable total, including promo percentage/line-count bounds.
+ * - capture_stock_usage: freezes the current recipe and supply units/names per new line.
+ * - consume_sale_stock: first completion groups frozen usage into stock deductions.
+ * - apply_stock_movement: validates each immutable movement against its sale or owner
+ *   operation receipt, locks the stock row and advances balance/revision atomically.
+ * - protect_stock_item: requires zero opening balance, immutable identity/unit and
+ *   sequential revisions; stock balances change through validated movements only.
+ * - guard_stock_recipe: serializes recipe changes, bounds lines and enforces revisions.
+ * - protect_stock_usage / immutable_stock_operation: reject changes to frozen evidence.
+ * - capture_work_session: first clock-in opens a session; last clock-out closes it;
+ *   memberships preserve employee display names for the session summary.
+ * - capture_preparation_order: completed payment with an active shift creates one
+ *   preparation ticket in its work session; historical imports do not create tickets.
+ * - lisi_queue_sheet_sale: completion enqueues the immutable sale for export.
+ * - lisi_queue_sheet_attendance: inserts/clock-out changes advance export-job revision.
+ * - lisi_queue_sheet_employee_name: name changes enqueue affected attendance records.
+ *
+ * These triggers execute inside the source transaction. Google I/O occurs later in
+ * the Sheets worker; report caches and diagnostics never become financial authority.
+ */
 import {
   pgTable,
   text,
@@ -16,6 +48,7 @@ import {
 } from "drizzle-orm/pg-core";
 import { sql } from "drizzle-orm";
 import type { PromoRules, DiscountSnapshot } from "@/modules/promos/rules";
+/** Owner/admin identities and SQL role boundary; shared café records are not partitioned by owner login. */
 export const user = pgTable(
   "owner_user",
   {
@@ -40,6 +73,7 @@ export const user = pgTable(
     uniqueIndex("account_email_ci").on(sql`lower(${t.email})`),
   ],
 );
+/** Durable administrator creation receipt links operation UUID, actor and created owner for retry safety. */
 export const ownerCreation = pgTable(
   "owner_creation",
   {
@@ -60,6 +94,7 @@ export const ownerCreation = pgTable(
     check("owner_creation_hash", sql`${t.requestHash} ~ '^[a-f0-9]{64}$'`),
   ],
 );
+/** Per-owner display language; separate from shared business data. */
 export const ownerPreferences = pgTable(
   "owner_preferences",
   {
@@ -70,6 +105,7 @@ export const ownerPreferences = pgTable(
   },
   (t) => [check("owner_language", sql`${t.language} IN ('id','en')`)],
 );
+/** Server-side owner/admin sessions; role, expiry and idle checks remain authorization requirements. */
 export const session = pgTable("owner_session", {
   id: text("id").primaryKey(),
   token: text("token").notNull().unique(),
@@ -86,6 +122,7 @@ export const session = pgTable("owner_session", {
     .notNull()
     .references(() => user.id, { onDelete: "cascade" }),
 });
+/** Better Auth credential records linked to identities; password hashes are never listing fields. */
 export const account = pgTable("owner_account", {
   id: text("id").primaryKey(),
   accountId: text("account_id").notNull(),
@@ -111,6 +148,7 @@ export const account = pgTable("owner_account", {
     .notNull()
     .defaultNow(),
 });
+/** Better Auth verification material; server-side authentication metadata only. */
 export const verification = pgTable("owner_verification", {
   id: text("id").primaryKey(),
   identifier: text("identifier").notNull(),
@@ -123,17 +161,20 @@ export const verification = pgTable("owner_verification", {
     .notNull()
     .defaultNow(),
 });
+/** Authentication library rate-limit state. */
 export const rateLimit = pgTable("auth_rate_limit", {
   id: text("id").primaryKey(),
   key: text("key").notNull().unique(),
   count: integer("count").notNull(),
   lastRequest: bigint("last_request", { mode: "number" }).notNull(),
 });
+/** Application SQL request/action budgets shared across server instances. */
 export const throttle = pgTable("throttle", {
   key: text("key").primaryKey(),
   count: integer("count").notNull(),
   resetAt: timestamp("reset_at", { withTimezone: true }).notNull(),
 });
+/** Security/action audit trail; distinct from sanitized operational diagnostics. */
 export const audit = pgTable("audit", {
   id: bigint("id", { mode: "number" }).primaryKey().generatedAlwaysAsIdentity(),
   action: text("action").notNull(),
@@ -141,6 +182,7 @@ export const audit = pgTable("audit", {
   details: jsonb("details").notNull().default({}),
   at: timestamp("at", { withTimezone: true }).notNull().defaultNow(),
 });
+/** Staff identity and protected four-digit PIN verification material; no owner role. */
 export const employee = pgTable(
   "employee",
   {
@@ -157,6 +199,7 @@ export const employee = pgTable(
     check("employee_name_length", sql`length(${t.name}) BETWEEN 1 AND 80`),
   ],
 );
+/** Clock-in/out evidence; transitions and work-session capture are atomic. */
 export const attendance = pgTable(
   "attendance",
   {
@@ -180,6 +223,7 @@ export const attendance = pgTable(
     ),
   ],
 );
+/** Single shared cashier authority: hashed pairing, expiry and current cashier state. */
 export const device = pgTable(
   "device",
   {
@@ -192,6 +236,7 @@ export const device = pgTable(
   },
   (t) => [check("one_device", sql`${t.id} = 'shared'`)],
 );
+/** Current catalogue/prices/categories; completed sales retain their own historical snapshots. */
 export const menuItem = pgTable(
   "menu_item",
   {
@@ -217,6 +262,7 @@ export const menuItem = pgTable(
 );
 export const paymentMethod = pgEnum("payment_method", ["cash", "qris"]);
 // Owner rules are mutable; each issued quote has a separate immutable snapshot.
+/** Owner-configured current promo rules/order; quotes freeze the applied rules and allocations. */
 export const promotion = pgTable(
   "promotion",
   {
@@ -235,6 +281,7 @@ export const saleStatus = pgEnum("sale_status", [
   "completed",
   "cancelled",
 ]);
+/** Durable payment operation and status machine; UUID retries preserve the original quote. */
 export const sale = pgTable(
   "sale",
   {
@@ -270,6 +317,7 @@ export const sale = pgTable(
     ),
   ],
 );
+/** Immutable purchased names/prices/quantities tied to the parent sale. */
 export const saleLine = pgTable(
   "sale_line",
   {
@@ -295,6 +343,7 @@ export const saleLine = pgTable(
     ),
   ],
 );
+/** Frozen per-promo discount evidence and per-line allocations for exact reconciliation. */
 export const saleDiscount = pgTable("sale_discount", {
   saleId: uuid("sale_id")
     .primaryKey()
@@ -303,6 +352,7 @@ export const saleDiscount = pgTable("sale_discount", {
 });
 
 // Optional export module. No credentials or financial snapshots live here.
+/** Durable sale/attendance export queue; retries are independent of checkout. */
 export const sheetsJob = pgTable(
   "sheets_sync_job",
   {
@@ -342,6 +392,7 @@ export const sheetsJob = pgTable(
       .where(sql`${t.syncedRevision}<${t.revision}`),
   ],
 );
+/** Reserved destination row/receipt metadata supports retries without duplicate spreadsheet rows. */
 export const sheetsRow = pgTable(
   "sheets_sync_row",
   {
@@ -361,6 +412,7 @@ export const sheetsRow = pgTable(
     ),
   ],
 );
+/** Core export destination, worker heartbeat and delivery status; not Google credentials. */
 export const sheetsTarget = pgTable(
   "sheets_sync_target",
   {
@@ -383,6 +435,7 @@ export const sheetsTarget = pgTable(
 );
 
 // Preparation is separate from the immutable financial sale state.
+/** Open/closed café work period derived from attendance for preparation/history and summaries. */
 export const workSession = pgTable(
   "work_session",
   {
@@ -404,6 +457,7 @@ export const workSession = pgTable(
     ),
   ],
 );
+/** Attendance membership and frozen employee name within a work session. */
 export const sessionShift = pgTable(
   "work_session_shift",
   {
@@ -417,6 +471,7 @@ export const sessionShift = pgTable(
   },
   (t) => [index("session_shift_session_idx").on(t.sessionId)],
 );
+/** Paid-order preparation/completion state, separate from financial sale status. */
 export const orderTicket = pgTable(
   "order_ticket",
   {
@@ -451,6 +506,7 @@ export const orderTicket = pgTable(
 );
 
 // Optional stock module: immutable quote usage and append-only movements.
+/** Supply catalogue, unit, movement-derived balance and concurrency revision. */
 export const stockItem = pgTable(
   "stock_item",
   {
@@ -469,6 +525,7 @@ export const stockItem = pgTable(
     ),
   ],
 );
+/** Versioned menu-to-supply recipe header. */
 export const stockRecipe = pgTable(
   "stock_recipe",
   {
@@ -479,6 +536,7 @@ export const stockRecipe = pgTable(
   },
   (t) => [check("stock_recipe_revision", sql`${t.revision}>0`)],
 );
+/** Supply units consumed per menu unit for the current recipe. */
 export const stockRecipeLine = pgTable(
   "stock_recipe_line",
   {
@@ -495,6 +553,7 @@ export const stockRecipeLine = pgTable(
     check("stock_recipe_quantity", sql`${t.quantity} BETWEEN 1 AND 1000000`),
   ],
 );
+/** Frozen recipe usage per sale line; later recipe edits cannot rewrite deductions. */
 export const stockUsage = pgTable(
   "stock_usage",
   {
@@ -518,6 +577,7 @@ export const stockUsage = pgTable(
     ),
   ],
 );
+/** Idempotent owner restock/adjustment receipt; immutable once written. */
 export const stockOperation = pgTable("stock_operation", {
   id: uuid("id").primaryKey(),
   requestHash: text("request_hash").notNull(),
@@ -528,6 +588,7 @@ export const stockOperation = pgTable("stock_operation", {
     .notNull()
     .defaultNow(),
 });
+/** Immutable supply ledger; validated inserts atomically update supply balances. */
 export const stockMovement = pgTable(
   "stock_movement",
   {
@@ -566,6 +627,7 @@ export const stockMovement = pgTable(
 );
 
 // Owner alert episodes/preferences only; no hooks or writes to business records.
+/** Persistent owner acknowledgment/snooze state; source rules determine actual resolution. */
 export const ownerAlertState = pgTable(
   "owner_alert_state",
   {
@@ -592,6 +654,7 @@ export const ownerAlertState = pgTable(
 );
 
 // Independent daily-report projection; no triggers on business tables.
+/** Independent report destination/publication coordination and worker error/backoff metadata. */
 export const dailyReportTarget = pgTable(
   "sheets_daily_target",
   {
@@ -616,6 +679,7 @@ export const dailyReportTarget = pgTable(
     ),
   ],
 );
+/** Per-Jakarta-day catalogue snapshot and dirty/revision state for report projection. */
 export const dailyReportDay = pgTable(
   "sheets_daily_day",
   {
@@ -637,6 +701,7 @@ export const dailyReportDay = pgTable(
     ),
   ],
 );
+/** Stable cached report rows reserved for each day; financial values come from source snapshots. */
 export const dailyReportRow = pgTable(
   "sheets_daily_row",
   {
@@ -657,6 +722,7 @@ export const dailyReportRow = pgTable(
 );
 
 // Upload lifecycle only. Menu references remain in the existing image_url field.
+/** Private image object metadata and immutable URLs; image bytes live in separate storage. */
 export const menuPhotoAsset = pgTable(
   "menu_photo_asset",
   {
@@ -680,5 +746,54 @@ export const menuPhotoAsset = pgTable(
       sql`${t.mode} IN ('local','s3') AND ${t.state} IN ('pending','ready','deleting','deleted') AND ${t.bytes} BETWEEN 1 AND 500000 AND ${t.inputHash} ~ '^[a-f0-9]{64}$' AND ${t.contentHash} ~ '^[a-f0-9]{64}$' AND ${t.target} ~ '^[a-f0-9]{64}$'`,
     ),
     index("menu_photo_cleanup_idx").on(t.state, t.touchedAt),
+  ],
+);
+
+// Diagnostic metadata is independent of business/auth tables; expiry or deletion
+// of an incident can never cascade into a sale, account, attendance or stock row.
+/** Grouped sanitized operational failures; no foreign keys to business/authentication tables. */
+export const diagnosticIssue = pgTable(
+  "diagnostic_issue",
+  {
+    id: uuid("id").primaryKey(),
+    fingerprint: text("fingerprint").notNull().unique(),
+    kind: text("kind").notNull(),
+    source: text("source").notNull(),
+    severity: text("severity").notNull(),
+    path: text("path").notNull(),
+    method: text("method").notNull(),
+    release: text("release").notNull(),
+    httpStatus: integer("http_status"),
+    errorKind: text("error_kind").notNull(),
+    technicalCode: text("technical_code"),
+    state: text("state").notNull().default("open"),
+    firstSeenAt: timestamp("first_seen_at", { withTimezone: true }).notNull(),
+    lastSeenAt: timestamp("last_seen_at", { withTimezone: true }).notNull(),
+    occurrences: integer("occurrences").notNull().default(0),
+    revision: integer("revision").notNull().default(0),
+    resolvedAt: timestamp("resolved_at", { withTimezone: true }),
+  },
+  t => [
+    check("diagnostic_issue_valid", sql`${t.fingerprint} ~ '^[a-f0-9]{64}$' AND ${t.kind} IN ('request_failed','database_connection','server_render','browser_crash','browser_request','cashier_load','sheets_sync','daily_report') AND ${t.source} IN ('server','browser','worker') AND ${t.severity} IN ('error','warning') AND ${t.state} IN ('open','resolved') AND ${t.occurrences} BETWEEN 0 AND 1000000000 AND ${t.revision} BETWEEN 0 AND 1000000000 AND length(${t.path})<=100 AND length(${t.method})<=10 AND length(${t.release})<=40 AND length(${t.errorKind})<=32 AND (${t.technicalCode} IS NULL OR length(${t.technicalCode})<=40) AND (${t.httpStatus} IS NULL OR ${t.httpStatus} BETWEEN 400 AND 599)`),
+    index("diagnostic_issue_feed_idx").on(t.state, t.lastSeenAt, t.id),
+    index("diagnostic_issue_source_idx").on(t.source, t.lastSeenAt),
+  ],
+);
+
+// Retained occurrence references point only to diagnostic issues. Frames contain
+// allowlisted code locations, never error messages, headers or request payloads.
+/** Bounded sanitized occurrence references/stack locations; references diagnostic groups only. */
+export const diagnosticEventRow = pgTable(
+  "diagnostic_event",
+  {
+    id: uuid("id").primaryKey(),
+    issueId: uuid("issue_id").notNull().references(() => diagnosticIssue.id, { onDelete: "cascade" }),
+    at: timestamp("at", { withTimezone: true }).notNull(),
+    frames: jsonb("frames").$type<string[]>().notNull().default([]),
+  },
+  t => [
+    check("diagnostic_event_frames", sql`jsonb_typeof(${t.frames})='array' AND jsonb_array_length(${t.frames})<=5 AND octet_length(${t.frames}::text)<=1500`),
+    index("diagnostic_event_issue_idx").on(t.issueId, t.at),
+    index("diagnostic_event_retention_idx").on(t.at, t.id),
   ],
 );

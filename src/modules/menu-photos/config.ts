@@ -1,6 +1,7 @@
 import { createHash } from "node:crypto";
 import { resolve } from "node:path";
 export class PhotoError extends Error {
+  /** Represent a bounded photo failure by code; never include storage credentials in its message. */
   constructor(
     public code:
       "configuration" | "unavailable" | "invalid_image" | "too_large",
@@ -21,8 +22,10 @@ export type PhotoConfig =
       prefix: string;
       target: string;
     };
+/** Compute a stable SHA-256 content/target identity for photo lifecycle checks; the digest is not an authorization credential. */
 export const photoHash = (data: string | Buffer) =>
   createHash("sha256").update(data).digest("hex");
+/** Server environment + actual database scope → isolated local storage or private S3 target; reject test/live mixups and unsafe prefixes before storage operations. */
 export function photoConfig(
   input: Record<string, string | undefined> = process.env,
 ): PhotoConfig {

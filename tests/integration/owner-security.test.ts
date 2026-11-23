@@ -18,7 +18,7 @@ import {
   GET as menu,
   POST as editMenu,
 } from "../../src/app/api/owner/menu/route";
-import { POST as device } from "../../src/app/api/owner/device/route";
+import { POST as device, GET as deviceStatus } from "../../src/app/api/owner/device/route";
 import { POST as preferences } from "../../src/app/api/owner/preferences/route";
 import {
   GET as promos,
@@ -56,7 +56,7 @@ import {
   GET as alerts,
   POST as manageAlerts,
 } from "../../src/app/api/owner/alerts/route";
-const reads = [owner, reports, employees, menu, sheets, promos, stock, alerts];
+const reads = [owner, reports, employees, menu, sheets, promos, stock, alerts, deviceStatus];
 const writes = [
   editEmployee,
   editMenu,
@@ -107,6 +107,54 @@ afterAll(async () => {
   await pool.end();
 });
 describe("owner/cashier trust boundary", () => {
+  it("sets ninety-day database and protected cookie expiry only on explicit pairing", async () => {
+    const cookie = await login();
+    const before = Date.now();
+    const response = await device(req("/api/owner/device", cookie, { action: "pair" }));
+    expect(response.status).toBe(200);
+    const pairingCookie = response.headers.get("set-cookie")!;
+    expect(pairingCookie).toContain("Max-Age=7776000");
+    expect(pairingCookie).toMatch(/HttpOnly/);
+    expect(pairingCookie).toMatch(/SameSite=Strict/);
+    const stored = (await pool.query("SELECT expires_at FROM device WHERE id='shared'")).rows[0].expires_at.getTime();
+    expect(stored).toBeGreaterThanOrEqual(before + 90 * 86400000);
+    expect(stored).toBeLessThanOrEqual(Date.now() + 90 * 86400000);
+    const revoked = await device(req("/api/owner/device", cookie, { action: "revoke" }));
+    expect(revoked.headers.get("set-cookie")).toContain("Max-Age=0");
+  });
+
+  it("reports real legacy expiry to a personal owner browser without renewing sessions or changing pairing and attendance", async () => {
+    const cookie = await login();
+    const token = await pairDevice();
+    await saveEmployee({ name: "Ayu", pin: "0123", active: true });
+    await attendanceAction(token, "clock-in", "0123");
+    await pool.query("UPDATE device SET expires_at=now()+interval '30 days'");
+    await pool.query("UPDATE owner_session SET updated_at=now()-interval '14 minutes'");
+    const before = (await pool.query("SELECT row_to_json(d) AS device, (SELECT jsonb_agg(a) FROM attendance a) AS attendance, (SELECT count(*) FROM audit) AS audits, (SELECT updated_at FROM owner_session LIMIT 1) AS owner_activity FROM device d")).rows;
+    const response = await deviceStatus(req("/api/owner/device", cookie, undefined, { "x-lisi-background": "1" }));
+    expect(response.status).toBe(200);
+    expect(response.headers.get("cache-control")).toBe("no-store");
+    expect(response.headers.getSetCookie()).toHaveLength(0);
+    const text = await response.text();
+    expect(JSON.parse(text)).toEqual({ state: "connected", daysRemaining: 30, expiresAt: new Date(before[0].device.expires_at).toISOString() });
+    for (const secret of [token, before[0].device.token_hash, "tokenHash", "cashierId", email])
+      expect(text).not.toContain(secret);
+    expect((await pool.query("SELECT row_to_json(d) AS device, (SELECT jsonb_agg(a) FROM attendance a) AS attendance, (SELECT count(*) FROM audit) AS audits, (SELECT updated_at FROM owner_session LIMIT 1) AS owner_activity FROM device d")).rows).toEqual(before);
+    expect((await cashier(req("/api/pos", "lisi_device=" + token))).status).toBe(200);
+  });
+
+  it("distinguishes absent, expired and revoked pairing and never restores cashier access", async () => {
+    const cookie = await login();
+    expect(await (await deviceStatus(req("/api/owner/device", cookie))).json()).toEqual({ state: "unpaired", expiresAt: null, daysRemaining: 0 });
+    const token = await pairDevice();
+    await pool.query("UPDATE device SET expires_at=now()-interval '1 second'");
+    expect(await (await deviceStatus(req("/api/owner/device", cookie))).json()).toMatchObject({ state: "expired", daysRemaining: 0 });
+    expect((await cashier(req("/api/pos", "lisi_device=" + token))).status).toBe(401);
+    await device(req("/api/owner/device", cookie, { action: "revoke" }));
+    expect(await (await deviceStatus(req("/api/owner/device", cookie))).json()).toEqual({ state: "unpaired", expiresAt: null, daysRemaining: 0 });
+    expect((await cashier(req("/api/pos", "lisi_device=" + token))).status).toBe(401);
+  });
+
   it("rejects forged alert owners, query fields and duplicate targets", async () => {
     const cookie = await login();
     expect(

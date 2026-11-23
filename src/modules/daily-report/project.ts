@@ -7,13 +7,16 @@ import {
   type DailyRow,
   type DailySale,
 } from "./types";
+/** Hash a deterministic report/catalogue projection for stable keys and change detection; never hash authentication credentials here. */
 export const hashReport = (value: unknown) =>
   createHash("sha256").update(JSON.stringify(value)).digest("hex");
+/** Reject negative or unsafe-integer source amounts before daily financial aggregation. */
 const safe = (n: number) => {
   if (!Number.isSafeInteger(n) || n < 0)
     throw new DailyReportError("invalid_source");
   return n;
 };
+/** Immutable sold lines and saved promo allocations + observed catalogue snapshot → grouped historical-name/price rows with exact net revenue. Unknown historical unsold prices stay unknown; no inferred bundles or SQL writes. */
 export function projectDay(
   date: string,
   sales: DailySale[],

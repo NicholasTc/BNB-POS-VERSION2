@@ -17,21 +17,26 @@ type Property = {
   gridProperties: { rowCount: number; columnCount: number };
 };
 type Value = string | number;
+/** Encode numbers or literal strings as Google cell values so menu/promo text is not interpreted as a formula. */
 const cell = (value: Value) => ({
   userEnteredValue:
     typeof value === "number" ? { numberValue: value } : { stringValue: value },
 });
+/** Build the application-owned formula projecting hidden report rows into the requested six-column selected-date view. */
 export function reportFormula(capacity: number) {
   const selected = `SORT(FILTER($I$6:$N$${capacity},$H$6:$H$${capacity}=$B$2,$I$6:$I$${capacity}<>""),1,TRUE,4,TRUE)`;
   return `=IFNA(VSTACK(${selected},HSTACK("","","","",SUMIF($H$6:$H$${capacity},$B$2,$M$6:$M$${capacity}),"")),HSTACK("Belum ada laporan untuk tanggal ini.","","","","",""))`;
 }
+/** Build the application-owned selected-date publication-status formula from hidden report metadata. */
 export function statusFormula(capacity: number) {
   return `=IFNA("Diperbarui "&TEXT(VLOOKUP($B$2,$P$6:$R$${capacity},2,FALSE),"dd mmm yyyy hh:mm")&" WIB. "&VLOOKUP($B$2,$P$6:$R$${capacity},3,FALSE),"Pilih tanggal. Laporan belum tersedia atau sedang disiapkan.")`;
 }
 export class GoogleDailyReport implements DailyTransport {
   private id?: number;
   private capacity = 1000;
+  /** Reuse the already-authorized Sheets call adapter for this independent daily-report tab. */
   constructor(private api: Pick<GoogleSheets, "call">) {}
+  /** Build a literal-cell update for a reserved managed row/column without making a request. */
   private update(row: number, column: number, values: Value[][]) {
     return {
       updateCells: {
@@ -41,6 +46,7 @@ export class GoogleDailyReport implements DailyTransport {
       },
     };
   }
+  /** Build a trusted application formula update; untrusted menu/promo text uses literal cells instead. */
   private formula(row: number, formula: string) {
     return {
       updateCells: {
@@ -50,6 +56,7 @@ export class GoogleDailyReport implements DailyTransport {
       },
     };
   }
+  /** Read bounded managed report ranges with an explicit render mode for ownership/formula checks. */
   private async values(range: string, render = "FORMULA") {
     return (
       ((
@@ -59,6 +66,7 @@ export class GoogleDailyReport implements DailyTransport {
       ).values as Value[][] | undefined) ?? []
     );
   }
+  /** Validate report ownership, capacity, headers/formulas/date selector and reserved row IDs; initialize or repair only the managed daily-report layout and preserve the selected date. */
   async prepare(input: ReportPrepare) {
     const meta = await this.api.call("?fields=sheets.properties");
     const sheets = (meta.sheets as { properties: Property }[]).map(
@@ -322,7 +330,9 @@ export class GoogleDailyReport implements DailyTransport {
     await this.api.call(":batchUpdate", { requests });
     return this.id;
   }
+  /** Build the requested report tab formatting/validation requests; no sale/attendance data is modified. */
   private format(): unknown[] {
+    /** Build a zero-based managed-sheet grid range for formatting operations. */
     const range = (sr: number, er: number, sc = 0, ec = 6) => ({
       sheetId: this.id,
       startRowIndex: sr,
@@ -330,6 +340,7 @@ export class GoogleDailyReport implements DailyTransport {
       startColumnIndex: sc,
       endColumnIndex: ec,
     });
+    /** Build a repeat-cell formatting request over the supplied managed range. */
     const repeat = (r: unknown, format: unknown) => ({
       repeatCell: {
         range: r,
@@ -442,6 +453,7 @@ export class GoogleDailyReport implements DailyTransport {
       },
     ];
   }
+  /** Publish one day of reserved hidden data and its status in one Google batch, then verify output; visible rows remain driven by the existing date selector. */
   async write(input: ReportWrite) {
     if (this.id === undefined)
       throw new DailyReportError("report_not_prepared");

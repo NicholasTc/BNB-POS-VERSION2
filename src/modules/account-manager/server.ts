@@ -8,6 +8,7 @@ import { env } from "@/lib/env";
 import { OWNER_IDLE_SECONDS, OWNER_SESSION_SECONDS } from "@/lib/auth";
 import type { z } from "zod";
 import type { newOwnerInput } from "./types";
+/** Admin-authorized route → repeatable-read paginated owner listing; return public account metadata only, never credentials or admin identity. */
 export async function listOwners(page: number) {
   return db.transaction(
     async (tx) => {
@@ -32,6 +33,7 @@ export async function listOwners(page: number) {
     { isolationLevel: "repeatable read", accessMode: "read only" },
   );
 }
+/** Admin route → fresh password check and identity/session locks → same-operation receipt lookup → atomically create owner + hashed credential + receipt + audit. All owner accounts share this cafe; no business records are copied. */
 export async function createOwner(
   admin: Awaited<ReturnType<typeof requireAdmin>>,
   input: z.infer<typeof newOwnerInput>,

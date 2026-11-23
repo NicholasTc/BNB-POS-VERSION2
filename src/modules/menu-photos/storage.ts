@@ -22,13 +22,16 @@ export interface PhotoStore {
   get(id: string): Promise<Buffer>;
   remove(id: string): Promise<void>;
 }
+/** Choose an isolated local or private S3 adapter; callers own upload/attachment lifecycle metadata and ambiguous-response recovery. */
 export function photoStore(config: PhotoConfig): PhotoStore {
+  /** Validate an opaque photo ID before deriving a fixed WebP basename; reject traversal/path injection. */
   const name = (id: string) => {
     if (photoId(photoUrl(id)) !== id) throw new PhotoError("unavailable");
     return `${id}.webp`;
   };
   if (config.mode === "local")
     return {
+      /** Write normalized bytes to the configured private adapter target; the caller records ready state only after this returns. */
       async put(id, bytes) {
         await mkdir(config.directory, { recursive: true, mode: 0o700 });
         const target = join(config.directory, name(id)),
@@ -40,6 +43,7 @@ export function photoStore(config: PhotoConfig): PhotoStore {
           await unlink(temp).catch(() => {});
         }
       },
+      /** Read the configured object with storage size/time bounds; the caller verifies metadata/content digests before serving. */
       async get(id) {
         const path = join(config.directory, name(id));
         const metadata = await stat(path);
@@ -47,6 +51,7 @@ export function photoStore(config: PhotoConfig): PhotoStore {
           throw new PhotoError("unavailable");
         return readFile(path);
       },
+      /** Delete only the validated managed object; the caller preserves a deletion tombstone when the result is uncertain. */
       async remove(id) {
         try {
           await unlink(join(config.directory, name(id)));
@@ -79,8 +84,10 @@ export function photoStore(config: PhotoConfig): PhotoStore {
     };
   }
   const s3 = cachedClient.client;
+  /** Combine the validated configured S3 prefix and photo basename; no user-provided directory is accepted. */
   const key = (id: string) => config.prefix + name(id);
   return {
+    /** Write normalized bytes to the configured private adapter target; the caller records ready state only after this returns. */
     async put(id, bytes) {
       await s3.send(
         new PutObjectCommand({
@@ -93,6 +100,7 @@ export function photoStore(config: PhotoConfig): PhotoStore {
         { abortSignal: AbortSignal.timeout(10000) },
       );
     },
+    /** Read the configured object with storage size/time bounds; the caller verifies metadata/content digests before serving. */
     async get(id) {
       const result = await s3.send(
         new GetObjectCommand({ Bucket: config.bucket, Key: key(id) }),
@@ -108,6 +116,7 @@ export function photoStore(config: PhotoConfig): PhotoStore {
       if (bytes.length > MAX_PHOTO_BYTES) throw new PhotoError("unavailable");
       return bytes;
     },
+    /** Delete only the validated managed object; the caller preserves a deletion tombstone when the result is uncertain. */
     async remove(id) {
       await s3.send(
         new DeleteObjectCommand({ Bucket: config.bucket, Key: key(id) }),

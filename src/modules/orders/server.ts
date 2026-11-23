@@ -5,6 +5,7 @@ import { cashierValid, lockedDevice, type Transaction } from "../attendance";
 import type { OrderBoardState, OrderPage, PreparationOrder } from "./types";
 
 export const ORDER_PAGE_SIZE = 20;
+/** Lock/verify the pairing, then join active employee, attendance and open work session; derive generation and preparation permissions from SQL. */
 async function authorize(tx: Transaction, token: string) {
   const d = await lockedDevice(tx, token);
   if (!cashierValid(d))
@@ -28,6 +29,7 @@ type OrderRecord = Omit<PreparationOrder, "receivedAt" | "finishedAt"> & {
   receivedAt: string;
   finishedAt: string | null;
 };
+/** Read a bounded pending or current-session-finished preparation page with validated timestamp/UUID keyset cursor and immutable sale-line display data. */
 async function page(
   tx: Transaction,
   sessionId: string,
@@ -78,6 +80,7 @@ async function page(
     nextCursor: result.rows.length > ORDER_PAGE_SIZE ? rows.at(-1)!.id : null,
   };
 }
+/** Authorized paired cashier → one transaction → current work session plus pending and finished preparation pages; no sale or attendance mutation. */
 export async function readOrders(
   token: string,
   cursors: { pendingAfter?: string; finishedBefore?: string } = {},
@@ -94,6 +97,7 @@ export async function readOrders(
     };
   });
 }
+/** Active cashier + matching generation → same-connection throttle and ticket lock → mark preparation finished and audit once. Retrying a finished ticket is harmless and never records another payment. */
 export async function finishOrder(
   token: string,
   id: string,

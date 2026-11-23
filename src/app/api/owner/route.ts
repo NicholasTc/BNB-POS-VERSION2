@@ -2,6 +2,7 @@ import { endpoint, json, requireOwner } from "@/lib/http";
 import { db } from "@/db";
 import { ownerPreferences } from "@/db/schema";
 import { eq } from "drizzle-orm";
+/** Owner role/expiry check → safe owner display identity and that owner language preference. */
 export const GET = endpoint(async (request) => {
   const owner = await requireOwner(request);
   const [preference] = await db

@@ -2,6 +2,7 @@ import { z } from "zod";
 import { endpoint, json, requireOwner, AppError } from "@/lib/http";
 import { businessToday } from "@/lib/dates";
 import { report } from "@/modules/reporting";
+/** Owner role + strict date/page query → consistent read-only revenue/history/attendance projection. */
 export const GET = endpoint(async (request) => {
   await requireOwner(request);
   const q = new URL(request.url).searchParams;

@@ -1,5 +1,6 @@
 import type { OwnerAlert } from "./types";
 import type { OwnerLanguage } from "@/lib/owner-language";
+/** Map a typed alert reason/count to localized owner-facing explanation and action wording; this function performs no detection or mutation. */
 export function alertCopy(
   alert: Pick<OwnerAlert, "reason" | "count">,
   language: OwnerLanguage,

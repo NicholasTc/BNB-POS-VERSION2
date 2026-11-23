@@ -6,6 +6,7 @@ import { lockedDevice } from "@/modules/attendance";
 import { cashier } from "@/modules/sales";
 import { promoRules, type Promo, type PromoRules } from "./rules";
 
+/** Owner-authorized route → validate stored rule JSON and return deterministic promo records with revisions. */
 export async function listPromos(): Promise<Promo[]> {
   const rows = await db
     .select()
@@ -17,6 +18,7 @@ export async function listPromos(): Promise<Promo[]> {
     revision: p.revision,
   }));
 }
+/** Verify paired active cashier in a transaction and return only active promos; an owner login is not a cashier credential. */
 export async function cashierPromos(token: string) {
   return db.transaction(async (tx) => {
     await cashier(tx, await lockedDevice(tx, token));
@@ -33,6 +35,7 @@ export async function cashierPromos(token: string) {
       .filter((p) => p.active);
   });
 }
+/** Owner route → validate rules and selected menu references → serialize promo edit with expected revision → save/audit future rules; existing quoted discount snapshots stay unchanged. */
 export async function savePromo(input: {
   id?: string;
   revision?: number;

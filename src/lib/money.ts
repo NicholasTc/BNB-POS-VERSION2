@@ -1,11 +1,14 @@
+/** Format an integer rupiah amount for display; this does not calculate or persist payment totals. */
 export const rupiah = (amount: number) =>
   new Intl.NumberFormat("id-ID", {
     style: "currency",
     currency: "IDR",
     maximumFractionDigits: 0,
   }).format(amount);
+/** Produce a compact display label only; exact financial values stay integer rupiah. */
 export const compactRupiah = (amount: number) =>
   rupiah(amount).replace(/\s/g, "");
+/** Validate bounded integer quantities/prices and sum exact gross line totals before quote persistence. */
 export function priceLines(lines: { unitPrice: number; quantity: number }[]) {
   if (!lines.length || lines.length > 50)
     throw new Error("Pilih 1 sampai 50 jenis menu.");

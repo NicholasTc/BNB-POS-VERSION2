@@ -15,6 +15,7 @@ export const environmentSchema = z.object({
   BETTER_AUTH_SECRET: z.string().min(48),
   PIN_PEPPER: z.string().min(48),
 });
+/** Validate required server database/auth/PIN configuration and report only invalid key names, never their values. */
 export function readEnvironment(
   input: Record<string, string | undefined> = process.env,
 ) {
@@ -25,4 +26,5 @@ export function readEnvironment(
     );
   return result.data;
 }
+/** Read validated server configuration on demand; consumers must keep it out of client imports and responses. */
 export const env = () => readEnvironment();

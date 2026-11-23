@@ -4,6 +4,7 @@ import { uploadHeaders, photoBody } from "@/modules/menu-photos/request";
 import { uploadPhoto } from "@/modules/menu-photos/server";
 import { PhotoError, photoConfig } from "@/modules/menu-photos/config";
 export const runtime = "nodejs";
+/** Owner role + upload MIME/size/origin budgets → stream bounded bytes → recheck owner → normalized idempotent private upload. */
 export const POST = endpoint(async (request) => {
   const mime = uploadHeaders(request);
   await requireOwner(request);

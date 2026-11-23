@@ -19,6 +19,7 @@ export class GoogleSheets implements SheetsTransport {
   private base: string;
   private legacySheetId?: number;
   private salesSheetId = 81001;
+  /** Bind one approved spreadsheet and private authorization callback to this server-only transport; no API request is made yet. */
   constructor(
     config: SheetsConfig,
     private authorization: () => Promise<Headers>,
@@ -27,6 +28,7 @@ export class GoogleSheets implements SheetsTransport {
   ) {
     this.base = `https://sheets.googleapis.com/v4/spreadsheets/${config.spreadsheetId}`;
   }
+  /** Acquire private Google headers and make a bounded same-destination API request; expose only safe status codes on failure. */
   async call(
     path: string,
     payload?: unknown,
@@ -50,6 +52,7 @@ export class GoogleSheets implements SheetsTransport {
       );
     return await response.json();
   }
+  /** Inspect managed tab/header/source-ID ownership, reject layout conflicts, expand known tabs and preserve verified legacy cells before delivery. */
   async prepare(mappings: RowMapping[]) {
     this.legacySheetId = undefined;
     const metadata = await this.call("?fields=sheets.properties");
@@ -279,6 +282,7 @@ export class GoogleSheets implements SheetsTransport {
     }
     await this.call(":batchUpdate", { requests: format });
   }
+  /** Write reserved SQL row values as literal Google cells and maintain supported formatting; stable row mappings make ambiguous-response retries idempotent. */
   async write(rows: MappedRow[]) {
     // RAW makes even malicious product/employee names literal text, not formulas.
     const data = rows.map((row) => ({
@@ -332,6 +336,7 @@ export class GoogleSheets implements SheetsTransport {
     }
   }
 }
+/** Server-only credential file/JSON → strict service-account validation → Sheets-scoped JWT authorization → GoogleSheets transport. Credentials never enter rows, logs or client bundles. */
 export async function googleSheets(config: SheetsConfig, signal?: AbortSignal) {
   try {
     const raw =

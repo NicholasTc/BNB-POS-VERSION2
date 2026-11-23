@@ -1,3 +1,4 @@
+/** Worker environment → validate destination → recurring core export and independent daily-report passes. SQL holds source/queue receipts; Google writes and bounded diagnostics occur outside checkout. */
 import { createRequire } from "node:module";
 const { loadEnvConfig } = createRequire(import.meta.url)(
   "@next/env",
@@ -11,6 +12,8 @@ const { syncDailyReport } = await import("../src/modules/daily-report/sync");
 const { GoogleDailyReport } =
   await import("../src/modules/daily-report/google");
 const { pool } = await import("../src/db");
+const { recordDiagnostic, closeDiagnostics, startDiagnosticMaintenance } = await import("../src/modules/diagnostics/record");
+startDiagnosticMaintenance();
 const once = process.argv.includes("--once");
 let stopping = false;
 process.on("SIGINT", () => {
@@ -26,6 +29,7 @@ try {
       googleSheets(config!, signal),
     );
     console.log(JSON.stringify({ event: "sheets_sync", ...result }));
+    if (result.state === "retry") recordDiagnostic({ kind: "sheets_sync", source: "worker", technicalCode: result.error });
     // Independent, opt-in TEST report. Core export has already committed;
     // report failures never mark Sales/Attendance deliveries as failed.
     const daily = await syncDailyReport(
@@ -33,7 +37,10 @@ try {
       config,
       async (signal) =>
         new GoogleDailyReport(await googleSheets(config!, signal)),
-    ).catch(() => ({ state: "retry", processed: 0, error: "unavailable" }));
+    ).catch((error) => {
+      recordDiagnostic({ kind: "daily_report", source: "worker", error });
+      return { state: "retry", processed: 0, error: "unavailable" };
+    });
     if (daily.state !== "off")
       console.log(JSON.stringify({ event: "sheets_daily_report", ...daily }));
     if (result.state === "off") break;
@@ -47,6 +54,7 @@ try {
       await new Promise((resolve) => setTimeout(resolve, 1000));
   } while (!stopping);
 } catch (error) {
+  recordDiagnostic({ kind: "sheets_sync", source: "worker", error, technicalCode: sheetsErrorCode(error) });
   console.error(
     JSON.stringify({
       event: "sheets_sync_failed",
@@ -55,5 +63,6 @@ try {
   );
   process.exitCode = 1;
 } finally {
+  await closeDiagnostics();
   await pool.end();
 }

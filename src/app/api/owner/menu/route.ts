@@ -4,10 +4,12 @@ import { menuItem } from "@/db/schema";
 import { endpoint, json, assertOrigin, body, requireOwner } from "@/lib/http";
 import { saveMenu } from "@/modules/sales";
 import { menuCategory, menuImage } from "@/lib/menu";
+/** Owner role → current catalogue for management; no historical sale snapshots are modified. */
 export const GET = endpoint(async (request) => {
   await requireOwner(request);
   return json(await db.select().from(menuItem).orderBy(menuItem.createdAt));
 });
+/** Owner role + Origin/strict schema → menu/photo-reference transaction and audit. */
 export const POST = endpoint(async (request) => {
   assertOrigin(request);
   await requireOwner(request);
